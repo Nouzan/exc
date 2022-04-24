@@ -1,5 +1,5 @@
 [package]
-name = "exchange"
+name = "exc"
 version = "0.1.0"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
