@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    # Publish `main` as Docker `latest` image.
+    branches:
+      - main
+      - v*
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Run tests for any PRs.
+  pull_request:
+    branches:
+      - main
+      - v*
+
+jobs:
+    rust-test:
+        name: Test on Rust ${{ matrix.rust }}
+        runs-on: ubuntu-latest
+        if: "!contains(github.event.head_commit.message, 'skip ci')"
+
+        strategy:
+          matrix:
+            rust:
+              - stable
+              - beta
+              - nightly
+              - 1.60.0 # MSRV
+
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v2
+          - name: Cancel Previous Runs
+            uses: styfle/cancel-workflow-action@0.6.0
+            with:
+              access_token: ${{ github.token }}
+
+          - name: Install Rust Toolchain
+            uses: actions-rs/toolchain@v1
+            if: ${{ !contains(github.event.head_commit.message, 'skip test') }}
+            with:
+              profile: minimal
+              toolchain: ${{ matrix.rust }}
+              override: true
+              components: rustfmt, clippy
+
+          - name: Check Format
+            uses: actions-rs/cargo@v1
+            if: ${{ !contains(github.event.head_commit.message, 'skip test') }}
+            with:
+              command: fmt
+              args: --all -- --check
+
+          - name: Lint
+            uses: actions-rs/cargo@v1
+            if: ${{ !contains(github.event.head_commit.message, 'skip test') }}
+            with:
+              command: clippy
+              args: --all --all-targets --all-features
+
+          - name: Build
+            uses: actions-rs/cargo@v1
+            if: ${{ !contains(github.event.head_commit.message, 'skip test') }}
+            with:
+              command: build
+              args: --all-features
+
+          - name: Test
+            uses: actions-rs/cargo@v1
+            if: ${{ !contains(github.event.head_commit.message, 'skip test') }}
+            with:
+              command: test
+              args: --all-features
