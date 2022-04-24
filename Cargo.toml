@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
 description = "Abstractions of exchanges."
-repository = "https://github.com/Nouzan/indicator"
+repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower"]
 
 [dependencies]
