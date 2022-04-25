@@ -3,7 +3,7 @@ use std::{
     future::Future,
     task::{Context, Poll},
 };
-use tower::Service;
+use tower_service::Service;
 
 /// Exchange Service.
 pub trait ExchangeService<ReqData> {
