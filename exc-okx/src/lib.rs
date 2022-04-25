@@ -1,8 +1,9 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+//! Exc-okx: Okx exchange services.
+
+#![deny(missing_docs)]
+
+/// Websocket Service.
+pub mod websocket;
+
+/// All errors.
+pub mod error;

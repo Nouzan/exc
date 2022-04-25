@@ -1,8 +1,3 @@
-/// Endpoint.
-pub mod endpoint;
-
-/// Channel.
-pub mod channel;
-
-/// Connection.
-pub mod connection;
+#[cfg(feature = "websocket")]
+/// Websocket transport.
+pub mod websocket;
