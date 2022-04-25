@@ -5,7 +5,7 @@ use tokio_tungstenite::tungstenite::Message;
 
 /// Okx websocket operation.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum Op {
     /// Subscribe.
     Subscribe,

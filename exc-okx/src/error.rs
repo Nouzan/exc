@@ -38,4 +38,13 @@ pub enum OkxError {
     /// Subscribing or unsubscribing.
     #[error("subscribing or unsubscribing {0:?}")]
     SubscribingOrUnsubscribing(Args),
+    /// Websocket closed.
+    #[error("websocket closed")]
+    WebsocketClosed,
+    /// Broken channel.
+    #[error("broken channel: {0}")]
+    BrokenChannle(anyhow::Error),
+    /// API Error.
+    #[error("api error: {0}")]
+    Api(String),
 }

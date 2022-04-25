@@ -9,6 +9,7 @@ repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower", "okx"]
 
 [dependencies]
+anyhow = "1"
 http = "0.2.6"
 thiserror = "1.0.30"
 tracing = "0.1.34"

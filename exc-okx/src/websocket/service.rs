@@ -1,13 +1,14 @@
 use super::types::request::WsRequestMessage;
-use super::types::Args;
+use super::types::{event::Event, Args};
 use super::{types::envelope::Envelope, WsRequest, WsResponse};
 use crate::error::OkxError;
+use crate::websocket::types::event::ResponseKind;
 use exc::transport::websocket::WsStream;
 use futures::{future::BoxFuture, stream::SplitSink, FutureExt, SinkExt, StreamExt};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::task::{Context, Poll};
 use tokio::sync::{mpsc, oneshot};
-use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::tungstenite::{Error as WsError, Message};
 
 type Callback = oneshot::Sender<Result<WsResponse, OkxError>>;
 
@@ -18,11 +19,18 @@ pub struct OkxWebsocketService {
 
 const MESSAGE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
 
+#[derive(Debug)]
+enum InFlight {
+    Subscribe(Args),
+    Unsubscribe(Args),
+}
+
 #[derive(Default)]
 struct Dispatch {
     subscriptions: HashMap<Args, ()>,
     subscribing: HashMap<Args, Callback>,
     unsubscribing: HashMap<Args, Callback>,
+    in_flights: VecDeque<InFlight>,
 }
 
 impl Dispatch {
@@ -50,7 +58,8 @@ impl Dispatch {
                     let req = request.into();
                     match self.send_message(&req, ws_tx).await {
                         Ok(_) => {
-                            self.subscribing.insert(args, callback);
+                            self.subscribing.insert(args.clone(), callback);
+                            self.in_flights.push_back(InFlight::Subscribe(args));
                         }
                         Err(err) => {
                             tokio::spawn(async move {
@@ -77,7 +86,8 @@ impl Dispatch {
                     let req = request.into();
                     match self.send_message(&req, ws_tx).await {
                         Ok(_) => {
-                            self.unsubscribing.insert(args, callback);
+                            self.unsubscribing.insert(args.clone(), callback);
+                            self.in_flights.push_back(InFlight::Unsubscribe(args));
                         }
                         Err(err) => {
                             tokio::spawn(async move {
@@ -92,10 +102,112 @@ impl Dispatch {
         }
     }
 
-    async fn handle_message(
-        &mut self,
-        msg: Result<Message, tokio_tungstenite::tungstenite::Error>,
-    ) -> Result<(), OkxError> {
+    async fn handle_message(&mut self, msg: Result<Message, WsError>) -> Result<(), OkxError> {
+        match msg {
+            Ok(msg) => match msg {
+                Message::Text(msg) => match msg.as_str() {
+                    "pong" => {}
+                    msg => match serde_json::from_str::<Event>(msg) {
+                        Ok(event) => {
+                            debug!("received an event: {event:?}");
+                            match event {
+                                Event::Response(response) => {
+                                    let in_flight =
+                                        self.in_flights.pop_front().ok_or_else(|| {
+                                            OkxError::BrokenChannle(anyhow::anyhow!(
+                                                "unwanted response"
+                                            ))
+                                        })?;
+                                    match response {
+                                        ResponseKind::Login(_) => {
+                                            error!("unimplemented");
+                                        }
+                                        ResponseKind::Subscribe { arg } => {
+                                            if !matches!(in_flight, InFlight::Subscribe(_)) {
+                                                return Err(OkxError::BrokenChannle(anyhow::anyhow!("response mismatched: in_flight={in_flight:?}")));
+                                            }
+                                            if let Some(callback) = self.subscribing.remove(&arg) {
+                                                self.subscriptions.insert(arg, ());
+                                                tokio::spawn(async move {
+                                                    if let Err(err) =
+                                                        callback.send(Ok(WsResponse {}))
+                                                    {
+                                                        error!("callback error: {err:?}");
+                                                    }
+                                                });
+                                            }
+                                        }
+                                        ResponseKind::Unsubscribe { arg } => {
+                                            if !matches!(in_flight, InFlight::Unsubscribe(_)) {
+                                                return Err(OkxError::BrokenChannle(anyhow::anyhow!("response mismatched: in_flight={in_flight:?}")));
+                                            }
+                                            if let Some(callback) = self.unsubscribing.remove(&arg)
+                                            {
+                                                self.subscriptions.remove(&arg);
+                                                if let Err(err) = callback.send(Ok(WsResponse {})) {
+                                                    error!("callback error: {err:?}");
+                                                }
+                                            }
+                                        }
+                                        ResponseKind::Error(msg) => match &in_flight {
+                                            InFlight::Subscribe(args) => {
+                                                if let Some(callback) =
+                                                    self.subscribing.remove(args)
+                                                {
+                                                    tokio::spawn(async move {
+                                                        if let Err(err) = callback.send(Err(
+                                                            OkxError::Api(msg.to_string()),
+                                                        )) {
+                                                            error!("callback error: {err:?}");
+                                                        }
+                                                    });
+                                                } else {
+                                                    return Err(OkxError::BrokenChannle(anyhow::anyhow!("response mismatched: in_flight={in_flight:?}")));
+                                                }
+                                            }
+                                            InFlight::Unsubscribe(args) => {
+                                                if let Some(callback) =
+                                                    self.unsubscribing.remove(args)
+                                                {
+                                                    tokio::spawn(async move {
+                                                        if let Err(err) = callback.send(Err(
+                                                            OkxError::Api(msg.to_string()),
+                                                        )) {
+                                                            error!("callback error: {err:?}");
+                                                        }
+                                                    });
+                                                } else {
+                                                    return Err(OkxError::BrokenChannle(anyhow::anyhow!("response mismatched: in_flight={in_flight:?}")));
+                                                }
+                                            }
+                                        },
+                                    }
+                                }
+                                Event::Change(change) => {
+                                    info!("change: {change:?}");
+                                }
+                            }
+                        }
+                        Err(err) => {
+                            error!("deserializing error: msg={msg} err={err}");
+                            return Err(err.into());
+                        }
+                    },
+                },
+                Message::Close(_) => {
+                    return Err(OkxError::WebsocketClosed);
+                }
+                _ => {}
+            },
+            Err(err) => match &err {
+                WsError::ConnectionClosed | WsError::AlreadyClosed => {
+                    return Err(err.into());
+                }
+                _ => {
+                    error!("websocket error: {err}");
+                }
+            },
+        }
         Ok(())
     }
 
