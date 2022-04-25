@@ -1,6 +1,6 @@
 use crate::{
     error::OkxError,
-    websocket::{request::WsRequest, response::WsResponse},
+    websocket::{WsRequest, WsResponse},
 };
 use futures::future::{poll_fn, BoxFuture};
 use http::Uri;

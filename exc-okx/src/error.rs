@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::websocket::{types::Args, WsRequest};
+
 /// All OKX errors.
 #[derive(Debug, Error)]
 pub enum OkxError {
@@ -12,7 +14,28 @@ pub enum OkxError {
     /// Websocket disconnected.
     #[error("websocket disconnected")]
     WebsocketDisconnected,
+    /// Ping error.
+    #[error("ping error: {0}")]
+    Ping(tokio_tungstenite::tungstenite::Error),
     /// Ping timeout.
     #[error("ping timeout")]
     PingTimeout,
+    /// Json error.
+    #[error("json: {0}")]
+    Json(#[from] serde_json::Error),
+    /// Request sender dropped.
+    #[error("request sender dropped")]
+    RequestSenderDropped,
+    /// Dispatch error.
+    #[error("dispatch error: req={0:?}")]
+    Dispatch(WsRequest),
+    /// Callback error.
+    #[error("responser error: {0}")]
+    Callback(#[from] tokio::sync::oneshot::error::RecvError),
+    /// Already subscribed or unsubscribing.
+    #[error("already subscribed or unsubscribping {0:?}")]
+    SubscribedOrUnsubscribing(Args),
+    /// Subscribing or unsubscribing.
+    #[error("subscribing or unsubscribing {0:?}")]
+    SubscribingOrUnsubscribing(Args),
 }

@@ -1,6 +1,6 @@
 use super::channel::WsEndpoint;
 use crate::error::OkxError;
-use crate::websocket::{request::WsRequest, response::WsResponse, service::OkxWebsocketService};
+use crate::websocket::{service::OkxWebsocketService, WsRequest, WsResponse};
 use exc::transport::websocket::connector::WsConnector;
 use futures::future::BoxFuture;
 use futures::FutureExt;
