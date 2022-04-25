@@ -4,7 +4,8 @@ use std::task::{Context, Poll};
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, tungstenite::Error, MaybeTlsStream, WebSocketStream};
 
-type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
+/// Websocket Stream.
+pub type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 type BoxConnecting = BoxFuture<'static, Result<WsStream, Error>>;
 
 /// Websocket Connector.

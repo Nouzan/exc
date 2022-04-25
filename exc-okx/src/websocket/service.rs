@@ -1,13 +1,18 @@
+use super::{request::WsRequest, response::WsResponse};
+use crate::error::OkxError;
+use exc::transport::websocket::WsStream;
 use futures::future::BoxFuture;
 
-use crate::error::OkxError;
-
-use super::{request::WsRequest, response::WsResponse};
-
 /// Okx websocket API service.
-pub struct OkxWebsocket {}
+pub struct OkxWebsocketService {}
 
-impl tower::Service<WsRequest> for OkxWebsocket {
+impl OkxWebsocketService {
+    pub(crate) async fn init(ws: WsStream) -> Result<Self, OkxError> {
+        todo!()
+    }
+}
+
+impl tower::Service<WsRequest> for OkxWebsocketService {
     type Response = WsResponse;
     type Error = OkxError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;

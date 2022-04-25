@@ -9,3 +9,5 @@ pub mod response;
 
 /// Okx websocket service.
 pub mod service;
+
+pub use transport::channel::{WsChannel, WsEndpoint};
