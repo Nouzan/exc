@@ -11,12 +11,12 @@ pub mod response;
 pub mod envelope;
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::hash::Hash;
 
 /// Okx arguments.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct Args(pub HashMap<String, String>);
+pub struct Args(pub BTreeMap<String, String>);
 
 impl Hash for Args {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {

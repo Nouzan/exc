@@ -1,6 +1,7 @@
 use super::Args;
 use crate::error::OkxError;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use tokio_tungstenite::tungstenite::Message;
 
 /// Okx websocket operation.
@@ -19,7 +20,7 @@ pub enum Op {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WsRequestMessage {
     /// Id.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     /// Operation.
     pub op: Op,
@@ -43,6 +44,24 @@ pub enum WsRequest {
     Subscribe(Args),
     /// Unsubscribe.
     Unsubscribe(Args),
+}
+
+impl WsRequest {
+    /// Subscribe tickers.
+    pub fn subscribe_tickers(inst: &str) -> Self {
+        Self::Subscribe(Args(BTreeMap::from([
+            ("channel".to_string(), "tickers".to_string()),
+            ("instId".to_string(), inst.to_string()),
+        ])))
+    }
+
+    /// Unsubscribe tickers.
+    pub fn unsubscribe_tickers(inst: &str) -> Self {
+        Self::Unsubscribe(Args(BTreeMap::from([
+            ("channel".to_string(), "tickers".to_string()),
+            ("instId".to_string(), inst.to_string()),
+        ])))
+    }
 }
 
 impl Into<WsRequestMessage> for WsRequest {

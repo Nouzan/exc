@@ -36,9 +36,19 @@ pub struct WsChannel {
 
 impl WsChannel {
     /// Check if channel is ready.
-    pub async fn ready(&mut self) -> Result<(), OkxError> {
+    pub(crate) async fn ready(&mut self) -> Result<(), OkxError> {
         poll_fn(|cx| self.poll_ready(cx)).await?;
         Ok(())
+    }
+
+    /// Send request.
+    pub async fn send(
+        &mut self,
+        request: WsRequest,
+    ) -> Result<<Self as Service<WsRequest>>::Future, OkxError> {
+        self.ready().await?;
+        let fut = self.call(request);
+        Ok(fut)
     }
 }
 
