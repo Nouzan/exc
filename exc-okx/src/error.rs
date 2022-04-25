@@ -9,4 +9,10 @@ pub enum OkxError {
     /// Connection error.
     #[error("connection error: {0}")]
     Connection(Box<dyn std::error::Error + Send + Sync>),
+    /// Websocket disconnected.
+    #[error("websocket disconnected")]
+    WebsocketDisconnected,
+    /// Ping timeout.
+    #[error("ping timeout")]
+    PingTimeout,
 }

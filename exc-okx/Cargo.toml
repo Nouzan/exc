@@ -8,15 +8,15 @@ description = "OKX exchange services"
 repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower", "okx"]
 
+[dependencies]
+http = "0.2.6"
+thiserror = "1.0.30"
+tracing = "0.1.34"
+futures = "0.3.21"
+
 [dependencies.exc]
 path = "../exc"
 features = ["websocket"]
-
-[dependencies.http]
-version = "0.2.6"
-
-[dependencies.thiserror]
-version = "1.0.30"
 
 [dependencies.tower]
 version = "0.4.12"
@@ -26,5 +26,10 @@ features = ["util", "reconnect"]
 version = "0.17.1"
 features = ["native-tls"]
 
-[dependencies.futures]
-version = "0.3.21"
+[dependencies.tokio]
+version = "1.17.0"
+features = ["sync", "rt-multi-thread", "time", "macros"]
+
+[dependencies.tokio-stream]
+version = "0.1.8"
+features = ["time"]

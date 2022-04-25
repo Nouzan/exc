@@ -1,15 +1,24 @@
-use futures::future::BoxFuture;
-
 use crate::{
     error::OkxError,
     websocket::{request::WsRequest, response::WsResponse},
 };
+use futures::future::{poll_fn, BoxFuture};
+use http::Uri;
+use tower::Service;
 
 use super::connection::Connection;
 
 /// Okx websocket endpoint.
 pub struct WsEndpoint {
-    pub(crate) uri: http::Uri,
+    pub(crate) uri: Uri,
+}
+
+impl Default for WsEndpoint {
+    fn default() -> Self {
+        Self {
+            uri: Uri::from_static("wss://wsaws.okex.com:8443/ws/v5/public"),
+        }
+    }
 }
 
 impl WsEndpoint {
@@ -23,6 +32,14 @@ impl WsEndpoint {
 /// Okx websocket channel.
 pub struct WsChannel {
     svc: Connection,
+}
+
+impl WsChannel {
+    /// Check if channel is ready.
+    pub async fn ready(&mut self) -> Result<(), OkxError> {
+        poll_fn(|cx| self.poll_ready(cx)).await?;
+        Ok(())
+    }
 }
 
 impl tower::Service<WsRequest> for WsChannel {
