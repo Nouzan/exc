@@ -1,5 +1,9 @@
-use exc_okx::websocket::{WsEndpoint, WsRequest};
+use exc_okx::websocket::{OkxWsClient, WsEndpoint, WsRequest, WsResponse};
 use futures::StreamExt;
+
+async fn request(client: &mut OkxWsClient, req: WsRequest) -> anyhow::Result<WsResponse> {
+    Ok(client.send(req).await?.await?)
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -10,13 +14,20 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut channel = WsEndpoint::default().connect().await?;
-    let req = WsRequest::subscribe_tickers("BTC-USDT");
-    let resp = channel.send(req).await?.await?;
-    tracing::info!("responsed!");
-    let mut stream = resp.into_stream();
-    while let Some(c) = stream.next().await {
-        println!("{c:?}");
+    let mut client = WsEndpoint::default().connect();
+    loop {
+        let req = WsRequest::subscribe_tickers("BTC-USDT");
+        match request(&mut client, req).await {
+            Ok(resp) => {
+                let mut stream = resp.into_stream();
+                while let Some(c) = stream.next().await {
+                    println!("{c:?}");
+                }
+                tracing::info!("stream is dead; reconnecting...");
+            }
+            Err(err) => {
+                tracing::error!("request error: {err}; retrying...");
+            }
+        }
     }
-    Ok(())
 }

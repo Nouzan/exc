@@ -17,8 +17,8 @@ impl Default for WsEndpoint {
 
 impl WsEndpoint {
     /// Connect and create a okx websocket channel.
-    pub async fn connect(&self) -> Result<OkxWsClient, OkxError> {
+    pub fn connect(&self) -> OkxWsClient {
         let svc = Connection::new(self);
-        Ok(OkxWsClient { svc })
+        OkxWsClient { svc }
     }
 }
