@@ -16,12 +16,18 @@ async fn main() -> anyhow::Result<()> {
 
     let mut client = WsEndpoint::default().connect();
     loop {
-        let req = WsRequest::subscribe_tickers("BTC-USDT");
+        let req = WsRequest::subscribe_tickers("ETH-USDT");
         match request(&mut client, req).await {
             Ok(resp) => {
                 let mut stream = resp.into_stream();
+                let mut count = 0;
                 while let Some(c) = stream.next().await {
+                    count += 1;
                     println!("{c:?}");
+                    if count > 10 {
+                        let _ =
+                            request(&mut client, WsRequest::unsubscribe_tickers("ETH-USDT")).await;
+                    }
                 }
                 tracing::info!("stream is dead; reconnecting...");
             }
