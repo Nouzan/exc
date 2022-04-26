@@ -44,11 +44,9 @@ enum PingState {
 }
 
 pin_project! {
-    struct PingPong<Si, S> {
+    struct PingPong<S> {
         #[pin]
-        stream: S,
-        #[pin]
-        sink: Si,
+        inner: S,
         #[pin]
         message_deadline: Sleep,
         #[pin]
@@ -58,17 +56,16 @@ pin_project! {
     }
 }
 
-impl<Si, S> PingPong<Si, S> {
+impl<S> PingPong<S> {
     const MESSAGE_TIMEOUT: std::time::Duration = Duration::from_secs(20);
     const PING: &'static str = "ping";
 
-    fn new(sink: Si, stream: S) -> Self {
+    fn new(inner: S) -> Self {
         let next = Instant::now() + Self::MESSAGE_TIMEOUT;
         let message_deadline = tokio::time::sleep_until(next);
         let ping_deadline = tokio::time::sleep_until(next);
         Self {
-            sink,
-            stream,
+            inner,
             message_deadline,
             ping_deadline,
             state: PingState::Idle,
@@ -77,34 +74,34 @@ impl<Si, S> PingPong<Si, S> {
     }
 }
 
-impl<T, Si, S> Sink<T> for PingPong<Si, S>
+impl<T, S> Sink<T> for PingPong<S>
 where
-    Si: Sink<T>,
+    S: Sink<T>,
 {
-    type Error = Si::Error;
+    type Error = S::Error;
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project().sink.poll_ready(cx)
+        self.project().inner.poll_ready(cx)
     }
 
     fn start_send(self: Pin<&mut Self>, item: T) -> Result<(), Self::Error> {
-        self.project().sink.start_send(item)
+        self.project().inner.start_send(item)
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project().sink.poll_flush(cx)
+        self.project().inner.poll_flush(cx)
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project().sink.poll_close(cx)
+        self.project().inner.poll_close(cx)
     }
 }
 
-impl<Si, S, Err> Stream for PingPong<Si, S>
+impl<S, Err> Stream for PingPong<S>
 where
     OkxError: From<Err>,
     S: Stream<Item = Result<String, Err>>,
-    Si: Sink<String, Error = Err>,
+    S: Sink<String, Error = Err>,
 {
     type Item = Result<String, OkxError>;
 
@@ -113,7 +110,7 @@ where
         if *this.close {
             return Poll::Ready(None);
         }
-        match this.stream.poll_next(cx) {
+        match this.inner.as_mut().poll_next(cx) {
             Poll::Ready(s) => match s {
                 Some(Ok(s)) => {
                     let next = Instant::now() + Self::MESSAGE_TIMEOUT;
@@ -145,9 +142,9 @@ where
                     this.ping_deadline.as_mut().reset(next);
                     *this.state = PingState::Ping;
                 }
-                PingState::Ping => match this.sink.as_mut().poll_ready(cx) {
+                PingState::Ping => match this.inner.as_mut().poll_ready(cx) {
                     Poll::Ready(_) => {
-                        if let Err(err) = this.sink.as_mut().start_send(Self::PING.to_string()) {
+                        if let Err(err) = this.inner.as_mut().start_send(Self::PING.to_string()) {
                             let err = OkxError::from(err);
                             trace!("ping pong; ping sent failed");
                             *this.state = PingState::PingFailed;
@@ -165,7 +162,7 @@ where
                         return Poll::Ready(Some(Err(OkxError::PingTimeout)));
                     }
                 },
-                PingState::PingSent => match this.sink.as_mut().poll_flush(cx) {
+                PingState::PingSent => match this.inner.as_mut().poll_flush(cx) {
                     Poll::Ready(_) => {
                         trace!("ping pong; ping sent");
                         *this.state = PingState::WaitPong;
@@ -195,7 +192,7 @@ where
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.stream.size_hint()
+        self.inner.size_hint()
     }
 }
 
@@ -217,8 +214,7 @@ impl Transport {
         OkxError: From<Err>,
     {
         let mut streams = HashMap::<_, _, RandomState>::default();
-        let (sink, stream) = base.split();
-        let ping_pong = PingPong::new(sink, stream);
+        let ping_pong = PingPong::new(base);
         let inner = ping_pong
             .sink_map_err(OkxError::from)
             .with(|req: WsRequest| async move {
