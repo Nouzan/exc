@@ -25,7 +25,7 @@ features = ["derive"]
 
 [dependencies.exc]
 path = "../exc"
-features = ["websocket"]
+features = ["websocket", "driven"]
 
 [dependencies.tower]
 version = "0.4.12"

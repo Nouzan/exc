@@ -7,7 +7,7 @@ use crate::websocket::{
     WsRequest, WsResponse,
 };
 use either::Either;
-use exc::transport::websocket::WsStream;
+use exc::transport::{driven::Driven, websocket::WsStream};
 use futures::{ready, Future, Sink, SinkExt, Stream, StreamExt};
 use pin_project_lite::pin_project;
 use std::collections::{hash_map::RandomState, HashMap};
@@ -38,7 +38,6 @@ type BoxStream = Pin<Box<dyn OkxWsStream + Send>>;
 enum PingState {
     Idle,
     Ping,
-    SendPing,
     PingSent,
     WaitPong,
     PingFailed,
@@ -55,6 +54,7 @@ pin_project! {
         #[pin]
         ping_deadline: Sleep,
         state: PingState,
+        close: bool,
     }
 }
 
@@ -72,6 +72,7 @@ impl<Si, S> PingPong<Si, S> {
             message_deadline,
             ping_deadline,
             state: PingState::Idle,
+            close: false,
         }
     }
 }
@@ -108,13 +109,17 @@ where
     type Item = Result<String, OkxError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let this = self.project();
+        let mut this = self.project();
+        if *this.close {
+            return Poll::Ready(None);
+        }
         match this.stream.poll_next(cx) {
             Poll::Ready(s) => match s {
                 Some(Ok(s)) => {
                     let next = Instant::now() + Self::MESSAGE_TIMEOUT;
                     this.message_deadline.reset(next);
                     *this.state = PingState::Idle;
+                    trace!("ping pong; timer reset");
                     match s.as_str() {
                         "pong" => return Poll::Pending,
                         _ => return Poll::Ready(Some(Ok(s))),
@@ -124,61 +129,67 @@ where
                     return Poll::Ready(Some(Err(OkxError::from(err))));
                 }
                 None => {
-                    return Poll::Ready(None);
+                    *this.close = true;
+                    trace!("ping pong; stream is dead");
+                    return Poll::Ready(Some(Err(OkxError::RemoteClosed)));
                 }
             },
             Poll::Pending => {}
         };
-        match this.state {
-            PingState::Idle => {
-                ready!(this.message_deadline.poll(cx));
-                let next = Instant::now() + Self::MESSAGE_TIMEOUT;
-                this.ping_deadline.reset(next);
-                *this.state = PingState::Ping;
-                Poll::Pending
-            }
-            PingState::Ping => {
-                match this.sink.poll_ready(cx) {
+        loop {
+            match this.state {
+                PingState::Idle => {
+                    ready!(this.message_deadline.as_mut().poll(cx));
+                    trace!("ping pong; need ping");
+                    let next = Instant::now() + Self::MESSAGE_TIMEOUT;
+                    this.ping_deadline.as_mut().reset(next);
+                    *this.state = PingState::Ping;
+                }
+                PingState::Ping => match this.sink.as_mut().poll_ready(cx) {
                     Poll::Ready(_) => {
-                        *this.state = PingState::SendPing;
+                        if let Err(err) = this.sink.as_mut().start_send(Self::PING.to_string()) {
+                            let err = OkxError::from(err);
+                            trace!("ping pong; ping sent failed");
+                            *this.state = PingState::PingFailed;
+                            *this.close = true;
+                            return Poll::Ready(Some(Err(OkxError::Ping(err.into()))));
+                        }
+                        *this.state = PingState::PingSent;
+                        trace!("ping pong; ready to send ping");
                     }
-                    Poll::Pending => {}
-                }
-                ready!(this.ping_deadline.poll(cx));
-                *this.state = PingState::PingFailed;
-                Poll::Ready(Some(Err(OkxError::PingTimeout)))
-            }
-            PingState::SendPing => {
-                let res = this.sink.start_send(Self::PING.to_string());
-                *this.state = PingState::PingSent;
-                if let Err(err) = res {
-                    let err = OkxError::from(err);
-                    *this.state = PingState::PingFailed;
-                    return Poll::Ready(Some(Err(OkxError::Ping(err.into()))));
-                }
-                ready!(this.ping_deadline.poll(cx));
-                *this.state = PingState::PingFailed;
-                Poll::Ready(Some(Err(OkxError::PingTimeout)))
-            }
-            PingState::PingSent => {
-                match this.sink.poll_flush(cx) {
+                    Poll::Pending => {
+                        ready!(this.ping_deadline.as_mut().poll(cx));
+                        trace!("ping pong; ping timeout");
+                        *this.state = PingState::PingFailed;
+                        *this.close = true;
+                        return Poll::Ready(Some(Err(OkxError::PingTimeout)));
+                    }
+                },
+                PingState::PingSent => match this.sink.as_mut().poll_flush(cx) {
                     Poll::Ready(_) => {
+                        trace!("ping pong; ping sent");
                         *this.state = PingState::WaitPong;
-                        return Poll::Pending;
                     }
-                    Poll::Pending => {}
+                    Poll::Pending => {
+                        ready!(this.ping_deadline.as_mut().poll(cx));
+                        trace!("ping pong; ping timeout");
+                        *this.state = PingState::PingFailed;
+                        *this.close = true;
+                        return Poll::Ready(Some(Err(OkxError::PingTimeout)));
+                    }
+                },
+                PingState::WaitPong => {
+                    ready!(this.ping_deadline.as_mut().poll(cx));
+                    trace!("ping pong; ping timeout");
+                    *this.state = PingState::PingFailed;
+                    *this.close = true;
+                    return Poll::Ready(Some(Err(OkxError::PingTimeout)));
                 }
-                ready!(this.ping_deadline.poll(cx));
-                *this.state = PingState::PingFailed;
-                Poll::Ready(Some(Err(OkxError::PingTimeout)))
-            }
-            PingState::WaitPong => {
-                ready!(this.ping_deadline.poll(cx));
-                *this.state = PingState::PingFailed;
-                Poll::Ready(Some(Err(OkxError::PingTimeout)))
-            }
-            PingState::PingFailed => {
-                Poll::Ready(Some(Err(OkxError::Ping(anyhow::anyhow!("ping failed")))))
+                PingState::PingFailed => {
+                    trace!("ping pong; ping failed");
+                    *this.close = true;
+                    return Poll::Ready(Some(Err(OkxError::Ping(anyhow::anyhow!("ping failed")))));
+                }
             }
         }
     }
@@ -244,6 +255,7 @@ impl Transport {
                                 ResponseKind::Error(msg) => Some(WsResponse::from_failure(msg)),
                             },
                             Event::Change(change) => {
+                                trace!("received {change:?}");
                                 if let Some(stream) = streams.get_mut(&change.arg) {
                                     if let Err(err) = stream.send(change) {
                                         let args = err.0.arg;
@@ -259,11 +271,20 @@ impl Transport {
                             Some(Err(err.into()))
                         }
                     },
-                    Err(err) => Some(Err(err)),
+                    Err(err) => {
+                        match &err {
+                            OkxError::RemoteClosed | OkxError::PingTimeout | OkxError::Ping(_) => {
+                                streams.clear();
+                            }
+                            _ => {}
+                        }
+                        error!("transport error: {err}");
+                        Some(Err(err))
+                    }
                 };
                 futures::future::ready(resp)
             });
-        let inner = Box::pin(inner);
+        let inner = Box::pin(Driven::new(inner));
         Self { inner }
     }
 }

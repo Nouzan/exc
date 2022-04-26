@@ -8,6 +8,9 @@ pub enum OkxError {
     /// Websocket error.
     #[error("weboscket: {0}")]
     Websocket(#[from] tokio_tungstenite::tungstenite::Error),
+    /// Remote closed.
+    #[error("remote closed")]
+    RemoteClosed,
     /// Connection error.
     #[error("connection error: {0}")]
     Connection(Box<dyn std::error::Error + Send + Sync>),
@@ -41,9 +44,6 @@ pub enum OkxError {
     /// Websocket closed.
     #[error("websocket closed")]
     WebsocketClosed,
-    /// Broken channel.
-    #[error("broken channel: {0}")]
-    BrokenChannle(anyhow::Error),
     /// API Error.
     #[error("api error: {0}")]
     Api(String),
