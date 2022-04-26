@@ -1,6 +1,7 @@
-use super::channel::WsEndpoint;
+use super::endpoint::WsEndpoint;
+use super::protocol::Protocol;
 use crate::error::OkxError;
-use crate::websocket::{service::OkxWebsocketService, WsRequest, WsResponse};
+use crate::websocket::{WsRequest, WsResponse};
 use exc::transport::websocket::connector::WsConnector;
 use futures::future::BoxFuture;
 use futures::FutureExt;
@@ -8,7 +9,7 @@ use http::Uri;
 use tower::ServiceExt;
 use tower::{reconnect::Reconnect, util::BoxService};
 
-/// Create a connection to OKX websocket api.
+/// Create a connection to okx websocket api.
 pub(crate) struct Connect {
     inner: WsConnector,
 }
@@ -20,7 +21,7 @@ impl Connect {
 }
 
 impl tower::Service<Uri> for Connect {
-    type Response = OkxWebsocketService;
+    type Response = Protocol;
     type Error = OkxError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -35,7 +36,7 @@ impl tower::Service<Uri> for Connect {
         let conn = self.inner.call(req);
         async move {
             let conn = conn.await?;
-            let svc = OkxWebsocketService::init(conn).await?;
+            let svc = Protocol::init(conn).await?;
             Ok(svc)
         }
         .boxed()
@@ -51,7 +52,7 @@ impl Connection {
     /// Create a new okx websocket connection.
     pub(crate) fn new(endpoint: &WsEndpoint) -> Self {
         let connector = Connect::new(WsConnector::default());
-        let conn = Reconnect::new::<OkxWebsocketService, Uri>(connector, endpoint.uri.clone())
+        let conn = Reconnect::new::<Protocol, Uri>(connector, endpoint.uri.clone())
             .map_err(OkxError::Connection);
         Self {
             inner: BoxService::new(conn),

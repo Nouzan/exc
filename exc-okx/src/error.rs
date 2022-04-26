@@ -16,7 +16,7 @@ pub enum OkxError {
     WebsocketDisconnected,
     /// Ping error.
     #[error("ping error: {0}")]
-    Ping(tokio_tungstenite::tungstenite::Error),
+    Ping(anyhow::Error),
     /// Ping timeout.
     #[error("ping timeout")]
     PingTimeout,
@@ -47,4 +47,7 @@ pub enum OkxError {
     /// API Error.
     #[error("api error: {0}")]
     Api(String),
+    /// Protocol Error.
+    #[error("protocol: {0}")]
+    Protocol(anyhow::Error),
 }

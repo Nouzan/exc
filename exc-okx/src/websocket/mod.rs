@@ -1,11 +1,12 @@
 /// Okx websocket transport.
 pub mod transport;
 
-/// Okx websocket service.
-pub mod service;
-
-/// Okx types.
+/// Types definitions for okx websocket api.
 pub mod types;
 
-pub use transport::channel::{WsChannel, WsEndpoint};
+/// Okx websocket client.
+pub mod client;
+
+pub use client::OkxWsClient;
+pub use transport::endpoint::WsEndpoint;
 pub use types::{request::WsRequest, response::WsResponse};

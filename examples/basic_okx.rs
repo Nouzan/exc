@@ -1,10 +1,5 @@
-use exc_okx::websocket::{WsChannel, WsEndpoint, WsRequest};
-
-async fn request(channel: &mut WsChannel, req: WsRequest) -> anyhow::Result<()> {
-    let resp = channel.send(req).await?.await?;
-    tracing::info!("{resp:?}");
-    Ok(())
-}
+use exc_okx::websocket::{WsEndpoint, WsRequest};
+use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -17,13 +12,11 @@ async fn main() -> anyhow::Result<()> {
 
     let mut channel = WsEndpoint::default().connect().await?;
     let req = WsRequest::subscribe_tickers("BTC-USDT");
-    if let Err(err) = request(&mut channel, req).await {
-        tracing::error!("{err}");
+    let resp = channel.send(req).await?.await?;
+    tracing::info!("responsed!");
+    let mut stream = resp.into_stream();
+    for c in stream.next().await {
+        println!("{c:?}");
     }
-    let req = WsRequest::unsubscribe_tickers("BTC-USDT");
-    if let Err(err) = request(&mut channel, req).await {
-        tracing::error!("{err}");
-    }
-    tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
     Ok(())
 }

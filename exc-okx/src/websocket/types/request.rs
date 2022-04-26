@@ -2,6 +2,7 @@ use super::Args;
 use crate::error::OkxError;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::fmt;
 use tokio_tungstenite::tungstenite::Message;
 
 /// Okx websocket operation.
@@ -44,6 +45,19 @@ pub enum WsRequest {
     Subscribe(Args),
     /// Unsubscribe.
     Unsubscribe(Args),
+}
+
+impl fmt::Display for WsRequest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Subscribe(args) => {
+                write!(f, "sub:{args}")
+            }
+            Self::Unsubscribe(args) => {
+                write!(f, "unsub:{args}")
+            }
+        }
+    }
 }
 
 impl WsRequest {
