@@ -61,10 +61,15 @@ impl WsResponse {
         }
     }
 
-    pub(crate) fn from_failure(msg: CodeMessage) -> Result<Self, OkxError> {
+    pub(crate) fn from_failure(_msg: CodeMessage) -> Result<Self, OkxError> {
         Err(OkxError::Protocol(anyhow::anyhow!(
             "cannot determine the identity of the error"
         )))
+    }
+
+    /// Get status of the response.
+    pub fn status(&self) -> Result<&(), &OkxError> {
+        self.status.as_ref()
     }
 
     /// Get response tag.

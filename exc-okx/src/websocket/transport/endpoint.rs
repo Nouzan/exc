@@ -1,5 +1,5 @@
 use super::connection::Connection;
-use crate::{error::OkxError, websocket::OkxWsClient};
+use crate::websocket::OkxWsClient;
 use http::Uri;
 
 /// Okx websocket endpoint.
