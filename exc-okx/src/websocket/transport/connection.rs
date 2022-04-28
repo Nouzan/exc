@@ -1,7 +1,7 @@
 use super::endpoint::WsEndpoint;
 use super::protocol::Protocol;
 use crate::error::OkxError;
-use crate::websocket::types::messages::{request::WsRequest, response::WsResponse};
+use crate::websocket::types::{request::Request, response::Response};
 use exc::transport::websocket::connector::WsConnector;
 use futures::future::BoxFuture;
 use futures::FutureExt;
@@ -21,7 +21,7 @@ impl Connect {
 }
 
 impl tower::Service<Uri> for Connect {
-    type Response = BoxService<WsRequest, WsResponse, OkxError>;
+    type Response = BoxService<Request, Response, OkxError>;
     type Error = OkxError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -36,7 +36,11 @@ impl tower::Service<Uri> for Connect {
         let conn = self.inner.call(req);
         async move {
             let conn = conn.await?;
-            let svc = Protocol::init(conn).await?.boxed();
+            let svc = Protocol::init(conn)
+                .await
+                .map_err(|err| OkxError::Protocol(err.into()))?
+                .map_err(|err| OkxError::Protocol(err.into()))
+                .boxed();
             Ok(svc)
         }
         .boxed()
@@ -45,7 +49,7 @@ impl tower::Service<Uri> for Connect {
 
 /// Okx websocket connection.
 pub(crate) struct Connection {
-    inner: BoxService<WsRequest, WsResponse, OkxError>,
+    inner: BoxService<Request, Response, OkxError>,
 }
 
 impl Connection {
@@ -63,8 +67,8 @@ impl Connection {
     }
 }
 
-impl tower::Service<WsRequest> for Connection {
-    type Response = WsResponse;
+impl tower::Service<Request> for Connection {
+    type Response = Response;
     type Error = OkxError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -75,7 +79,7 @@ impl tower::Service<WsRequest> for Connection {
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, req: WsRequest) -> Self::Future {
+    fn call(&mut self, req: Request) -> Self::Future {
         self.inner.call(req)
     }
 }

@@ -1,11 +1,11 @@
-use crate::{
-    error::OkxError,
-    websocket::{WsRequest, WsResponse},
-};
-use futures::future::{poll_fn, BoxFuture};
-use tower::Service;
+use crate::error::OkxError;
+use futures::future::BoxFuture;
+use tower::{Service, ServiceExt};
 
-use super::transport::connection::Connection;
+use super::{
+    transport::connection::Connection,
+    types::{request::Request, response::Response},
+};
 
 /// Okx websocket channel.
 pub struct OkxWsClient {
@@ -13,25 +13,19 @@ pub struct OkxWsClient {
 }
 
 impl OkxWsClient {
-    /// Check if channel is ready.
-    pub(crate) async fn ready(&mut self) -> Result<(), OkxError> {
-        poll_fn(|cx| self.poll_ready(cx)).await?;
-        Ok(())
-    }
-
     /// Send request.
     pub async fn send(
         &mut self,
-        request: WsRequest,
-    ) -> Result<<Self as Service<WsRequest>>::Future, OkxError> {
+        request: Request,
+    ) -> Result<<Self as Service<Request>>::Future, OkxError> {
         self.ready().await?;
         let fut = self.call(request);
         Ok(fut)
     }
 }
 
-impl tower::Service<WsRequest> for OkxWsClient {
-    type Response = WsResponse;
+impl tower::Service<Request> for OkxWsClient {
+    type Response = Response;
     type Error = OkxError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -42,7 +36,7 @@ impl tower::Service<WsRequest> for OkxWsClient {
         self.svc.poll_ready(cx)
     }
 
-    fn call(&mut self, req: WsRequest) -> Self::Future {
+    fn call(&mut self, req: Request) -> Self::Future {
         self.svc.call(req)
     }
 }

@@ -1,15 +1,10 @@
-use crate::error::OkxError;
-use crate::websocket::types::messages::Args;
-use crate::websocket::types::messages::{
-    event::{Event, ResponseKind},
-    request::WsRequest,
-    response::WsResponse,
+use crate::websocket::types::{
+    request::{ClientStream, Request},
+    response::{Response, ServerStream, Status},
 };
-use either::Either;
-use exc::transport::{driven::Driven, websocket::WsStream};
-use futures::{Sink, SinkExt, Stream, StreamExt};
+use exc::transport::websocket::WsStream;
+use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, StreamExt, TryStreamExt};
 use pin_project_lite::pin_project;
-use std::collections::{hash_map::RandomState, HashMap};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use thiserror::Error;
@@ -20,43 +15,53 @@ use tower::Service;
 mod frame;
 mod message;
 mod ping_pong;
+mod stream;
 
+pub use frame::FrameError;
 pub use message::MessageError;
 pub use ping_pong::PingPongError;
+pub use stream::StreamingError;
+
+type Req = ClientStream;
+type Resp = Result<ServerStream, Status>;
 
 /// Protocol Error.
 #[derive(Debug, Error)]
 pub enum ProtocolError {
     /// Transport Errors.
     #[error("transport: {0}")]
-    Transport(#[from] MessageError<PingPongError>),
+    Transport(#[from] StreamingError<FrameError<MessageError<PingPongError>>>),
 
-    /// Subsribed.
-    #[error("subscribed: {0}")]
-    Subscribed(Args),
+    /// Tokio tower error.
+    #[error("tokio-tower: {0}")]
+    TokioTower(anyhow::Error),
+    // /// Subsribed.
+    // #[error("subscribed: {0}")]
+    // Subscribed(Args),
 }
 
 /// Okx websocket transport stream.
 pub trait OkxWsStream:
-    Sink<WsRequest, Error = OkxError> + Stream<Item = Result<WsResponse, OkxError>>
+    Sink<Req, Error = ProtocolError> + Stream<Item = Result<Resp, ProtocolError>>
 {
 }
 
 impl<S> OkxWsStream for S
 where
-    S: Sink<WsRequest, Error = OkxError>,
-    S: Stream<Item = Result<WsResponse, OkxError>>,
+    S: Sink<Req, Error = ProtocolError>,
+    S: Stream<Item = Result<Resp, ProtocolError>>,
 {
 }
 
 type BoxStream = Pin<Box<dyn OkxWsStream + Send>>;
 
 pin_project! {
-/// Okx websocket transport of v5 api.
-pub struct Transport {
-    #[pin]
-    inner: BoxStream,
-}
+    /// Okx websocket transport of v5 api.
+    pub struct Transport {
+        #[pin]
+        inner: BoxStream,
+        stream_id: usize,
+    }
 }
 
 impl Transport {
@@ -68,82 +73,28 @@ impl Transport {
         S: Stream<Item = Result<String, Err>>,
         Err: Into<anyhow::Error>,
     {
-        let mut streams = HashMap::<_, _, RandomState>::default();
         let transport = ping_pong::layer(transport);
         let transport = message::layer(transport);
+        let transport = frame::layer(transport);
+        let transport = stream::layer(transport);
         let inner = transport
-            .sink_map_err(|err| OkxError::Protocol(ProtocolError::from(err).into()))
-            .filter_map(move |msg: Result<Event, _>| {
-                let resp = match msg {
-                    Ok(event) => match event {
-                        Event::Response(resp) => match resp {
-                            ResponseKind::Login(_) => {
-                                error!("login unimplemented");
-                                None
-                            }
-                            ResponseKind::Subscribe { arg } => {
-                                let resp = if streams.contains_key(&arg) {
-                                    WsResponse::from_error(
-                                        Either::Right(arg.clone()),
-                                        OkxError::Protocol(ProtocolError::Subscribed(arg).into()),
-                                    )
-                                } else {
-                                    let (resp, tx) = WsResponse::streaming(arg.clone());
-                                    streams.insert(arg, tx);
-                                    resp
-                                };
-                                Some(Ok(resp))
-                            }
-                            ResponseKind::Unsubscribe { arg } => {
-                                streams.remove(&arg);
-                                Some(Ok(WsResponse::unsubscribed(arg)))
-                            }
-                            ResponseKind::Error(msg) => Some(WsResponse::from_failure(msg)),
-                        },
-                        Event::Change(change) => {
-                            trace!("received {change:?}");
-                            if let Some(stream) = streams.get_mut(&change.arg) {
-                                if let Err(err) = stream.send(change) {
-                                    let args = err.0.arg;
-                                    debug!("the listener of {args:?} is gone");
-                                    streams.remove(&args);
-                                }
-                            }
-                            None
-                        }
-                    },
-                    Err(err) => {
-                        match &err {
-                            MessageError::Transport(
-                                PingPongError::RemoteClosed
-                                | PingPongError::PingTimeout
-                                | PingPongError::Ping(_),
-                            ) => {
-                                streams.clear();
-                            }
-                            _ => {}
-                        }
-                        error!("transport error: {err}");
-                        Some(Err(OkxError::Protocol(
-                            ProtocolError::Transport(err).into(),
-                        )))
-                    }
-                };
-                futures::future::ready(resp)
-            });
-        let inner = Box::pin(Driven::new(inner));
-        Self { inner }
+            .sink_map_err(ProtocolError::from)
+            .map_err(ProtocolError::from);
+        Self {
+            inner: Box::pin(inner),
+            stream_id: 1,
+        }
     }
 }
 
-impl Sink<WsRequest> for Transport {
-    type Error = OkxError;
+impl Sink<Req> for Transport {
+    type Error = ProtocolError;
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.project().inner.poll_ready(cx)
     }
 
-    fn start_send(self: Pin<&mut Self>, item: WsRequest) -> Result<(), Self::Error> {
+    fn start_send(self: Pin<&mut Self>, item: Req) -> Result<(), Self::Error> {
         self.project().inner.start_send(item)
     }
 
@@ -157,7 +108,7 @@ impl Sink<WsRequest> for Transport {
 }
 
 impl Stream for Transport {
-    type Item = Result<WsResponse, OkxError>;
+    type Item = Result<Resp, ProtocolError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.project().inner.poll_next(cx)
@@ -168,31 +119,38 @@ impl Stream for Transport {
     }
 }
 
-impl TagStore<WsRequest, WsResponse> for Transport {
-    type Tag = String;
+impl TagStore<Req, Resp> for Transport {
+    type Tag = usize;
 
-    fn assign_tag(self: Pin<&mut Self>, r: &mut WsRequest) -> Self::Tag {
-        r.to_string()
+    fn assign_tag(self: Pin<&mut Self>, r: &mut Req) -> Self::Tag {
+        let this = self.project();
+        let id = *this.stream_id;
+        *this.stream_id += 1;
+        r.id = id;
+        id
     }
 
-    fn finish_tag(self: Pin<&mut Self>, r: &WsResponse) -> Self::Tag {
-        r.tag()
+    fn finish_tag(self: Pin<&mut Self>, r: &Resp) -> Self::Tag {
+        match r.as_ref() {
+            Ok(s) => s.id,
+            Err(e) => e.stream_id,
+        }
     }
 }
 
-impl From<tokio_tower::Error<Transport, WsRequest>> for OkxError {
-    fn from(err: tokio_tower::Error<Transport, WsRequest>) -> Self {
-        Self::Protocol(err.into())
+impl From<tokio_tower::Error<Transport, Req>> for ProtocolError {
+    fn from(err: tokio_tower::Error<Transport, Req>) -> Self {
+        Self::TokioTower(err.into())
     }
 }
 
 /// Okx websocket api protocol.
 pub struct Protocol {
-    inner: Client<Transport, OkxError, WsRequest>,
+    inner: Client<Transport, ProtocolError, Req>,
 }
 
 impl Protocol {
-    pub(crate) async fn init(websocket: WsStream) -> Result<Self, OkxError> {
+    pub(crate) async fn init(websocket: WsStream) -> Result<Self, ProtocolError> {
         let transport = websocket
             .with(|msg: String| async move { Ok(Message::Text(msg)) })
             .filter_map(|msg| async move {
@@ -211,16 +169,25 @@ impl Protocol {
     }
 }
 
-impl Service<WsRequest> for Protocol {
-    type Response = WsResponse;
-    type Error = OkxError;
-    type Future = <Client<Transport, OkxError, WsRequest> as Service<WsRequest>>::Future;
+impl Service<Request> for Protocol {
+    type Response = Response;
+    type Error = ProtocolError;
+    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, req: WsRequest) -> Self::Future {
-        self.inner.call(req)
+    fn call(&mut self, req: Request) -> Self::Future {
+        let resp = self.inner.call(req.into_client_stream());
+        async move {
+            let resp = resp.await?.map(|stream| stream.inner);
+            let resp = match resp {
+                Ok(stream) => Response::Streaming(stream),
+                Err(err) => Response::Error(err),
+            };
+            Ok(resp)
+        }
+        .boxed()
     }
 }

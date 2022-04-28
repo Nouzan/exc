@@ -9,10 +9,10 @@ use tokio::time::{Duration, Instant, Sleep};
 #[derive(Debug, Error)]
 pub enum PingPongError {
     /// Transport.
-    #[error("[ping] transport: {0}")]
+    #[error("{0}")]
     Transport(#[from] anyhow::Error),
     /// Remote close.
-    #[error("[ping] transport: remote closed")]
+    #[error("[ping] remote closed")]
     RemoteClosed,
     /// Ping.
     #[error("[ping] ping: {0}")]
@@ -125,29 +125,33 @@ where
         if *this.close {
             return Poll::Ready(None);
         }
-        match this.inner.as_mut().poll_next(cx) {
-            Poll::Ready(s) => match s {
-                Some(Ok(s)) => {
-                    let next = Instant::now() + Self::MESSAGE_TIMEOUT;
-                    this.message_deadline.reset(next);
-                    *this.state = PingState::Idle;
-                    trace!("ping pong; timer reset");
-                    match s.as_str() {
-                        "pong" => return Poll::Pending,
-                        _ => return Poll::Ready(Some(Ok(s))),
+        loop {
+            match this.inner.as_mut().poll_next(cx) {
+                Poll::Ready(s) => match s {
+                    Some(Ok(s)) => {
+                        let next = Instant::now() + Self::MESSAGE_TIMEOUT;
+                        this.message_deadline.as_mut().reset(next);
+                        *this.state = PingState::Idle;
+                        trace!("ping pong; timer reset");
+                        match s.as_str() {
+                            "pong" => {}
+                            _ => return Poll::Ready(Some(Ok(s))),
+                        }
                     }
+                    Some(Err(err)) => {
+                        return Poll::Ready(Some(Err(PingPongError::Transport(err.into()))));
+                    }
+                    None => {
+                        *this.close = true;
+                        trace!("ping pong; stream is dead");
+                        return Poll::Ready(Some(Err(PingPongError::RemoteClosed)));
+                    }
+                },
+                Poll::Pending => {
+                    break;
                 }
-                Some(Err(err)) => {
-                    return Poll::Ready(Some(Err(PingPongError::Transport(err.into()))));
-                }
-                None => {
-                    *this.close = true;
-                    trace!("ping pong; stream is dead");
-                    return Poll::Ready(Some(Err(PingPongError::RemoteClosed)));
-                }
-            },
-            Poll::Pending => {}
-        };
+            };
+        }
         loop {
             match this.state {
                 PingState::Idle => {

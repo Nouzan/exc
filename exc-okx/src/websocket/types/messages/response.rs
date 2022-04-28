@@ -1,6 +1,6 @@
 use crate::error::OkxError;
 
-use super::event::{Change, CodeMessage};
+use super::event::Change;
 use super::Args;
 use either::Either;
 use futures::stream::BoxStream;
@@ -32,41 +32,6 @@ pub struct WsResponse {
 }
 
 impl WsResponse {
-    pub(crate) fn streaming(args: Args) -> (Self, mpsc::UnboundedSender<Change>) {
-        let (tx, rx) = mpsc::unbounded_channel();
-
-        (
-            Self {
-                status: Ok(()),
-                id: Either::Right(args),
-                kind: WsResponseKind::Streaming(Streaming(rx)),
-            },
-            tx,
-        )
-    }
-
-    pub(crate) fn unsubscribed(args: Args) -> Self {
-        Self {
-            status: Ok(()),
-            id: Either::Right(args),
-            kind: WsResponseKind::Unary,
-        }
-    }
-
-    pub(crate) fn from_error(id: Either<String, Args>, error: OkxError) -> Self {
-        Self {
-            status: Err(error),
-            id,
-            kind: WsResponseKind::Unary,
-        }
-    }
-
-    pub(crate) fn from_failure(_msg: CodeMessage) -> Result<Self, OkxError> {
-        Err(OkxError::Protocol(anyhow::anyhow!(
-            "cannot determine the identity of the error"
-        )))
-    }
-
     /// Get status of the response.
     pub fn status(&self) -> Result<&(), &OkxError> {
         self.status.as_ref()

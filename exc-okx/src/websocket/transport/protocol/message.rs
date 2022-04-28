@@ -12,7 +12,7 @@ pub enum MessageError<E> {
     #[error("[message] serializing: {0}")]
     Serializing(serde_json::Error),
     /// Transport error.
-    #[error("[message] transport: {0}")]
+    #[error("{0}")]
     Transport(#[from] E),
 }
 

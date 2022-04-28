@@ -1,7 +1,10 @@
-use exc_okx::websocket::{OkxWsClient, WsEndpoint, WsRequest, WsResponse};
+use exc_okx::websocket::{
+    types::{request::Request, response::Response},
+    OkxWsClient, WsEndpoint,
+};
 use futures::StreamExt;
 
-async fn request(client: &mut OkxWsClient, req: WsRequest) -> anyhow::Result<WsResponse> {
+async fn request(client: &mut OkxWsClient, req: Request) -> anyhow::Result<Response> {
     Ok(client.send(req).await?.await?)
 }
 
@@ -16,17 +19,26 @@ async fn main() -> anyhow::Result<()> {
 
     let mut client = WsEndpoint::default().connect();
     loop {
-        let req = WsRequest::subscribe_tickers("ETH-USDT");
+        let (req, _subscription) = Request::subscribe_tickers("ETH-USDT");
         match request(&mut client, req).await {
-            Ok(resp) => {
-                let mut stream = resp.into_stream();
-                while let Some(c) = stream.next().await {
-                    println!("{c:?}");
+            Ok(resp) => match resp.into_result() {
+                Ok(mut stream) => {
+                    let mut count = 0;
+                    while let Some(c) = stream.next().await {
+                        println!("{c:?}");
+                        count += 1;
+                        if count > 10 {
+                            break;
+                        }
+                    }
+                    tracing::info!("stream is dead; reconnecting...");
                 }
-                tracing::info!("stream is dead; reconnecting...");
-            }
+                Err(status) => {
+                    tracing::error!("request error: {}; retrying...", status.kind);
+                }
+            },
             Err(err) => {
-                tracing::error!("request error: {err}; retrying...");
+                tracing::error!("transport error: {err}; retrying...");
             }
         }
     }
