@@ -1,7 +1,7 @@
 use super::endpoint::WsEndpoint;
 use super::protocol::Protocol;
 use crate::error::OkxError;
-use crate::websocket::{WsRequest, WsResponse};
+use crate::websocket::types::messages::{request::WsRequest, response::WsResponse};
 use exc::transport::websocket::connector::WsConnector;
 use futures::future::BoxFuture;
 use futures::FutureExt;

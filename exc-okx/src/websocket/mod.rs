@@ -9,4 +9,4 @@ pub mod client;
 
 pub use client::OkxWsClient;
 pub use transport::endpoint::WsEndpoint;
-pub use types::{request::WsRequest, response::WsResponse};
+pub use types::messages::{request::WsRequest, response::WsResponse};

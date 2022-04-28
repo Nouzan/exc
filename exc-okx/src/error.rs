@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::websocket::{types::Args, WsRequest};
+use crate::websocket::{types::messages::Args, WsRequest};
 
 /// All OKX errors.
 #[derive(Debug, Error)]
