@@ -1,14 +1,18 @@
 use futures::stream::BoxStream;
 use thiserror::Error;
 
-use super::{frames::server::ServerFrame, messages::Args};
+use super::frames::server::ServerFrame;
 
 /// Response error status kind.
 #[derive(Debug, Error)]
 pub enum StatusKind {
     /// Already subscribed.
     #[error("already subscribed")]
-    AlreadySubscribed(Args),
+    AlreadySubscribed(String),
+
+    /// Close an idle stream.
+    #[error("close an idle stream")]
+    CloseIdleStream,
 }
 
 /// Responsee error status.
