@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
                         tracing::info!("stream is dead; reconnecting...");
                     }
                     Err(status) => {
-                        tracing::error!("request error: {}; retrying...", status.kind);
+                        tracing::error!("request error: {}; retrying...", status);
                     }
                 }
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
