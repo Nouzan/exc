@@ -7,6 +7,7 @@ pub mod types;
 /// Okx websocket client.
 pub mod client;
 
-pub use client::OkxWsClient;
-pub use transport::endpoint::WsEndpoint;
-pub use types::messages::{request::WsRequest, response::WsResponse};
+pub use client::Client;
+pub use transport::endpoint::Endpoint;
+pub use types::{request::Request, response::Response};
+

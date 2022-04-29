@@ -1,10 +1,10 @@
 use exc_okx::websocket::{
     types::{request::Request, response::Response},
-    OkxWsClient, WsEndpoint,
+    Client, Endpoint,
 };
 use futures::StreamExt;
 
-async fn subscribe_tickers(client: &mut OkxWsClient, inst: &str) -> anyhow::Result<Response> {
+async fn subscribe_tickers(client: &mut Client, inst: &str) -> anyhow::Result<Response> {
     Ok(client.send(Request::subscribe_tickers(inst)).await?.await?)
 }
 
@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut client = WsEndpoint::default().connect();
+    let mut client = Endpoint::default().connect();
     let mut s2 = subscribe_tickers(&mut client, "ETH-USDT")
         .await?
         .into_result()?;

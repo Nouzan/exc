@@ -7,12 +7,12 @@ use super::{
     types::{request::Request, response::Response},
 };
 
-/// Okx websocket channel.
-pub struct OkxWsClient {
+/// Okx websocket client.
+pub struct Client {
     pub(crate) svc: Connection,
 }
 
-impl OkxWsClient {
+impl Client {
     /// Send request.
     pub async fn send(
         &mut self,
@@ -24,7 +24,7 @@ impl OkxWsClient {
     }
 }
 
-impl tower::Service<Request> for OkxWsClient {
+impl tower::Service<Request> for Client {
     type Response = Response;
     type Error = OkxError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;

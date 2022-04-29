@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
-
-use crate::websocket::WsRequest;
-
+use crate::websocket::types::messages::request::WsRequest;
 use super::{callback::Callback, frames::client::ClientFrame, messages::Args};
 use async_stream::stream;
 use futures::stream::{BoxStream, StreamExt};

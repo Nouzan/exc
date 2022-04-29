@@ -1,4 +1,4 @@
-use super::endpoint::WsEndpoint;
+use super::endpoint::Endpoint;
 use super::protocol::Protocol;
 use crate::error::OkxError;
 use crate::websocket::types::{request::Request, response::Response};
@@ -54,7 +54,7 @@ pub(crate) struct Connection {
 
 impl Connection {
     /// Create a new okx websocket connection.
-    pub(crate) fn new(endpoint: &WsEndpoint) -> Self {
+    pub(crate) fn new(endpoint: &Endpoint) -> Self {
         let connector = Connect::new(WsConnector::default());
         let conn = Reconnect::new::<<Connect as Service<Uri>>::Response, Uri>(
             connector,

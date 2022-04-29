@@ -1,13 +1,13 @@
 use super::connection::Connection;
-use crate::websocket::OkxWsClient;
+use crate::websocket::Client;
 use http::Uri;
 
 /// Okx websocket endpoint.
-pub struct WsEndpoint {
+pub struct Endpoint {
     pub(crate) uri: Uri,
 }
 
-impl Default for WsEndpoint {
+impl Default for Endpoint {
     fn default() -> Self {
         Self {
             uri: Uri::from_static("wss://wsaws.okex.com:8443/ws/v5/public"),
@@ -15,10 +15,10 @@ impl Default for WsEndpoint {
     }
 }
 
-impl WsEndpoint {
+impl Endpoint {
     /// Connect and create a okx websocket channel.
-    pub fn connect(&self) -> OkxWsClient {
+    pub fn connect(&self) -> Client {
         let svc = Connection::new(self);
-        OkxWsClient { svc }
+        Client { svc }
     }
 }

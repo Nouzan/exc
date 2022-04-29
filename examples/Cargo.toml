@@ -7,6 +7,10 @@ edition = "2021"
 name = "basic-okx"
 path = "basic_okx.rs"
 
+[[bin]]
+name = "okx-two-streams"
+path = "okx_two_streams.rs"
+
 [dependencies]
 anyhow = "1"
 exc-okx = { path = "../exc-okx" }
