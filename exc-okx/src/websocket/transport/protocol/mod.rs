@@ -181,7 +181,7 @@ impl Service<Request> for Protocol {
     fn call(&mut self, req: Request) -> Self::Future {
         let resp = self.inner.call(req.into_client_stream());
         async move {
-            let resp = resp.await?.map(|stream| stream.inner);
+            let resp = resp.await?;
             let resp = match resp {
                 Ok(stream) => Response::Streaming(stream),
                 Err(err) => Response::Error(err),

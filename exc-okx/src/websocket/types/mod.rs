@@ -9,3 +9,6 @@ pub mod request;
 
 /// Response.
 pub mod response;
+
+/// Callback.
+pub mod callback;

@@ -1,3 +1,4 @@
+use crate::websocket::types::callback::Callback;
 use crate::websocket::types::frames::client::ClientFrame;
 use crate::websocket::types::frames::server::ServerFrame;
 use crate::websocket::types::request::ClientStream;
@@ -30,10 +31,11 @@ struct StreamContext {
 }
 
 impl StreamContext {
-    fn new(id: usize) -> Self {
+    fn new(id: usize, cb: Callback) -> Self {
         let (server_frame_tx, server_frame_rx) = mpsc::unbounded();
         let stream = ServerStream {
             id,
+            cb,
             inner: server_frame_rx.boxed(),
         };
         Self {
@@ -86,8 +88,9 @@ where
         loop {
             tokio::select! {
                 Some(mut client_stream) = client_stream_rx.next() => {
+                    let cb = client_stream.cb.take().expect("client stream must contains a callback");
                     let id = client_stream.id;
-                    let ctx = StreamContext::new(id);
+                    let ctx = StreamContext::new(id, cb);
                     streams.insert(id, ctx);
                     let mut client_frame_tx = client_frame_tx.clone();
                     tokio::spawn(async move {

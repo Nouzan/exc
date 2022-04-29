@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut client = WsEndpoint::default().connect();
     loop {
-        let (req, subscription) = Request::subscribe_tickers("ETH-USDT");
+        let req = Request::subscribe_tickers("ETH-USDT");
         match request(&mut client, req).await {
             Ok(resp) => {
                 match resp.into_result() {
@@ -38,7 +38,6 @@ async fn main() -> anyhow::Result<()> {
                         tracing::error!("request error: {}; retrying...", status.kind);
                     }
                 }
-                drop(subscription);
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
             Err(err) => {

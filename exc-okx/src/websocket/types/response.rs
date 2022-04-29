@@ -1,7 +1,7 @@
-use futures::stream::BoxStream;
+use super::{callback::Callback, frames::server::ServerFrame};
+use futures::{stream::BoxStream, Stream};
+use pin_project_lite::pin_project;
 use thiserror::Error;
-
-use super::frames::server::ServerFrame;
 
 /// Response error status kind.
 #[derive(Debug, Error)]
@@ -23,23 +23,42 @@ pub struct Status {
     pub kind: StatusKind,
 }
 
-/// Server stream.
-pub struct ServerStream {
-    pub(crate) id: usize,
-    pub(crate) inner: BoxStream<'static, ServerFrame>,
+pin_project! {
+    /// Server stream.
+    pub struct ServerStream {
+        pub(crate) id: usize,
+        pub(crate) cb: Callback,
+        #[pin]
+        pub(crate) inner: BoxStream<'static, ServerFrame>,
+    }
+}
+
+impl Stream for ServerStream {
+    type Item = ServerFrame;
+
+    fn poll_next(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        self.project().inner.poll_next(cx)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 /// Okx websocket api response.
 pub enum Response {
     /// Streaming.
-    Streaming(BoxStream<'static, ServerFrame>),
+    Streaming(ServerStream),
     /// Error.
     Error(Status),
 }
 
 impl Response {
     /// Convert into a result.
-    pub fn into_result(self) -> Result<BoxStream<'static, ServerFrame>, Status> {
+    pub fn into_result(self) -> Result<ServerStream, Status> {
         match self {
             Self::Streaming(stream) => Ok(stream),
             Self::Error(status) => Err(status),
