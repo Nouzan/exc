@@ -1,6 +1,6 @@
 use crate::websocket::types::{
     request::{ClientStream, Request},
-    response::{Response, ServerStream, Status},
+    response::{Response, ServerStream, Status, StatusKind},
 };
 use exc::transport::websocket::WsStream;
 use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, StreamExt, TryStreamExt};
@@ -183,8 +183,17 @@ impl Service<Request> for Protocol {
         async move {
             let resp = resp.await?;
             let resp = match resp {
-                Ok(stream) => Response::Streaming(stream),
-                Err(err) => Response::Error(err),
+                Ok(stream) => {
+                    let mut stream = Box::pin(stream.peekable());
+                    if let Some(frame) = stream.as_mut().peek().await {
+                        trace!("wait header; peeked {frame:?}");
+                        Response::Streaming(stream)
+                    } else {
+                        trace!("wait header; no header");
+                        Response::Error(StatusKind::EmptyResponse)
+                    }
+                }
+                Err(err) => Response::Error(err.kind),
             };
             Ok(resp)
         }

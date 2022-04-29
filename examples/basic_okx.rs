@@ -19,20 +19,21 @@ async fn main() -> anyhow::Result<()> {
 
     let mut client = Endpoint::default().connect();
     loop {
-        let req = Request::subscribe_tickers("ETH-USDT");
+        let req = Request::subscribe_tickers("ETH_USDT");
         match request(&mut client, req).await {
             Ok(resp) => {
+		tracing::info!("responsed");
                 match resp.into_result() {
                     Ok(mut stream) => {
                         let mut count = 0;
                         while let Some(c) = stream.next().await {
-                            println!("{c:?}");
+                            tracing::info!("{c:?}");
                             count += 1;
                             if count > 10 {
                                 break;
                             }
                         }
-                        tracing::info!("stream is dead; reconnecting...");
+                        tracing::warn!("stream is dead; reconnecting...");
                     }
                     Err(status) => {
                         tracing::error!("request error: {}; retrying...", status);

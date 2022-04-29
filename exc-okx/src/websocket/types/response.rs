@@ -13,6 +13,10 @@ pub enum StatusKind {
     /// Close an idle stream.
     #[error("close an idle stream")]
     CloseIdleStream,
+
+    /// Empty response.
+    #[error("empty response")]
+    EmptyResponse,
 }
 
 /// Responsee error status.
@@ -51,17 +55,17 @@ impl Stream for ServerStream {
 /// Okx websocket api response.
 pub enum Response {
     /// Streaming.
-    Streaming(ServerStream),
+    Streaming(BoxStream<'static, ServerFrame>),
     /// Error.
-    Error(Status),
+    Error(StatusKind),
 }
 
 impl Response {
     /// Convert into a result.
-    pub fn into_result(self) -> Result<ServerStream, StatusKind> {
+    pub fn into_result(self) -> Result<BoxStream<'static, ServerFrame>, StatusKind> {
         match self {
             Self::Streaming(stream) => Ok(stream),
-            Self::Error(status) => Err(status.kind),
+            Self::Error(status) => Err(status),
         }
     }
 }
