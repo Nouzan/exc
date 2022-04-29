@@ -33,7 +33,10 @@ where
         .filter_map(|msg| async move {
             match msg {
                 Ok(msg) => match serde_json::from_str::<Event>(&msg) {
-                    Ok(event) => Some(Ok(event)),
+                    Ok(event) => {
+                        trace!("message layer; received event={event:?}");
+                        Some(Ok(event))
+                    }
                     Err(err) => {
                         warn!("message layer; deserializing message error: {err}; ignored");
                         None

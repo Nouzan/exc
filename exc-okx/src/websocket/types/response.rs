@@ -58,10 +58,10 @@ pub enum Response {
 
 impl Response {
     /// Convert into a result.
-    pub fn into_result(self) -> Result<ServerStream, Status> {
+    pub fn into_result(self) -> Result<ServerStream, StatusKind> {
         match self {
             Self::Streaming(stream) => Ok(stream),
-            Self::Error(status) => Err(status),
+            Self::Error(status) => Err(status.kind),
         }
     }
 }
