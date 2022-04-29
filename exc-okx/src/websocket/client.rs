@@ -1,15 +1,15 @@
-use crate::error::OkxError;
-use futures::future::BoxFuture;
-use tower::{Service, ServiceExt};
-
 use super::{
     transport::connection::Connection,
     types::{request::Request, response::Response},
 };
+use crate::error::OkxError;
+use futures::{future::BoxFuture, FutureExt, TryFutureExt};
+use tower::{buffer::Buffer, Service, ServiceExt};
 
 /// Okx websocket client.
+#[derive(Clone)]
 pub struct Client {
-    pub(crate) svc: Connection,
+    pub(crate) svc: Buffer<Connection, Request>,
 }
 
 impl Client {
@@ -33,10 +33,10 @@ impl tower::Service<Request> for Client {
         &mut self,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.svc.poll_ready(cx)
+        self.svc.poll_ready(cx).map_err(OkxError::Buffer)
     }
 
     fn call(&mut self, req: Request) -> Self::Future {
-        self.svc.call(req)
+        self.svc.call(req).map_err(OkxError::Buffer).boxed()
     }
 }

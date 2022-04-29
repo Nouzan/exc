@@ -10,4 +10,3 @@ pub mod client;
 pub use client::Client;
 pub use transport::endpoint::Endpoint;
 pub use types::{request::Request, response::Response};
-

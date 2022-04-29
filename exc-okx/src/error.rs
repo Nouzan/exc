@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::websocket::{types::messages::{Args, request::WsRequest}};
+use crate::websocket::types::messages::{request::WsRequest, Args};
 
 /// All OKX errors.
 #[derive(Debug, Error)]
@@ -50,4 +50,7 @@ pub enum OkxError {
     /// Protocol Error.
     #[error("protocol: {0}")]
     Protocol(anyhow::Error),
+    /// Buffer Layer Error.
+    #[error("buffer: {0}")]
+    Buffer(Box<dyn std::error::Error + Send + Sync>),
 }

@@ -1,8 +1,8 @@
-use std::collections::BTreeMap;
-use crate::websocket::types::messages::request::WsRequest;
 use super::{callback::Callback, frames::client::ClientFrame, messages::Args};
+use crate::websocket::types::messages::request::WsRequest;
 use async_stream::stream;
 use futures::stream::{BoxStream, StreamExt};
+use std::collections::BTreeMap;
 
 /// Okx websocket api request.
 pub struct Request {
