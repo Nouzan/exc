@@ -19,24 +19,28 @@ async fn main() -> anyhow::Result<()> {
 
     let mut client = WsEndpoint::default().connect();
     loop {
-        let (req, _subscription) = Request::subscribe_tickers("ETH-USDT");
+        let (req, subscription) = Request::subscribe_tickers("ETH-USDT");
         match request(&mut client, req).await {
-            Ok(resp) => match resp.into_result() {
-                Ok(mut stream) => {
-                    let mut count = 0;
-                    while let Some(c) = stream.next().await {
-                        println!("{c:?}");
-                        count += 1;
-                        if count > 10 {
-                            break;
+            Ok(resp) => {
+                match resp.into_result() {
+                    Ok(mut stream) => {
+                        let mut count = 0;
+                        while let Some(c) = stream.next().await {
+                            println!("{c:?}");
+                            count += 1;
+                            if count > 10 {
+                                break;
+                            }
                         }
+                        tracing::info!("stream is dead; reconnecting...");
                     }
-                    tracing::info!("stream is dead; reconnecting...");
+                    Err(status) => {
+                        tracing::error!("request error: {}; retrying...", status.kind);
+                    }
                 }
-                Err(status) => {
-                    tracing::error!("request error: {}; retrying...", status.kind);
-                }
-            },
+                drop(subscription);
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            }
             Err(err) => {
                 tracing::error!("transport error: {err}; retrying...");
             }

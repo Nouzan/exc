@@ -70,7 +70,7 @@ pub(super) fn layer<T, E>(
 ) -> impl Sink<ClientStream, Error = StreamingError<E>>
        + Stream<Item = Result<Result<ServerStream, Status>, StreamingError<E>>>
 where
-    E: Send + 'static,
+    E: Send + 'static + std::fmt::Display,
     T: Send + 'static,
     T: Sink<ClientFrame, Error = E>,
     T: Stream<Item = Result<ServerFrame, E>>,
@@ -146,6 +146,7 @@ where
                                         tags.remove(&tag);
                                     }
                                     streams.remove(&id);
+                                    debug!("stream {id} closed abnormally (remote -> local)");
                                 }
                             }
                             StreamState::LocalClosed | StreamState::Closed => {
@@ -173,18 +174,19 @@ where
                                     ctx.state = StreamState::RemoteClosed;
                                     warn!("streaming worker; received a remote close frame: id={id}");
                                 }
-                                ctx.sender.send(frame).await.map_err(StreamingError::Sender)?;
+                                let _ = ctx.sender.send(frame).await;
                             },
                             StreamState::LocalClosed => {
                                 if is_end_stream {
                                     ctx.state = StreamState::Closed;
-                                    ctx.sender.send(frame).await.map_err(StreamingError::Sender)?;
+                                    let _ = ctx.sender.send(frame).await;
                                     if let Some(tag) = ctx.tag.take() {
                                         tags.remove(&tag);
                                     }
+                                    debug!("stream {id} closed normally (local -> remote)");
                                     streams.remove(&id);
                                 } else {
-                                    ctx.sender.send(frame).await.map_err(StreamingError::Sender)?;
+                                    let _ = ctx.sender.send(frame).await;
                                 }
                             },
                             StreamState::RemoteClosed | StreamState::Closed => {
@@ -204,6 +206,7 @@ where
     };
     tokio::spawn(async move {
         if let Err(err) = worker.await {
+            error!("streaming worker: {err}");
             let _ = last_server_stream_tx.send(Err(err)).await;
         }
     });
