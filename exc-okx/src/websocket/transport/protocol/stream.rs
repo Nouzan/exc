@@ -113,6 +113,7 @@ where
                                     ctx.state = StreamState::Closed;
                                     server_stream_tx.send(Ok(Err(Status { stream_id: id, kind: StatusKind::CloseIdleStream }))).await.map_err(StreamingError::Sender)?;
                                     streams.remove(&id);
+                    trace!("stream {id}; idle -> closed");
                                     // client frame is ignored
                                     continue;
                                 } else {
@@ -130,6 +131,7 @@ where
                                         }
                                     }
                                     ctx.state = StreamState::Open;
+                    trace!("stream {id}; idle -> open");
                                     if let Some(stream) = ctx.stream.take() {
                                         server_stream_tx.send(Ok(Ok(stream))).await.map_err(StreamingError::Sender)?;
                                     } else {
@@ -140,6 +142,7 @@ where
                             StreamState::Open => {
                                 if is_end_stream {
                                     ctx.state = StreamState::LocalClosed;
+                    trace!("stream {id}; open -> local-closed");
                                 }
                             },
                             StreamState::RemoteClosed => {
@@ -150,6 +153,7 @@ where
                                     }
                                     streams.remove(&id);
                                     debug!("stream {id} closed abnormally (remote -> local)");
+                    trace!("stream {id}; remote-closed -> closed");
                                 }
                             }
                             StreamState::LocalClosed | StreamState::Closed => {
@@ -176,6 +180,7 @@ where
                                 if is_end_stream {
                                     ctx.state = StreamState::RemoteClosed;
                                     warn!("streaming worker; received a remote close frame: id={id}");
+                    trace!("stream {id}; open -> remote-closed");
                                 }
                                 let _ = ctx.sender.send(frame).await;
                             },
@@ -187,6 +192,7 @@ where
                                         tags.remove(&tag);
                                     }
                                     debug!("stream {id} closed normally (local -> remote)");
+                    trace!("stream {id}; local-closed -> closed");
                                     streams.remove(&id);
                                 } else {
                                     let _ = ctx.sender.send(frame).await;

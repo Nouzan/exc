@@ -1,15 +1,12 @@
-use super::{
-    transport::connection::Connection,
-    types::{request::Request, response::Response},
-};
+use super::types::{request::Request, response::Response};
 use crate::error::OkxError;
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
-use tower::{buffer::Buffer, Service, ServiceExt};
+use tower::{buffer::Buffer, util::BoxService, Service, ServiceExt};
 
 /// Okx websocket client.
 #[derive(Clone)]
 pub struct Client {
-    pub(crate) svc: Buffer<Connection, Request>,
+    pub(crate) svc: Buffer<BoxService<Request, Response, OkxError>, Request>,
 }
 
 impl Client {

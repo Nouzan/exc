@@ -17,12 +17,14 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut client = Endpoint::default().connect();
+    let mut client = Endpoint::default()
+        .timeout(std::time::Duration::from_secs(5))
+        .connect();
     loop {
         let req = Request::subscribe_tickers("ETH_USDT");
         match request(&mut client, req).await {
             Ok(resp) => {
-		tracing::info!("responsed");
+                tracing::info!("responsed");
                 match resp.into_result() {
                     Ok(mut stream) => {
                         let mut count = 0;

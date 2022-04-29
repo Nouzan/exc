@@ -50,7 +50,10 @@ pub enum OkxError {
     /// Protocol Error.
     #[error("protocol: {0}")]
     Protocol(anyhow::Error),
+    /// Layers error.
+    #[error(transparent)]
+    Layer(Box<dyn std::error::Error + Send + Sync>),
     /// Buffer Layer Error.
-    #[error("buffer: {0}")]
+    #[error(transparent)]
     Buffer(Box<dyn std::error::Error + Send + Sync>),
 }
