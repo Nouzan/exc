@@ -5,7 +5,7 @@ use exc_okx::websocket::{
 use futures::StreamExt;
 
 async fn request(client: &mut Client, req: Request) -> anyhow::Result<Response> {
-    Ok(client.send(req).await?.await?)
+    Ok(client.request(req).await?.await?)
 }
 
 #[tokio::main]
@@ -17,11 +17,12 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut client = Endpoint::default()
+    let channel = Endpoint::default()
         .timeout(std::time::Duration::from_secs(5))
         .connect();
+    let mut client = Client::new(channel);
     loop {
-        let req = Request::subscribe_tickers("ETH_USDT");
+        let req = Request::subscribe_tickers("ETH-USDT");
         match request(&mut client, req).await {
             Ok(resp) => {
                 tracing::info!("responsed");

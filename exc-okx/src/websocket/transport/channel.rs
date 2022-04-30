@@ -1,21 +1,15 @@
-use super::transport::channel::Channel;
-use super::types::{request::Request, response::Response};
 use crate::error::OkxError;
-use futures::future::BoxFuture;
-use tower::{Service, ServiceExt};
+use crate::websocket::types::{request::Request, response::Response};
+use futures::{future::BoxFuture, FutureExt, TryFutureExt};
+use tower::{buffer::Buffer, util::BoxService, Service, ServiceExt};
 
-/// Okx websocket client.
+/// Okx websocket channel.
 #[derive(Clone)]
-pub struct Client {
-    pub(crate) channel: Channel,
+pub struct Channel {
+    pub(crate) svc: Buffer<BoxService<Request, Response, OkxError>, Request>,
 }
 
-impl Client {
-    /// Create a new client from the given channel.
-    pub fn new(channel: Channel) -> Self {
-        Self { channel }
-    }
-
+impl Channel {
     /// Send request.
     pub async fn request(
         &mut self,
@@ -27,7 +21,7 @@ impl Client {
     }
 }
 
-impl tower::Service<Request> for Client {
+impl tower::Service<Request> for Channel {
     type Response = Response;
     type Error = OkxError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
@@ -36,10 +30,10 @@ impl tower::Service<Request> for Client {
         &mut self,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.channel.poll_ready(cx)
+        self.svc.poll_ready(cx).map_err(OkxError::Buffer)
     }
 
     fn call(&mut self, req: Request) -> Self::Future {
-        self.channel.call(req)
+        self.svc.call(req).map_err(OkxError::Buffer).boxed()
     }
 }

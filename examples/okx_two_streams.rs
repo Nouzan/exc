@@ -1,12 +1,15 @@
 use exc_okx::websocket::{
-    types::{request::Request, response::ServerStream},
+    types::{frames::server::ServerFrame, request::Request},
     Client, Endpoint,
 };
-use futures::StreamExt;
+use futures::{Stream, StreamExt};
 
-async fn subscribe_tickers(client: &mut Client, inst: &str) -> anyhow::Result<ServerStream> {
+async fn subscribe_tickers(
+    client: &mut Client,
+    inst: &str,
+) -> anyhow::Result<impl Stream<Item = ServerFrame>> {
     Ok(client
-        .send(Request::subscribe_tickers(inst))
+        .request(Request::subscribe_tickers(inst))
         .await?
         .await?
         .into_result()?)
@@ -22,15 +25,15 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let client = Endpoint::default().connect();
+    let channel = Endpoint::default().connect();
     let handles = ["BTC-USDT", "ETH-USDT"]
         .into_iter()
         .map(|inst| {
-            let mut shared = client.clone();
+            let mut client = Client::new(channel.clone());
             tokio::spawn(async move {
                 loop {
                     tracing::info!("{inst}");
-                    match { subscribe_tickers(&mut shared, inst).await } {
+                    match { subscribe_tickers(&mut client, inst).await } {
                         Ok(mut stream) => {
                             let mut count = 0;
                             while let Some(c) = stream.next().await {
