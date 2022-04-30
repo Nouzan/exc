@@ -16,7 +16,7 @@ impl Client {
         Self { channel }
     }
 
-    /// Send request.
+    /// Make a general request.
     pub async fn request(
         &mut self,
         request: Request,
