@@ -11,7 +11,9 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let channel = Endpoint::default().connect();
+    let channel = Endpoint::default()
+        .timeout(std::time::Duration::from_secs(5))
+        .connect();
     let handles = ["BTC-USDT", "ETH-USDT"]
         .into_iter()
         .map(|inst| {
