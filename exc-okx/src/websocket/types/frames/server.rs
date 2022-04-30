@@ -20,10 +20,10 @@ impl ServerFrame {
     }
 }
 
-impl TryFrom<ServerFrame> for Ticker {
+impl TryFrom<ServerFrame> for Vec<Result<Ticker, OkxError>> {
     type Error = OkxError;
 
     fn try_from(value: ServerFrame) -> Result<Self, Self::Error> {
-        todo!()
+        value.inner.try_into()
     }
 }

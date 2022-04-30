@@ -79,7 +79,18 @@ impl TryFrom<Response> for BoxStream<'static, Result<Ticker, OkxError>> {
     fn try_from(value: Response) -> Result<Self, Self::Error> {
         match value {
             Response::Streaming(stream) => {
-                let stream = stream.skip(1).map(|frame| frame.try_into()).boxed();
+                let stream = stream
+                    .skip(1)
+                    .flat_map(|frame| {
+                        let res: Result<Vec<Result<Ticker, OkxError>>, OkxError> = frame.try_into();
+                        match res {
+                            Ok(tickers) => futures::stream::iter(tickers).left_stream(),
+                            Err(err) => {
+                                futures::stream::once(async move { Err(err) }).right_stream()
+                            }
+                        }
+                    })
+                    .boxed();
                 Ok(stream)
             }
             Response::Error(status) => Err(OkxError::Api(status)),

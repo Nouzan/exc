@@ -1,19 +1,5 @@
-use exc_okx::websocket::{
-    types::{frames::server::ServerFrame, request::Request},
-    Client, Endpoint,
-};
-use futures::{Stream, StreamExt};
-
-async fn subscribe_tickers(
-    client: &mut Client,
-    inst: &str,
-) -> anyhow::Result<impl Stream<Item = ServerFrame>> {
-    Ok(client
-        .request(Request::subscribe_tickers(inst))
-        .await?
-        .await?
-        .into_result()?)
-}
+use exc_okx::websocket::{Client, Endpoint};
+use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -33,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
             tokio::spawn(async move {
                 loop {
                     tracing::info!("{inst}");
-                    match { subscribe_tickers(&mut client, inst).await } {
+                    match { client.subscribe_tickers(inst).await } {
                         Ok(mut stream) => {
                             let mut count = 0;
                             while let Some(c) = stream.next().await {

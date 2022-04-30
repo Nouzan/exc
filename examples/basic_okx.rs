@@ -1,12 +1,5 @@
-use exc_okx::websocket::{
-    types::{request::Request, response::Response},
-    Client, Endpoint,
-};
+use exc_okx::websocket::{types::request::Request, Client, Endpoint};
 use futures::StreamExt;
-
-async fn request(client: &mut Client, req: Request) -> anyhow::Result<Response> {
-    Ok(client.request(req).await?.await?)
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -23,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     let mut client = Client::new(channel);
     loop {
         let req = Request::subscribe_tickers("ETH-USDT");
-        match request(&mut client, req).await {
+        match client.request(req).await {
             Ok(resp) => {
                 tracing::info!("responsed");
                 match resp.into_result() {

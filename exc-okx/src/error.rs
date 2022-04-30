@@ -59,4 +59,7 @@ pub enum OkxError {
     /// Buffer Layer Error.
     #[error(transparent)]
     Buffer(Box<dyn std::error::Error + Send + Sync>),
+    /// Unexpected data type.
+    #[error("unpexpected data type: {0}")]
+    UnexpectedDataType(anyhow::Error),
 }

@@ -1,7 +1,14 @@
+use crate::error::OkxError;
+
+use self::ticker::OkxTicker;
+
 use super::Args;
+use exc::types::ticker::Ticker;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
+
+mod ticker;
 
 /// Message with code.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,4 +83,25 @@ pub enum Event {
     Response(ResponseKind),
     /// Change.
     Change(Change),
+}
+
+impl TryFrom<Event> for Vec<Result<Ticker, OkxError>> {
+    type Error = OkxError;
+
+    fn try_from(event: Event) -> Result<Self, Self::Error> {
+        match event {
+            Event::Response(resp) => Err(OkxError::UnexpectedDataType(anyhow::anyhow!(
+                "response: {resp:?}"
+            ))),
+            Event::Change(change) => Ok(change
+                .data
+                .into_iter()
+                .map(|v| {
+                    serde_json::from_value::<OkxTicker>(v)
+                        .map(Ticker::from)
+                        .map_err(OkxError::from)
+                })
+                .collect()),
+        }
+    }
 }

@@ -19,6 +19,7 @@ serde_json = "1.0.79"
 pin-project-lite = "0.2.8"
 tokio-tower = "0.6.0"
 async-stream = "0.3.3"
+rust_decimal = "1.23"
 
 [dependencies.serde]
 version = "1.0.136"
@@ -44,3 +45,7 @@ features = ["sync", "rt-multi-thread", "time", "macros"]
 [dependencies.tokio-stream]
 version = "0.1.8"
 features = ["time"]
+
+[dependencies.time]
+version = "0.3.9"
+features = ["serde-human-readable"]

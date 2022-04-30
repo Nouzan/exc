@@ -8,5 +8,8 @@ pub mod websocket;
 /// All errors.
 pub mod error;
 
+/// Util
+pub mod util;
+
 #[macro_use]
 extern crate tracing;
