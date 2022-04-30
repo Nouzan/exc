@@ -1,6 +1,9 @@
 /// Ticker.
 pub mod ticker;
 
+/// Subscriptions.
+pub mod subscriptions;
+
 /// Data trait.
 pub trait Data {}
 

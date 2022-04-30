@@ -1,4 +1,7 @@
+use crate::error::OkxError;
+
 use super::super::messages::event::{Event, ResponseKind};
+use exc::types::ticker::Ticker;
 
 /// Server Frame.
 #[derive(Debug, Clone)]
@@ -14,5 +17,13 @@ impl ServerFrame {
             self.inner,
             Event::Response(ResponseKind::Unsubscribe { arg: _ } | ResponseKind::Error(_))
         )
+    }
+}
+
+impl TryFrom<ServerFrame> for Ticker {
+    type Error = OkxError;
+
+    fn try_from(value: ServerFrame) -> Result<Self, Self::Error> {
+        todo!()
     }
 }

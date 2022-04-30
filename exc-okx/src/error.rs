@@ -1,6 +1,9 @@
 use thiserror::Error;
 
-use crate::websocket::types::messages::{request::WsRequest, Args};
+use crate::websocket::types::{
+    messages::{request::WsRequest, Args},
+    response::StatusKind,
+};
 
 /// All OKX errors.
 #[derive(Debug, Error)]
@@ -46,7 +49,7 @@ pub enum OkxError {
     WebsocketClosed,
     /// API Error.
     #[error("api error: {0}")]
-    Api(String),
+    Api(StatusKind),
     /// Protocol Error.
     #[error("protocol: {0}")]
     Protocol(anyhow::Error),

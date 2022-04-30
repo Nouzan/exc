@@ -1,5 +1,8 @@
+use crate::error::OkxError;
+
 use super::{callback::Callback, frames::server::ServerFrame};
-use futures::{stream::BoxStream, Stream};
+use exc::types::ticker::Ticker;
+use futures::{stream::BoxStream, Stream, StreamExt};
 use pin_project_lite::pin_project;
 use thiserror::Error;
 
@@ -66,6 +69,20 @@ impl Response {
         match self {
             Self::Streaming(stream) => Ok(stream),
             Self::Error(status) => Err(status),
+        }
+    }
+}
+
+impl TryFrom<Response> for BoxStream<'static, Result<Ticker, OkxError>> {
+    type Error = OkxError;
+
+    fn try_from(value: Response) -> Result<Self, Self::Error> {
+        match value {
+            Response::Streaming(stream) => {
+                let stream = stream.skip(1).map(|frame| frame.try_into()).boxed();
+                Ok(stream)
+            }
+            Response::Error(status) => Err(OkxError::Api(status)),
         }
     }
 }
