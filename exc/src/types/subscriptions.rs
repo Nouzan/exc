@@ -8,8 +8,8 @@ pub struct SubscribeTickers {
 impl SubscribeTickers {
     /// Create a new [`SubscribeTickers`]
     pub fn new(inst: &str) -> Self {
-	Self {
-	    instrument: inst.to_string(),
-	}
+        Self {
+            instrument: inst.to_string(),
+        }
     }
 }
