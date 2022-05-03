@@ -1,8 +1,8 @@
 use crate::error::OkxError;
 
 use super::{callback::Callback, frames::server::ServerFrame};
-use exc::types::ticker::Ticker;
-use futures::{stream::BoxStream, Stream, StreamExt};
+use exc::{types::ticker::Ticker, ExchangeError};
+use futures::{stream::BoxStream, Stream, StreamExt, TryStreamExt};
 use pin_project_lite::pin_project;
 use thiserror::Error;
 
@@ -73,8 +73,8 @@ impl Response {
     }
 }
 
-impl TryFrom<Response> for BoxStream<'static, Result<Ticker, OkxError>> {
-    type Error = OkxError;
+impl TryFrom<Response> for BoxStream<'static, Result<Ticker, ExchangeError>> {
+    type Error = ExchangeError;
 
     fn try_from(value: Response) -> Result<Self, Self::Error> {
         match value {
@@ -90,10 +90,11 @@ impl TryFrom<Response> for BoxStream<'static, Result<Ticker, OkxError>> {
                             }
                         }
                     })
+                    .map_err(ExchangeError::from)
                     .boxed();
                 Ok(stream)
             }
-            Response::Error(status) => Err(OkxError::Api(status)),
+            Response::Error(status) => Err(OkxError::Api(status).into()),
         }
     }
 }

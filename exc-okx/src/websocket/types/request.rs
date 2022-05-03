@@ -1,7 +1,7 @@
 use super::{callback::Callback, frames::client::ClientFrame, messages::Args};
-use crate::{error::OkxError, websocket::types::messages::request::WsRequest};
+use crate::websocket::types::messages::request::WsRequest;
 use async_stream::stream;
-use exc::types::subscriptions::SubscribeTickers;
+use exc::{types::subscriptions::SubscribeTickers, ExchangeError};
 use futures::stream::{BoxStream, StreamExt};
 use std::collections::BTreeMap;
 
@@ -52,7 +52,7 @@ pub struct ClientStream {
 }
 
 impl TryFrom<SubscribeTickers> for Request {
-    type Error = OkxError;
+    type Error = ExchangeError;
 
     fn try_from(value: SubscribeTickers) -> Result<Self, Self::Error> {
         let inst = value.instrument;

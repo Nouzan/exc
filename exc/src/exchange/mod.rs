@@ -4,10 +4,19 @@ use tower::{Service, ServiceExt};
 mod subscribe_tickers;
 
 /// Exchange.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct Exchange<C, Req> {
     channel: C,
     _req: PhantomData<fn() -> Req>,
+}
+
+impl<C, Req> Clone for Exchange<C, Req>
+where
+    C: Clone,
+{
+    fn clone(&self) -> Self {
+        Self::new(self.channel.clone())
+    }
 }
 
 impl<C, Req> Exchange<C, Req> {

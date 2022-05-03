@@ -12,12 +12,11 @@ use tower::{Service, ServiceExt};
 
 impl<C, Req> Exchange<C, Req>
 where
-    C: Service<Req>,
-    Req: TryFrom<SubscribeTickers, Error = C::Error>,
-    C::Response: TryInto<BoxStream<'static, Result<Ticker, C::Error>>, Error = C::Error>,
-    ExchangeError: From<C::Error>,
-    C::Error: Send + 'static,
-    C::Future: Send + 'static,
+    Self: Service<
+        SubscribeTickers,
+        Response = BoxStream<'static, Result<Ticker, ExchangeError>>,
+        Error = ExchangeError,
+    >,
 {
     /// Subscribe tickers.
     pub async fn subscribe_tickers(
@@ -30,11 +29,10 @@ where
 
 impl<C, Req> Service<SubscribeTickers> for Exchange<C, Req>
 where
-    C: Service<Req>,
-    Req: TryFrom<SubscribeTickers, Error = C::Error>,
-    C::Response: TryInto<BoxStream<'static, Result<Ticker, C::Error>>, Error = C::Error>,
-    ExchangeError: From<C::Error>,
-    C::Error: Send + 'static,
+    C: Service<Req, Error = ExchangeError>,
+    Req: TryFrom<SubscribeTickers, Error = ExchangeError>,
+
+    BoxStream<'static, Result<Ticker, ExchangeError>>: TryFrom<C::Response, Error = ExchangeError>,
     C::Future: Send + 'static,
 {
     type Response = BoxStream<'static, Result<Ticker, ExchangeError>>;
@@ -55,13 +53,13 @@ where
                 let res = self.channel.call(req);
                 async move {
                     let resp = res.await?;
-                    let stream: BoxStream<'static, Result<Ticker, C::Error>> = resp.try_into()?;
+                    let stream: BoxStream<'static, Result<Ticker, _>> = BoxStream::try_from(resp)?;
                     let stream = stream.map_err(ExchangeError::from).boxed();
                     Ok(stream)
                 }
                 .left_future()
             }
-            Err(err) => futures::future::ready(Err(err.into())).right_future(),
+            Err(err) => futures::future::ready(Err(err)).right_future(),
         }
         .boxed()
     }

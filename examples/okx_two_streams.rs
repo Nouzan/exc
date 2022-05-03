@@ -1,6 +1,7 @@
-use exc::exchange::Exchange;
+use exc::{exchange::Exchange, ExchangeError};
 use exc_okx::websocket::Endpoint;
 use futures::StreamExt;
+use tower::{ServiceBuilder, ServiceExt};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -15,10 +16,19 @@ async fn main() -> anyhow::Result<()> {
     let channel = Endpoint::default()
         .timeout(std::time::Duration::from_secs(5))
         .connect();
+    let channel = ServiceBuilder::new()
+        .buffer(2)
+        .rate_limit(1, std::time::Duration::from_secs(30))
+        .service(channel)
+        .map_err(|err| ExchangeError::Other(anyhow::anyhow!("{err}")))
+        .boxed_clone();
+
+    let exchange = Exchange::new(channel);
+
     let handles = ["BTC-USDT", "ETH-USDT"]
         .into_iter()
         .map(|inst| {
-            let mut client = Exchange::new(channel.clone());
+            let mut client = exchange.clone();
             tokio::spawn(async move {
                 loop {
                     tracing::info!("{inst}");
