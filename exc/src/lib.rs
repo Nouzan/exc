@@ -16,6 +16,3 @@ pub mod error;
 
 pub use error::ExchangeError;
 pub use exchange::Exchange;
-
-#[macro_use]
-extern crate tracing;
