@@ -26,6 +26,7 @@ futures = "0.3.21"
 serde = { version = "1.0.136", features = ["derive"] }
 time = { version = "0.3.9", features = ["serde-well-known"] }
 rust_decimal = "1.23.1"
+indicator = "0.2"
 
 [dependencies.tokio-tungstenite]
 version = "0.17.1"
