@@ -1,4 +1,5 @@
-use exc_okx::websocket::{types::request::Request, Client, Endpoint};
+use exc::Exchange;
+use exc_okx::websocket::{types::request::Request, Endpoint};
 use futures::StreamExt;
 
 #[tokio::main]
@@ -13,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
     let channel = Endpoint::default()
         .timeout(std::time::Duration::from_secs(5))
         .connect();
-    let mut client = Client::new(channel);
+    let mut client = Exchange::new(channel);
     loop {
         let req = Request::subscribe_tickers("ETH-USDT");
         match client.request(req).await {

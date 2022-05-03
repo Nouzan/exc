@@ -24,7 +24,7 @@ impl Default for WsConnector {
     }
 }
 
-impl tower_service::Service<Uri> for WsConnector {
+impl tower::Service<Uri> for WsConnector {
     type Response = WsStream;
     type Error = Error;
     type Future = BoxConnecting;

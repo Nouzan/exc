@@ -35,7 +35,7 @@ fn server_message_to_tag(msg: &Event) -> Option<String> {
             ResponseKind::Subscribe { arg } | ResponseKind::Unsubscribe { arg } => {
                 Some(format!("sub:{arg}"))
             }
-            ResponseKind::Login(_) => Some(format!("login:login")),
+            ResponseKind::Login(_) => Some("login:login".to_string()),
             _ => None,
         },
     }

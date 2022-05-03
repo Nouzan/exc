@@ -1,4 +1,5 @@
-use exc_okx::websocket::{Client, Endpoint};
+use exc::exchange::Exchange;
+use exc_okx::websocket::Endpoint;
 use futures::StreamExt;
 
 #[tokio::main]
@@ -17,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     let handles = ["BTC-USDT", "ETH-USDT"]
         .into_iter()
         .map(|inst| {
-            let mut client = Client::new(channel.clone());
+            let mut client = Exchange::new(channel.clone());
             tokio::spawn(async move {
                 loop {
                     tracing::info!("{inst}");

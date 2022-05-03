@@ -78,15 +78,15 @@ impl WsRequest {
     }
 }
 
-impl Into<WsRequestMessage> for WsRequest {
-    fn into(self) -> WsRequestMessage {
-        match self {
-            Self::Subscribe(args) => WsRequestMessage {
+impl From<WsRequest> for WsRequestMessage {
+    fn from(req: WsRequest) -> Self {
+        match req {
+            WsRequest::Subscribe(args) => Self {
                 id: None,
                 op: Op::Subscribe,
                 args: vec![args],
             },
-            Self::Unsubscribe(args) => WsRequestMessage {
+            WsRequest::Unsubscribe(args) => Self {
                 id: None,
                 op: Op::Unsubscribe,
                 args: vec![args],

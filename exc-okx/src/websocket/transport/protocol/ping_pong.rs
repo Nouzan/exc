@@ -125,33 +125,29 @@ where
         if *this.close {
             return Poll::Ready(None);
         }
-        loop {
-            match this.inner.as_mut().poll_next(cx) {
-                Poll::Ready(s) => match s {
-                    Some(Ok(s)) => {
-                        let next = Instant::now() + Self::MESSAGE_TIMEOUT;
-                        this.message_deadline.as_mut().reset(next);
-                        *this.state = PingState::Idle;
-                        trace!("ping pong; timer reset");
-                        match s.as_str() {
-                            "pong" => {}
-                            _ => return Poll::Ready(Some(Ok(s))),
-                        }
+        while let Poll::Ready(s) = this.inner.as_mut().poll_next(cx) {
+            match s {
+                Some(Ok(s)) => {
+                    let next = Instant::now() + Self::MESSAGE_TIMEOUT;
+                    this.message_deadline.as_mut().reset(next);
+                    *this.state = PingState::Idle;
+                    trace!("ping pong; timer reset");
+                    match s.as_str() {
+                        "pong" => {}
+                        _ => return Poll::Ready(Some(Ok(s))),
                     }
-                    Some(Err(err)) => {
-                        return Poll::Ready(Some(Err(PingPongError::Transport(err.into()))));
-                    }
-                    None => {
-                        *this.close = true;
-                        trace!("ping pong; stream is dead");
-                        return Poll::Ready(Some(Err(PingPongError::RemoteClosed)));
-                    }
-                },
-                Poll::Pending => {
-                    break;
                 }
-            };
+                Some(Err(err)) => {
+                    return Poll::Ready(Some(Err(PingPongError::Transport(err.into()))));
+                }
+                None => {
+                    *this.close = true;
+                    trace!("ping pong; stream is dead");
+                    return Poll::Ready(Some(Err(PingPongError::RemoteClosed)));
+                }
+            }
         }
+
         loop {
             match this.state {
                 PingState::Idle => {

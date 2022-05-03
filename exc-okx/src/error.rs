@@ -1,3 +1,4 @@
+use exc::error::ExchangeError;
 use thiserror::Error;
 
 use crate::websocket::types::{
@@ -62,4 +63,10 @@ pub enum OkxError {
     /// Unexpected data type.
     #[error("unpexpected data type: {0}")]
     UnexpectedDataType(anyhow::Error),
+}
+
+impl From<OkxError> for ExchangeError {
+    fn from(err: OkxError) -> Self {
+        Self::Other(err.into())
+    }
 }
