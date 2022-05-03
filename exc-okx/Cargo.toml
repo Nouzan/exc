@@ -49,3 +49,7 @@ features = ["time"]
 [dependencies.time]
 version = "0.3.9"
 features = ["serde-human-readable"]
+
+[dependencies.hyper]
+version = "0.14"
+features = ["client", "http1"]

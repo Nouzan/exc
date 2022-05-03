@@ -2,8 +2,11 @@
 
 #![deny(missing_docs)]
 
-/// Websocket Service.
+/// Websocket API.
 pub mod websocket;
+
+/// Http API.
+pub mod http;
 
 /// All errors.
 pub mod error;

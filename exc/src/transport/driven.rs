@@ -27,11 +27,11 @@ impl<Req, E, Resp> Driven<Req, E, Resp> {
         let worker = async move {
             while let Some(resp) = stream.next().await {
                 if stream_tx.send(resp).is_err() {
-                    error!("driven sender is broken");
+                    tracing::error!("driven sender is broken");
                     break;
                 }
             }
-            trace!("driven worker; stream is dead");
+            tracing::trace!("driven worker; stream is dead");
         };
         tokio::spawn(async move { worker.await });
         Driven {

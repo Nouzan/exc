@@ -11,10 +11,11 @@ keywords = ["exchange", "tower"]
 [features]
 websocket = [
     "tokio-tungstenite",
-    "http",
+    "dep:http",
     "tokio/net",
 ]
 driven = ["tokio/sync", "tokio/rt", "tokio-stream", "pin-project-lite"]
+http = ["hyper/client", "hyper/http1", "hyper-tls", "dep:http"]
 
 [dependencies]
 anyhow = "1"
@@ -47,3 +48,10 @@ optional = true
 version = "0.2.7"
 optional = true
 
+[dependencies.hyper]
+version = "0.14"
+optional = true
+
+[dependencies.hyper-tls]
+version = "0.5"
+optional = true
