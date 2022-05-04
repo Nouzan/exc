@@ -1,3 +1,13 @@
+use futures::stream::BoxStream;
+
+use crate::ExchangeError;
+
+use super::ticker::Ticker;
+use super::Request;
+
+/// Ticker Stream.
+pub type TickerStream = BoxStream<'static, Result<Ticker, ExchangeError>>;
+
 /// Subscribe tickers.
 #[derive(Debug, Clone)]
 pub struct SubscribeTickers {
@@ -12,4 +22,8 @@ impl SubscribeTickers {
             instrument: inst.to_string(),
         }
     }
+}
+
+impl Request for SubscribeTickers {
+    type Response = TickerStream;
 }

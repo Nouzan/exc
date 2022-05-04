@@ -1,4 +1,6 @@
 use super::Exchange;
+use crate::service::ExchangeService;
+use crate::types::subscriptions::TickerStream;
 use crate::{
     error::ExchangeError,
     types::{subscriptions::SubscribeTickers, ticker::Ticker},
@@ -10,13 +12,8 @@ use futures::{
 };
 use tower::{util::Oneshot, Service, ServiceExt};
 
-/// Ticker stream.
-pub type TickerStream = BoxStream<'static, Result<Ticker, ExchangeError>>;
-
 /// Subscribe tickers service.
-pub trait SubscribeTickersService:
-    Service<SubscribeTickers, Response = TickerStream, Error = ExchangeError>
-{
+pub trait SubscribeTickersService: ExchangeService<SubscribeTickers> {
     /// Subscribe tickers.
     fn subscribe_tickers(&mut self, inst: &str) -> Oneshot<&mut Self, SubscribeTickers>
     where
@@ -26,10 +23,7 @@ pub trait SubscribeTickersService:
     }
 }
 
-impl<S> SubscribeTickersService for S where
-    S: Service<SubscribeTickers, Response = TickerStream, Error = ExchangeError>
-{
-}
+impl<S> SubscribeTickersService for S where S: ExchangeService<SubscribeTickers> {}
 
 impl<C, Req> Service<SubscribeTickers> for Exchange<C, Req>
 where
