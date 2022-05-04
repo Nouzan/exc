@@ -15,6 +15,7 @@ pub type CandleStream = BoxStream<'static, Result<Candle, ExchangeError>>;
 /// Query candles.
 #[derive(Debug)]
 pub struct QueryCandles {
+    inst: String,
     period: Period,
     start: Bound<OffsetDateTime>,
     end: Bound<OffsetDateTime>,
@@ -22,10 +23,11 @@ pub struct QueryCandles {
 
 impl QueryCandles {
     /// Create a new query.
-    pub fn new<R>(period: Period, range: R) -> Self
+    pub fn new<R>(inst: &str, period: Period, range: R) -> Self
     where
         R: RangeBounds<OffsetDateTime>,
     {
+        let inst = inst.to_string();
         let offset = period.utc_offset();
         let start = match range.start_bound() {
             Bound::Unbounded => Bound::Unbounded,
@@ -37,7 +39,17 @@ impl QueryCandles {
             Bound::Included(&t) => Bound::Included(t.to_offset(offset)),
             Bound::Excluded(&t) => Bound::Excluded(t.to_offset(offset)),
         };
-        Self { period, start, end }
+        Self {
+            inst,
+            period,
+            start,
+            end,
+        }
+    }
+
+    /// Get Instrument.
+    pub fn inst(&self) -> &str {
+        self.inst.as_str()
     }
 
     /// Get period.
@@ -77,11 +89,11 @@ pub struct QueryLastCandles {
 
 impl QueryLastCandles {
     /// Create a new query.
-    pub fn new<R>(period: Period, range: R, last: usize) -> Self
+    pub fn new<R>(inst: &str, period: Period, range: R, last: usize) -> Self
     where
         R: RangeBounds<OffsetDateTime>,
     {
-        let query = QueryCandles::new(period, range);
+        let query = QueryCandles::new(inst, period, range);
         Self { query, last }
     }
 
@@ -89,15 +101,10 @@ impl QueryLastCandles {
     pub fn last(&self) -> usize {
         self.last
     }
-}
 
-impl RangeBounds<OffsetDateTime> for QueryLastCandles {
-    fn start_bound(&self) -> Bound<&OffsetDateTime> {
-        self.query.start_bound()
-    }
-
-    fn end_bound(&self) -> Bound<&OffsetDateTime> {
-        self.query.end_bound()
+    /// Get query.
+    pub fn query(&self) -> &QueryCandles {
+        &self.query
     }
 }
 
