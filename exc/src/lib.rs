@@ -18,4 +18,5 @@ pub mod error;
 pub mod service;
 
 pub use error::ExchangeError;
-pub use exchange::{subscribe_tickers::SubscribeTickersService, Exchange};
+pub use exchange::Exchange;
+pub use service::subscribe_tickers::SubscribeTickersService;

@@ -3,6 +3,9 @@ use crate::ExchangeError;
 use super::types::Request;
 use tower::Service;
 
+/// Subscribe tickers.
+pub mod subscribe_tickers;
+
 /// Exchange Service,
 /// an alias of [`tower::Service`].
 pub trait ExchangeService<R>: Service<R, Response = R::Response, Error = ExchangeError>

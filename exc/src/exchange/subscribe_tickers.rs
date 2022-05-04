@@ -1,5 +1,4 @@
 use super::Exchange;
-use crate::service::ExchangeService;
 use crate::types::subscriptions::TickerStream;
 use crate::{
     error::ExchangeError,
@@ -10,20 +9,7 @@ use futures::{
     stream::BoxStream,
     StreamExt, TryStreamExt,
 };
-use tower::{util::Oneshot, Service, ServiceExt};
-
-/// Subscribe tickers service.
-pub trait SubscribeTickersService: ExchangeService<SubscribeTickers> {
-    /// Subscribe tickers.
-    fn subscribe_tickers(&mut self, inst: &str) -> Oneshot<&mut Self, SubscribeTickers>
-    where
-        Self: Sized,
-    {
-        ServiceExt::<SubscribeTickers>::oneshot(self, SubscribeTickers::new(inst))
-    }
-}
-
-impl<S> SubscribeTickersService for S where S: ExchangeService<SubscribeTickers> {}
+use tower::Service;
 
 impl<C, Req> Service<SubscribeTickers> for Exchange<C, Req>
 where
