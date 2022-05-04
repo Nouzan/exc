@@ -1,8 +1,16 @@
+use futures::stream::BoxStream;
 use indicator::Period;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::ops::{Bound, RangeBounds};
 use time::OffsetDateTime;
+
+use crate::ExchangeError;
+
+use super::Request;
+
+/// Candle Stream.
+pub type CandleStream = BoxStream<'static, Result<Candle, ExchangeError>>;
 
 /// Query candles.
 #[derive(Debug)]
@@ -56,6 +64,10 @@ impl RangeBounds<OffsetDateTime> for QueryCandles {
     }
 }
 
+impl Request for QueryCandles {
+    type Response = CandleStream;
+}
+
 /// Query last `n` candles in range.
 #[derive(Debug)]
 pub struct QueryLastCandles {
@@ -87,6 +99,10 @@ impl RangeBounds<OffsetDateTime> for QueryLastCandles {
     fn end_bound(&self) -> Bound<&OffsetDateTime> {
         self.query.end_bound()
     }
+}
+
+impl Request for QueryLastCandles {
+    type Response = CandleStream;
 }
 
 /// Candle (OHLCV).
