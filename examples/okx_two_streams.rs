@@ -1,4 +1,4 @@
-use exc::{exchange::Exchange, ExchangeError};
+use exc::{Exchange, ExchangeError, SubscribeTickersService};
 use exc_okx::websocket::Endpoint;
 use futures::StreamExt;
 use tower::{ServiceBuilder, ServiceExt};

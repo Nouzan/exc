@@ -8,34 +8,37 @@ use futures::{
     stream::BoxStream,
     StreamExt, TryStreamExt,
 };
-use tower::{Service, ServiceExt};
+use tower::{util::Oneshot, Service, ServiceExt};
 
-impl<C, Req> Exchange<C, Req>
-where
-    Self: Service<
-        SubscribeTickers,
-        Response = BoxStream<'static, Result<Ticker, ExchangeError>>,
-        Error = ExchangeError,
-    >,
+/// Ticker stream.
+pub type TickerStream = BoxStream<'static, Result<Ticker, ExchangeError>>;
+
+/// Subscribe tickers service.
+pub trait SubscribeTickersService:
+    Service<SubscribeTickers, Response = TickerStream, Error = ExchangeError>
 {
     /// Subscribe tickers.
-    pub async fn subscribe_tickers(
-        &mut self,
-        inst: &str,
-    ) -> Result<BoxStream<'static, Result<Ticker, ExchangeError>>, ExchangeError> {
-        ServiceExt::<SubscribeTickers>::oneshot(self, SubscribeTickers::new(inst)).await
+    fn subscribe_tickers(&mut self, inst: &str) -> Oneshot<&mut Self, SubscribeTickers>
+    where
+        Self: Sized,
+    {
+        ServiceExt::<SubscribeTickers>::oneshot(self, SubscribeTickers::new(inst))
     }
+}
+
+impl<S> SubscribeTickersService for S where
+    S: Service<SubscribeTickers, Response = TickerStream, Error = ExchangeError>
+{
 }
 
 impl<C, Req> Service<SubscribeTickers> for Exchange<C, Req>
 where
     C: Service<Req, Error = ExchangeError>,
     Req: TryFrom<SubscribeTickers, Error = ExchangeError>,
-
-    BoxStream<'static, Result<Ticker, ExchangeError>>: TryFrom<C::Response, Error = ExchangeError>,
+    TickerStream: TryFrom<C::Response, Error = ExchangeError>,
     C::Future: Send + 'static,
 {
-    type Response = BoxStream<'static, Result<Ticker, ExchangeError>>;
+    type Response = TickerStream;
     type Error = ExchangeError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 

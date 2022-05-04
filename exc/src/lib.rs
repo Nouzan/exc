@@ -15,4 +15,4 @@ pub mod types;
 pub mod error;
 
 pub use error::ExchangeError;
-pub use exchange::Exchange;
+pub use exchange::{subscribe_tickers::SubscribeTickersService, Exchange};

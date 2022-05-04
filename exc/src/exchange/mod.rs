@@ -1,7 +1,8 @@
 use std::marker::PhantomData;
 use tower::{Service, ServiceExt};
 
-mod subscribe_tickers;
+/// Subscribe tickers.
+pub mod subscribe_tickers;
 
 /// Exchange.
 #[derive(Debug)]
