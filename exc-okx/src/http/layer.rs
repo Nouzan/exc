@@ -1,9 +1,25 @@
 use super::types::{request::HttpRequest, response::HttpResponse};
 use exc::ExchangeError;
-use futures::{future::BoxFuture, FutureExt};
+use futures::{future::BoxFuture, FutureExt, TryFutureExt};
 use http::{Request, Response};
 use hyper::Body;
-use tower::Service;
+use tower::{Service, Layer};
+
+/// Okx HTTP API layer.
+pub struct OkxHttpApiLayer<'a> {
+    host: &'a str,
+}
+
+impl<'a, S> Layer<S> for OkxHttpApiLayer<'a> {
+    type Service = OkxHttpApi<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+	OkxHttpApi {
+	    host: self.host.to_string(),
+	    http: inner,
+	}
+    }
+}
 
 /// Okx HTTP API Service.
 pub struct OkxHttpApi<S> {
@@ -14,6 +30,8 @@ pub struct OkxHttpApi<S> {
 impl<S> Service<HttpRequest> for OkxHttpApi<S>
 where
     S: Service<Request<Body>, Response = Response<Body>>,
+    S::Future: Send + 'static,
+    S::Error: 'static,
     ExchangeError: From<S::Error>,
 {
     type Response = HttpResponse;
@@ -39,10 +57,22 @@ where
                 }),
         };
         match req {
-            Ok(req) => {
-                let res = self.http.call(req);
-                todo!()
-            }
+            Ok(req) => self
+                .http
+                .call(req)
+                .map_err(ExchangeError::from)
+                .and_then(|resp| {
+                    trace!("http response; status: {:?}", resp.status());
+                    hyper::body::to_bytes(resp.into_body())
+                        .map_err(|err| ExchangeError::Other(err.into()))
+                })
+                .and_then(|bytes| {
+                    let resp = serde_json::from_slice::<HttpResponse>(&bytes)
+                        .map_err(|err| ExchangeError::Other(err.into()));
+
+                    futures::future::ready(resp)
+                })
+                .boxed(),
             Err(err) => futures::future::ready(Err(err)).boxed(),
         }
     }
