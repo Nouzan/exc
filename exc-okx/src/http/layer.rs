@@ -35,6 +35,7 @@ impl<'a, S> Layer<S> for OkxHttpApiLayer<'a> {
 }
 
 /// Okx HTTP API Service.
+#[derive(Clone)]
 pub struct OkxHttpApi<S> {
     host: String,
     http: S,

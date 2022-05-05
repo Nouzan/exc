@@ -7,7 +7,26 @@ use exc::{
 use exc_okx::http::{layer::OkxHttpApiLayer, types::request::HttpRequest};
 use futures::StreamExt;
 use time::macros::{datetime, offset};
+use tower::retry::Policy;
 use tower::{ServiceBuilder, ServiceExt};
+
+#[derive(Debug, Clone, Copy)]
+struct Always;
+
+impl<Req: Clone, Res, E> Policy<Req, Res, E> for Always {
+    type Future = futures::future::Ready<Self>;
+    fn retry(&self, _req: &Req, result: Result<&Res, &E>) -> Option<Self::Future> {
+        if result.is_ok() {
+            None
+        } else {
+            Some(futures::future::ready(Self))
+        }
+    }
+
+    fn clone_request(&self, req: &Req) -> Option<Req> {
+        Some(req.clone())
+    }
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -24,13 +43,14 @@ async fn main() -> anyhow::Result<()> {
         .service(channel);
     let svc = Exchange::<_, HttpRequest>::new(svc);
     let mut svc = ServiceBuilder::default()
-        .layer(BackwardCandles::new(100, 2))
-        .rate_limit(10, std::time::Duration::from_secs(2))
+        .layer(BackwardCandles::new(100, 1))
+        .rate_limit(19, std::time::Duration::from_secs(2))
+        .retry(Always)
         .service(svc);
     let query = QueryCandles::new(
         "BTC-USDT",
         Period::minutes(offset!(+8), 1),
-        datetime!(2022-01-01 00:00:00 +08:00)..,
+        datetime!(2022-04-15 00:00:00 +08:00)..,
     );
     let mut stream = (&mut svc).oneshot(query).await?;
     while let Some(c) = stream.next().await {

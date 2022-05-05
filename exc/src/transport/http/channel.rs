@@ -6,6 +6,7 @@ use hyper_tls::HttpsConnector;
 use crate::ExchangeError;
 
 /// Https channel.
+#[derive(Clone)]
 pub struct HttpsChannel {
     pub(crate) inner: Client<HttpsConnector<HttpConnector>>,
 }
