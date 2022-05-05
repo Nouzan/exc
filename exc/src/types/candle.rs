@@ -1,5 +1,6 @@
+use derive_more::Display;
 use futures::stream::BoxStream;
-use indicator::Period;
+pub use indicator::{window::mode::tumbling::period::PeriodKind, Period};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::ops::{Bound, RangeBounds};
@@ -113,7 +114,16 @@ impl Request for QueryLastCandles {
 }
 
 /// Candle (OHLCV).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Display)]
+#[display(
+    fmt = "ts={} ohlcv=[{}, {}, {}, {}, {}]",
+    ts,
+    open,
+    high,
+    low,
+    close,
+    volume
+)]
 pub struct Candle {
     /// Timestamp.
     #[serde(with = "time::serde::rfc3339")]

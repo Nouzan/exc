@@ -2,7 +2,11 @@ use futures::{future::BoxFuture, FutureExt};
 use std::marker::PhantomData;
 use tower::{Service, ServiceExt};
 
-use crate::{types::Request, ExchangeError};
+use crate::{
+    service::ExchangeService,
+    types::{Adaptor, Request},
+    ExchangeError,
+};
 
 /// Exchange.
 #[derive(Debug)]
@@ -40,10 +44,10 @@ impl<C, Req> Exchange<C, Req> {
 
 impl<C, Req, R> Service<R> for Exchange<C, Req>
 where
-    C: Service<Req, Error = ExchangeError>,
-    Req: TryFrom<R, Error = ExchangeError>,
     R: Request,
-    R::Response: TryFrom<C::Response, Error = ExchangeError> + Send + 'static,
+    Req: Adaptor<R>,
+    C: ExchangeService<Req>,
+    R::Response: Send + 'static,
     C::Future: Send + 'static,
 {
     type Response = R::Response;
@@ -58,13 +62,13 @@ where
     }
 
     fn call(&mut self, req: R) -> Self::Future {
-        let request = Req::try_from(req);
+        let request = Req::from_request(req);
         match request {
             Ok(req) => {
                 let res = self.channel.call(req);
                 async move {
                     let resp = res.await?;
-                    let resp = R::Response::try_from(resp)?;
+                    let resp = Req::into_response(resp)?;
                     Ok(resp)
                 }
                 .left_future()

@@ -50,7 +50,7 @@ features = ["time"]
 
 [dependencies.time]
 version = "0.3.9"
-features = ["serde-human-readable"]
+features = ["serde-human-readable", "macros"]
 
 [dependencies.hyper]
 version = "0.14"

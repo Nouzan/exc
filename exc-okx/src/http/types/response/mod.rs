@@ -22,4 +22,6 @@ pub struct HttpResponse {
 pub enum ResponseData {
     /// Candle.
     Candle(Candle),
+    /// Placeholder.
+    Placeholder,
 }

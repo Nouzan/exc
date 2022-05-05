@@ -24,7 +24,7 @@ async fn main() -> anyhow::Result<()> {
             inst_id: "BTC-USDT".to_string(),
             after: None,
             before: None,
-            bar: Some("1m".to_string()),
+            bar: Some("1m"),
             limit: None,
         })))
         .await?;

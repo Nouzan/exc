@@ -8,14 +8,14 @@ use serde_with::{serde_as, DisplayFromStr};
 pub struct HistoryCandles {
     /// Instrument Id.
     pub inst_id: String,
-    /// After (older).
+    /// After (older) (millis).
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub after: Option<u64>,
-    /// Before (newer).
+    /// Before (newer) (millis).
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub before: Option<u64>,
     /// Bar.
-    pub bar: Option<String>,
+    pub bar: Option<&'static str>,
     /// Limit (last).
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub limit: Option<usize>,

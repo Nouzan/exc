@@ -1,3 +1,5 @@
+use exc::types::Request as ExcRequest;
+
 /// Okx websocket transport.
 pub mod transport;
 
@@ -6,3 +8,7 @@ pub mod types;
 
 pub use transport::endpoint::Endpoint;
 pub use types::{request::Request, response::Response};
+
+impl ExcRequest for Request {
+    type Response = Response;
+}
