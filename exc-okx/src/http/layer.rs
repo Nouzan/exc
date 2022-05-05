@@ -3,21 +3,34 @@ use exc::ExchangeError;
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
 use http::{Request, Response};
 use hyper::Body;
-use tower::{Service, Layer};
+use tower::{Layer, Service};
 
 /// Okx HTTP API layer.
 pub struct OkxHttpApiLayer<'a> {
     host: &'a str,
 }
 
+impl Default for OkxHttpApiLayer<'static> {
+    fn default() -> Self {
+        Self::new("https://www.okx.com")
+    }
+}
+
+impl<'a> OkxHttpApiLayer<'a> {
+    /// Create a new okx http api layer.
+    pub fn new(host: &'a str) -> Self {
+        Self { host }
+    }
+}
+
 impl<'a, S> Layer<S> for OkxHttpApiLayer<'a> {
     type Service = OkxHttpApi<S>;
 
     fn layer(&self, inner: S) -> Self::Service {
-	OkxHttpApi {
-	    host: self.host.to_string(),
-	    http: inner,
-	}
+        OkxHttpApi {
+            host: self.host.to_string(),
+            http: inner,
+        }
     }
 }
 
