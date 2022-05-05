@@ -1,6 +1,7 @@
 use exc::{
+    service::fetch_candles::BackwardCandles,
     transport::http::endpoint::Endpoint,
-    types::candle::{Period, QueryLastCandles},
+    types::candle::{Period, QueryCandles},
     Exchange,
 };
 use exc_okx::http::{layer::OkxHttpApiLayer, types::request::HttpRequest};
@@ -21,16 +22,22 @@ async fn main() -> anyhow::Result<()> {
     let svc = ServiceBuilder::default()
         .layer(OkxHttpApiLayer::default())
         .service(channel);
-    let mut ex = Exchange::<_, HttpRequest>::new(svc);
-    let query = QueryLastCandles::new(
+    let svc = Exchange::<_, HttpRequest>::new(svc);
+    let mut svc = ServiceBuilder::default()
+        .layer(BackwardCandles::new(100, 2))
+        .rate_limit(10, std::time::Duration::from_secs(2))
+        .service(svc);
+    let query = QueryCandles::new(
         "BTC-USDT",
         Period::minutes(offset!(+8), 1),
-        datetime!(2020-01-01 00:00:00 +08:00)..=datetime!(2020-01-01 00:02:00 +08),
-        2,
+        datetime!(2022-01-01 00:00:00 +08:00)..,
     );
-    let mut stream = (&mut ex).oneshot(query).await?;
-    while let Some(Ok(c)) = stream.next().await {
-        tracing::info!("{c}");
+    let mut stream = (&mut svc).oneshot(query).await?;
+    while let Some(c) = stream.next().await {
+        match c {
+            Ok(c) => tracing::info!("{c}"),
+            Err(err) => tracing::error!("{err}"),
+        }
     }
     Ok(())
 }

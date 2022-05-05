@@ -3,7 +3,10 @@ use futures::stream::BoxStream;
 pub use indicator::{window::mode::tumbling::period::PeriodKind, Period};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use std::ops::{Bound, RangeBounds};
+use std::{
+    ops::{Bound, RangeBounds},
+    sync::Arc,
+};
 use time::OffsetDateTime;
 
 use crate::ExchangeError;
@@ -14,12 +17,12 @@ use super::Request;
 pub type CandleStream = BoxStream<'static, Result<Candle, ExchangeError>>;
 
 /// Query candles.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct QueryCandles {
-    inst: String,
+    inst: Arc<String>,
     period: Period,
-    start: Bound<OffsetDateTime>,
-    end: Bound<OffsetDateTime>,
+    pub(crate) start: Bound<OffsetDateTime>,
+    pub(crate) end: Bound<OffsetDateTime>,
 }
 
 impl QueryCandles {
@@ -28,7 +31,7 @@ impl QueryCandles {
     where
         R: RangeBounds<OffsetDateTime>,
     {
-        let inst = inst.to_string();
+        let inst = Arc::new(inst.to_string());
         let offset = period.utc_offset();
         let start = match range.start_bound() {
             Bound::Unbounded => Bound::Unbounded,
@@ -82,10 +85,11 @@ impl Request for QueryCandles {
 }
 
 /// Query last `n` candles in range.
-#[derive(Debug)]
+/// Return a candle stream that produce the last `last` candles backward.
+#[derive(Debug, Clone)]
 pub struct QueryLastCandles {
-    query: QueryCandles,
-    last: usize,
+    pub(crate) query: QueryCandles,
+    pub(crate) last: usize,
 }
 
 impl QueryLastCandles {

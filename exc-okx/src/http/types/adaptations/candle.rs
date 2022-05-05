@@ -38,28 +38,29 @@ impl Adaptor<QueryLastCandles> for HttpRequest {
     }
 
     fn into_response(
-        mut resp: Self::Response,
+        resp: Self::Response,
     ) -> Result<<QueryLastCandles as exc::types::Request>::Response, exc::ExchangeError> {
         match resp.code.as_str() {
             "0" => {
                 let stream = stream! {
-                        while let Some(data) = resp.data.pop() {
-                if let ResponseData::Candle(c) = data {
-                    if let Some(ts) = millis_to_ts(c.0) {
-                    yield Ok(Candle {
-                        ts,
-                        open: c.1,
-                        high: c.2,
-                        low: c.3,
-                        close: c.4,
-                        volume: c.5,
-                    });
-                    } else {
-                    yield Err(ExchangeError::Other(anyhow::anyhow!("cannot parse ts")));
-                    }
-                }
+                        for data in resp.data {
+                trace!("received a data: {data:?}");
+                    if let ResponseData::Candle(c) = data {
+                        if let Some(ts) = millis_to_ts(c.0) {
+                        yield Ok(Candle {
+                            ts,
+                            open: c.1,
+                            high: c.2,
+                            low: c.3,
+                            close: c.4,
+                            volume: c.5,
+                        });
+                        } else {
+                        yield Err(ExchangeError::Other(anyhow::anyhow!("cannot parse ts")));
                         }
-                    };
+                    }
+                    }
+                        };
                 Ok(stream.boxed())
             }
             _ => Err(ExchangeError::Other(anyhow::anyhow!(
