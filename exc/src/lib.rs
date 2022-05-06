@@ -17,6 +17,9 @@ pub mod error;
 /// Service.
 pub mod service;
 
+/// Utils.
+pub mod util;
+
 pub use error::ExchangeError;
 pub use exchange::{Exchange, ExchangeLayer};
 pub use service::{
