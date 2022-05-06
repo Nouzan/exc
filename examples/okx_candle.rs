@@ -1,10 +1,9 @@
 use exc::{
-    service::fetch_candles::BackwardCandles,
     transport::http::endpoint::Endpoint,
     types::candle::{Period, QueryCandles},
-    Exchange,
+    ExchangeLayer, FetchCandlesBackwardLayer,
 };
-use exc_okx::http::{layer::OkxHttpApiLayer, types::request::HttpRequest};
+use exc_okx::http::layer::OkxHttpApiLayer;
 use futures::StreamExt;
 use time::macros::{datetime, offset};
 use tower::retry::Policy;
@@ -36,16 +35,15 @@ async fn main() -> anyhow::Result<()> {
             std::env::var("RUST_LOG").unwrap_or_else(|_| "okx_candle=debug,exc_okx=debug".into()),
         ))
         .init();
-    let channel = Endpoint::default().connect_https();
-    let svc = ServiceBuilder::default()
-        .layer(OkxHttpApiLayer::default())
-        .service(channel);
-    let svc = Exchange::<_, HttpRequest>::new(svc);
+
     let mut svc = ServiceBuilder::default()
-        .layer(BackwardCandles::new(100, 1))
+        .layer(FetchCandlesBackwardLayer::new(100, 1))
         .rate_limit(19, std::time::Duration::from_secs(2))
         .retry(Always)
-        .service(svc);
+        .layer(ExchangeLayer::default())
+        .layer(OkxHttpApiLayer::default())
+        .service(Endpoint::default().connect_https());
+
     let query = QueryCandles::new(
         "BTC-USDT",
         Period::minutes(offset!(+8), 1),

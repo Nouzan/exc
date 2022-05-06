@@ -36,12 +36,12 @@ use std::num::NonZeroUsize;
 use tower::buffer::Buffer;
 
 /// Fetch candles backward layer.
-pub struct BackwardCandles {
+pub struct FetchCandlesBackwardLayer {
     bound: usize,
     limit: NonZeroUsize,
 }
 
-impl BackwardCandles {
+impl FetchCandlesBackwardLayer {
     /// Create a new fetch candles backward layer.
     /// # Panic
     /// Panic if `limit` is zero.
@@ -53,7 +53,7 @@ impl BackwardCandles {
     }
 }
 
-impl<S> Layer<S> for BackwardCandles
+impl<S> Layer<S> for FetchCandlesBackwardLayer
 where
     S: ExchangeService<QueryLastCandles> + Send + 'static,
     S::Future: Send,

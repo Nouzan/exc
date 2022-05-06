@@ -8,6 +8,11 @@ use crate::{
     ExchangeError,
 };
 
+/// Layer.
+pub mod layer;
+
+pub use layer::ExchangeLayer;
+
 /// Exchange.
 #[derive(Debug)]
 pub struct Exchange<C, Req> {
