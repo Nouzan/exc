@@ -52,6 +52,7 @@ where
     R: Request,
     Req: Adaptor<R>,
     C: ExchangeService<Req>,
+    C::Error: Into<ExchangeError>,
     R::Response: Send + 'static,
     C::Future: Send + 'static,
 {
@@ -63,7 +64,7 @@ where
         &mut self,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.channel.poll_ready(cx).map_err(ExchangeError::from)
+        self.channel.poll_ready(cx).map_err(|err| err.into())
     }
 
     fn call(&mut self, req: R) -> Self::Future {
@@ -72,7 +73,7 @@ where
             Ok(req) => {
                 let res = self.channel.call(req);
                 async move {
-                    let resp = res.await?;
+                    let resp = res.await.map_err(|err| err.into())?;
                     let resp = Req::into_response(resp)?;
                     Ok(resp)
                 }

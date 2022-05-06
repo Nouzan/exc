@@ -5,7 +5,7 @@ use thiserror::Error;
 pub enum ExchangeError {
     /// Error from layers.
     #[error(transparent)]
-    Layer(Box<dyn std::error::Error + Send + Sync>),
+    Layer(#[from] Box<dyn std::error::Error + Send + Sync>),
     #[cfg(feature = "http")]
     /// Http errors.
     #[error("http: {0}")]

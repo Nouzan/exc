@@ -11,7 +11,7 @@ use crate::{
     ExchangeError,
 };
 
-use super::ExchangeService;
+use super::{Exc, ExcMut, ExchangeService};
 
 /// Fetch candles service.
 pub trait FetchCandlesService: ExchangeService<QueryCandles> {
@@ -21,12 +21,15 @@ pub trait FetchCandlesService: ExchangeService<QueryCandles> {
         inst: &str,
         period: Period,
         range: R,
-    ) -> Oneshot<&mut Self, QueryCandles>
+    ) -> Oneshot<ExcMut<'_, Self>, QueryCandles>
     where
         Self: Sized,
         R: RangeBounds<OffsetDateTime>,
     {
-        ServiceExt::<QueryCandles>::oneshot(self, QueryCandles::new(inst, period, range))
+        ServiceExt::<QueryCandles>::oneshot(
+            self.as_service_mut(),
+            QueryCandles::new(inst, period, range),
+        )
     }
 }
 
@@ -62,7 +65,7 @@ where
 
     fn layer(&self, inner: S) -> Self::Service {
         FetchCandlesBackward {
-            svc: Buffer::new(inner, self.bound),
+            svc: Buffer::new(inner.into_service(), self.bound),
             limit: self.limit,
         }
     }
@@ -73,7 +76,7 @@ pub struct FetchCandlesBackward<S>
 where
     S: ExchangeService<QueryLastCandles> + 'static,
 {
-    svc: Buffer<S, QueryLastCandles>,
+    svc: Buffer<Exc<S>, QueryLastCandles>,
     limit: NonZeroUsize,
 }
 
@@ -90,7 +93,7 @@ where
         &mut self,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.svc.poll_ready(cx).map_err(ExchangeError::Layer)
+        Service::poll_ready(&mut self.svc, cx).map_err(ExchangeError::from)
     }
 
     fn call(&mut self, query: QueryCandles) -> Self::Future {

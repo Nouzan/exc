@@ -19,4 +19,7 @@ pub mod service;
 
 pub use error::ExchangeError;
 pub use exchange::{Exchange, ExchangeLayer};
-pub use service::{subscribe_tickers::SubscribeTickersService, fetch_candles::{FetchCandlesService, FetchCandlesBackward, FetchCandlesBackwardLayer}};
+pub use service::{
+    fetch_candles::{FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesService},
+    subscribe_tickers::SubscribeTickersService,
+};

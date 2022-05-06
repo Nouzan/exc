@@ -35,19 +35,21 @@ async fn main() -> anyhow::Result<()> {
             std::env::var("RUST_LOG").unwrap_or_else(|_| "okx_candle=debug,exc_okx=debug".into()),
         ))
         .init();
-
-    let mut svc = ServiceBuilder::default()
-        .layer(FetchCandlesBackwardLayer::new(100, 1))
-        .rate_limit(19, std::time::Duration::from_secs(2))
-        .retry(Always)
+    let channel = ServiceBuilder::default()
         .layer(ExchangeLayer::default())
         .layer(OkxHttpApiLayer::default())
         .service(Endpoint::default().connect_https());
+    let mut svc = ServiceBuilder::default()
+        .layer(FetchCandlesBackwardLayer::new(100, 1))
+        .retry(Always)
+        .buffer(2)
+        .rate_limit(20, std::time::Duration::from_secs(2))
+        .service(channel);
 
     let query = QueryCandles::new(
         "BTC-USDT",
         Period::minutes(offset!(+8), 1),
-        datetime!(2020-04-15 00:00:00 +08:00)..=datetime!(2020-04-16 00:00:00 +08:00),
+        datetime!(2020-04-15 00:00:00 +08:00)..=datetime!(2021-04-16 00:00:00 +08:00),
     );
     let mut stream = (&mut svc).oneshot(query).await?;
     while let Some(c) = stream.next().await {

@@ -11,17 +11,14 @@ pub struct ExchangeLayer<Req> {
 
 impl<Req> Default for ExchangeLayer<Req> {
     fn default() -> Self {
-	Self {
-	    _req: PhantomData,
-	}
+        Self { _req: PhantomData }
     }
 }
 
-impl<S, Req> Layer<S> for ExchangeLayer<Req>
-{
+impl<S, Req> Layer<S> for ExchangeLayer<Req> {
     type Service = Exchange<S, Req>;
 
     fn layer(&self, inner: S) -> Self::Service {
-	Exchange::new(inner)
+        Exchange::new(inner)
     }
 }
