@@ -7,7 +7,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::fmt()
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "basic_okx=debug,exc_okx=debug".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "okx_ws_basic=debug,exc_okx=debug".into()),
         ))
         .init();
 

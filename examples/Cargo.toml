@@ -4,8 +4,8 @@ version = "0.0.0"
 edition = "2021"
 
 [[bin]]
-name = "basic-okx"
-path = "basic_okx.rs"
+name = "okx-ws-basic"
+path = "okx_ws_basic.rs"
 
 [[bin]]
 name = "okx-http-basic"
