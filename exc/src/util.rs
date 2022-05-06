@@ -4,8 +4,8 @@ use std::{
     time::Duration,
 };
 
+use ::time::{macros::time, Date, Month, OffsetDateTime, PrimitiveDateTime};
 use indicator::{window::mode::tumbling::period::PeriodKind, Period};
-use time::{macros::time, Date, Month, OffsetDateTime, PrimitiveDateTime};
 
 const WEEK_OFFSET: Duration = Duration::from_secs(4 * 24 * 3600);
 
