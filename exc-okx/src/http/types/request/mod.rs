@@ -6,13 +6,14 @@ use self::history_candles::HistoryCandles;
 pub mod history_candles;
 
 /// Okx HTTP API request types.
+#[derive(Debug, Clone)]
 pub enum HttpRequest {
     /// Get (public requests).
     Get(Get),
 }
 
 /// Okx HTTP API get request types.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(untagged)]
 pub enum Get {
     /// History candles.

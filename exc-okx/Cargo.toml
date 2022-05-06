@@ -34,7 +34,7 @@ features = ["websocket", "driven"]
 
 [dependencies.tower]
 version = "0.4.12"
-features = ["util", "reconnect", "buffer", "timeout"]
+features = ["util", "reconnect", "buffer", "timeout", "retry"]
 
 [dependencies.tokio-tungstenite]
 version = "0.17.1"

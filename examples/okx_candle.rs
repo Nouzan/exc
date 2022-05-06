@@ -6,26 +6,7 @@ use exc::{
 use exc_okx::http::layer::OkxHttpApiLayer;
 use futures::StreamExt;
 use time::macros::{datetime, offset};
-use tower::retry::Policy;
 use tower::{ServiceBuilder, ServiceExt};
-
-#[derive(Debug, Clone, Copy)]
-struct Always;
-
-impl<Req: Clone, Res, E> Policy<Req, Res, E> for Always {
-    type Future = futures::future::Ready<Self>;
-    fn retry(&self, _req: &Req, result: Result<&Res, &E>) -> Option<Self::Future> {
-        if result.is_ok() {
-            None
-        } else {
-            Some(futures::future::ready(Self))
-        }
-    }
-
-    fn clone_request(&self, req: &Req) -> Option<Req> {
-        Some(req.clone())
-    }
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -35,16 +16,12 @@ async fn main() -> anyhow::Result<()> {
             std::env::var("RUST_LOG").unwrap_or_else(|_| "okx_candle=debug,exc_okx=debug".into()),
         ))
         .init();
-    let channel = ServiceBuilder::default()
-        .layer(ExchangeLayer::default())
-        .layer(OkxHttpApiLayer::default())
-        .service(Endpoint::default().connect_https());
     let mut svc = ServiceBuilder::default()
         .layer(FetchCandlesBackwardLayer::new(100, 1))
-        .retry(Always)
-        .buffer(2)
-        .rate_limit(20, std::time::Duration::from_secs(2))
-        .service(channel);
+        .rate_limit(19, std::time::Duration::from_secs(2))
+        .layer(ExchangeLayer::default())
+        .layer(OkxHttpApiLayer::default().retry_on_error())
+        .service(Endpoint::default().connect_https());
 
     let query = QueryCandles::new(
         "BTC-USDT",

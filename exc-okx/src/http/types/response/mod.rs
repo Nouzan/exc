@@ -13,6 +13,7 @@ pub struct HttpResponse {
     /// Message.
     pub msg: String,
     /// Data.
+    #[serde(default)]
     pub data: Vec<ResponseData>,
 }
 

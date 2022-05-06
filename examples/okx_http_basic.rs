@@ -3,7 +3,7 @@ use exc_okx::http::{
     layer::OkxHttpApiLayer,
     types::request::{history_candles::HistoryCandles, Get, HttpRequest},
 };
-use tower::{ServiceBuilder, ServiceExt};
+use tower::{retry::Policy, ServiceBuilder, ServiceExt};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

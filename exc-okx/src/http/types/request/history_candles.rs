@@ -3,7 +3,7 @@ use serde_with::{serde_as, DisplayFromStr};
 
 /// History Candles.
 #[serde_as]
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct HistoryCandles {
     /// Instrument Id.
