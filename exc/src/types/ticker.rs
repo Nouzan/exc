@@ -1,9 +1,11 @@
+use derive_more::Display;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
 /// Ticker.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Display)]
+#[display(fmt = "ts={ts} ({last}, {size}) bid={bid:?} ask={ask:?}")]
 pub struct Ticker {
     /// Timestamp.
     #[serde(with = "time::serde::rfc3339")]

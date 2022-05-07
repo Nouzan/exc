@@ -30,7 +30,7 @@ impl Endpoint {
 impl Default for Endpoint {
     fn default() -> Self {
         Self {
-            uri: Uri::from_static("wss://wsaws.okex.com:8443/ws/v5/public"),
+            uri: Uri::from_static("wss://ws.okex.com:8443/ws/v5/public"),
             timeout: None,
             buffer_size: None,
         }

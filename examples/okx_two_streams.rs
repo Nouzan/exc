@@ -27,12 +27,10 @@ async fn main() -> anyhow::Result<()> {
                     tracing::info!("{inst}");
                     match { client.subscribe_tickers(inst).await } {
                         Ok(mut stream) => {
-                            let mut count = 0;
                             while let Some(c) = stream.next().await {
-                                tracing::info!("{c:?}");
-                                count += 1;
-                                if count > 10 {
-                                    break;
+                                match c {
+                                    Ok(c) => tracing::info!("{c}"),
+                                    Err(err) => tracing::error!("{err}"),
                                 }
                             }
                             tracing::warn!("stream is dead; reconnecting..");
