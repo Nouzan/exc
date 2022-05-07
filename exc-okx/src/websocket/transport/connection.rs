@@ -6,8 +6,9 @@ use exc::transport::websocket::connector::WsConnector;
 use futures::future::BoxFuture;
 use futures::FutureExt;
 use http::Uri;
+use tower::timeout::TimeoutLayer;
 use tower::{reconnect::Reconnect, util::BoxService};
-use tower::{Service, ServiceExt};
+use tower::{Service, ServiceBuilder, ServiceExt};
 
 /// Create a connection to okx websocket api.
 pub(crate) struct Connect {
@@ -55,7 +56,10 @@ pub(crate) struct Connection {
 impl Connection {
     /// Create a new okx websocket connection.
     pub(crate) fn new(endpoint: &Endpoint) -> Self {
-        let connector = Connect::new(WsConnector::default());
+        let connector = ServiceBuilder::default()
+            .option_layer(endpoint.connection_timeout.map(TimeoutLayer::new))
+            .service(Connect::new(WsConnector::default()))
+            .boxed();
         let conn = Reconnect::new::<<Connect as Service<Uri>>::Response, Uri>(
             connector,
             endpoint.uri.clone(),

@@ -13,12 +13,14 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let endpoint = Endpoint::default().timeout(std::time::Duration::from_secs(5));
+    let endpoint = Endpoint::default()
+        .timeout(std::time::Duration::from_secs(5))
+        .connection_timeout(std::time::Duration::from_secs(5));
     let exchange = ServiceBuilder::new()
         .layer(ExchangeLayer::default())
         .service(endpoint.connect());
 
-    let handles = ["BTC-USDT", "ETH-USDT"]
+    let handles = ["BTC-USDT", "ETH-USDT", "LTC-USDT", "DOGE-USDT"]
         .into_iter()
         .map(|inst| {
             let mut client = exchange.clone();
@@ -30,7 +32,9 @@ async fn main() -> anyhow::Result<()> {
                             while let Some(c) = stream.next().await {
                                 match c {
                                     Ok(c) => tracing::info!("{c}"),
-                                    Err(err) => tracing::error!("{err}"),
+                                    Err(err) => {
+                                        tracing::error!("{err}");
+                                    }
                                 }
                             }
                             tracing::warn!("stream is dead; reconnecting..");

@@ -10,6 +10,7 @@ const DEFAULT_BUFFER_SIZE: usize = 1024;
 pub struct Endpoint {
     pub(crate) uri: Uri,
     pub(crate) timeout: Option<std::time::Duration>,
+    pub(crate) connection_timeout: Option<std::time::Duration>,
     pub(crate) buffer_size: Option<usize>,
 }
 
@@ -17,6 +18,12 @@ impl Endpoint {
     /// Set request timeout. Default to `None`.
     pub fn timeout(mut self, duration: std::time::Duration) -> Self {
         self.timeout = Some(duration);
+        self
+    }
+
+    /// Set request timeout. Default to `None`.
+    pub fn connection_timeout(mut self, duration: std::time::Duration) -> Self {
+        self.connection_timeout = Some(duration);
         self
     }
 
@@ -32,6 +39,7 @@ impl Default for Endpoint {
         Self {
             uri: Uri::from_static("wss://ws.okex.com:8443/ws/v5/public"),
             timeout: None,
+            connection_timeout: None,
             buffer_size: None,
         }
     }

@@ -219,11 +219,16 @@ where
             let _ = last_server_stream_tx.send(Err(err)).await;
         }
     });
-    Streaming { sender, receiver }
+    Streaming {
+        close: false,
+        sender,
+        receiver,
+    }
 }
 
 pin_project! {
     struct Streaming<E> {
+    close: bool,
         #[pin]
         sender: UnboundedSender<ClientStream>,
         #[pin]
@@ -235,29 +240,41 @@ impl<E> Sink<ClientStream> for Streaming<E> {
     type Error = StreamingError<E>;
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project()
-            .sender
+        let this = self.project();
+        if *this.close {
+            return Poll::Ready(Err(StreamingError::BlokenStreamingLayer));
+        }
+        this.sender
             .poll_ready(cx)
             .map_err(|err| StreamingError::Sender(err))
     }
 
     fn start_send(self: Pin<&mut Self>, item: ClientStream) -> Result<(), Self::Error> {
-        self.project()
-            .sender
+        let this = self.project();
+        if *this.close {
+            return Err(StreamingError::BlokenStreamingLayer);
+        }
+        this.sender
             .start_send(item)
             .map_err(|err| StreamingError::Sender(err))
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project()
-            .sender
+        let this = self.project();
+        if *this.close {
+            return Poll::Ready(Err(StreamingError::BlokenStreamingLayer));
+        }
+        this.sender
             .poll_flush(cx)
             .map_err(|err| StreamingError::Sender(err))
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project()
-            .sender
+        let this = self.project();
+        if *this.close {
+            return Poll::Ready(Err(StreamingError::BlokenStreamingLayer));
+        }
+        this.sender
             .poll_close(cx)
             .map_err(|err| StreamingError::Sender(err))
     }
@@ -267,7 +284,21 @@ impl<E> Stream for Streaming<E> {
     type Item = Result<Result<ServerStream, Status>, StreamingError<E>>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        self.project().receiver.poll_next(cx)
+        let this = self.project();
+        match this.receiver.poll_next(cx) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(None) => {
+                trace!("streaming poll stream; stream end, close the transport");
+                *this.close = true;
+                Poll::Ready(None)
+            }
+            Poll::Ready(Some(Ok(stream))) => Poll::Ready(Some(Ok(stream))),
+            Poll::Ready(Some(Err(err))) => {
+                trace!("streaming poll stream; stream error, close the transport");
+                *this.close = true;
+                Poll::Ready(Some(Err(err)))
+            }
+        }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
