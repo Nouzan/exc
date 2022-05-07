@@ -1,6 +1,6 @@
 [package]
 name = "exc"
-version = "0.1.0-alpha.7"
+version = "0.1.0"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
