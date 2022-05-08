@@ -1,6 +1,6 @@
 [package]
 name = "exc-okx"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
@@ -28,7 +28,7 @@ version = "1.0.136"
 features = ["derive"]
 
 [dependencies.exc]
-version = "0.1.0"
+version = "0.1.1"
 path = "../exc"
 features = ["websocket", "driven"]
 
