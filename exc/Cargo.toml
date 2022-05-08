@@ -29,6 +29,7 @@ rust_decimal = "1.23.1"
 indicator = "0.2"
 derive_more = "0.99"
 async-stream = "0.3"
+num-traits = "0.2.15"
 
 [dependencies.tokio-tungstenite]
 version = "0.17.1"
