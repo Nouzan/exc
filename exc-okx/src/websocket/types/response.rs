@@ -36,12 +36,12 @@ pin_project! {
         pub(crate) id: usize,
         pub(crate) cb: Callback,
         #[pin]
-        pub(crate) inner: BoxStream<'static, ServerFrame>,
+        pub(crate) inner: BoxStream<'static, Result<ServerFrame, OkxError>>,
     }
 }
 
 impl Stream for ServerStream {
-    type Item = ServerFrame;
+    type Item = Result<ServerFrame, OkxError>;
 
     fn poll_next(
         self: std::pin::Pin<&mut Self>,
@@ -58,14 +58,16 @@ impl Stream for ServerStream {
 /// Okx websocket api response.
 pub enum Response {
     /// Streaming.
-    Streaming(BoxStream<'static, ServerFrame>),
+    Streaming(BoxStream<'static, Result<ServerFrame, OkxError>>),
     /// Error.
     Error(StatusKind),
 }
 
 impl Response {
     /// Convert into a result.
-    pub fn into_result(self) -> Result<BoxStream<'static, ServerFrame>, StatusKind> {
+    pub fn into_result(
+        self,
+    ) -> Result<BoxStream<'static, Result<ServerFrame, OkxError>>, StatusKind> {
         match self {
             Self::Streaming(stream) => Ok(stream),
             Self::Error(status) => Err(status),
@@ -82,7 +84,8 @@ impl TryFrom<Response> for BoxStream<'static, Result<Ticker, ExchangeError>> {
                 let stream = stream
                     .skip(1)
                     .flat_map(|frame| {
-                        let res: Result<Vec<Result<Ticker, OkxError>>, OkxError> = frame.try_into();
+                        let res: Result<Vec<Result<Ticker, OkxError>>, OkxError> =
+                            frame.and_then(|f| f.try_into());
                         match res {
                             Ok(tickers) => futures::stream::iter(tickers).left_stream(),
                             Err(err) => {

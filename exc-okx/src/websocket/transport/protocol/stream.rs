@@ -1,3 +1,4 @@
+use crate::error::OkxError;
 use crate::websocket::types::callback::Callback;
 use crate::websocket::types::frames::client::ClientFrame;
 use crate::websocket::types::frames::server::ServerFrame;
@@ -24,7 +25,7 @@ enum StreamState {
 }
 
 struct StreamContext {
-    sender: UnboundedSender<ServerFrame>,
+    sender: UnboundedSender<Result<ServerFrame, OkxError>>,
     stream: Option<ServerStream>,
     state: StreamState,
     tag: Option<String>,
@@ -44,6 +45,12 @@ impl StreamContext {
             state: StreamState::Idle,
             tag: None,
         }
+    }
+}
+
+impl Drop for StreamContext {
+    fn drop(&mut self) {
+        let _ = self.sender.send(Err(OkxError::StreamDropped));
     }
 }
 
@@ -182,12 +189,12 @@ where
                                     warn!("streaming worker; received a remote close frame: id={id}");
                     trace!("stream {id}; open -> remote-closed");
                                 }
-                                let _ = ctx.sender.send(frame).await;
+                                let _ = ctx.sender.send(Ok(frame)).await;
                             },
                             StreamState::LocalClosed => {
                                 if is_end_stream {
                                     ctx.state = StreamState::Closed;
-                                    let _ = ctx.sender.send(frame).await;
+                                    let _ = ctx.sender.send(Ok(frame)).await;
                                     if let Some(tag) = ctx.tag.take() {
                                         tags.remove(&tag);
                                     }
@@ -195,7 +202,7 @@ where
                     trace!("stream {id}; local-closed -> closed");
                                     streams.remove(&id);
                                 } else {
-                                    let _ = ctx.sender.send(frame).await;
+                                    let _ = ctx.sender.send(Ok(frame)).await;
                                 }
                             },
                             StreamState::RemoteClosed | StreamState::Closed => {

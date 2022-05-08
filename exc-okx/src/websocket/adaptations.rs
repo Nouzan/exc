@@ -34,16 +34,28 @@ impl Adaptor<SubscribeInstruments> for Request {
             Response::Streaming(stream) => {
                 let stream = stream
                     .skip(1)
-                    .filter_map(|frame| ready(frame.into_change()))
-                    .flat_map(|change| {
-                        iter(change.deserialize_data::<OkxInstrumentMeta>()).filter_map(|m| match m
-                        {
-                            Ok(m) => ready(Some(Ok(InstrumentMeta::from(m)))),
-                            Err(err) => {
-                                error!("deserialize instrument meta error: {err}, skipped.");
-                                ready(None)
-                            }
+                    .filter_map(|frame| {
+                        ready(match frame {
+                            Ok(frame) => frame.into_change().map(Ok),
+                            Err(err) => Some(Err(err)),
                         })
+                    })
+                    .flat_map(|change| match change {
+                        Ok(change) => iter(change.deserialize_data::<OkxInstrumentMeta>())
+                            .filter_map(|m| match m {
+                                Ok(m) => ready(Some(Ok(InstrumentMeta::from(m)))),
+                                Err(err) => {
+                                    error!("deserialize instrument meta error: {err}, skipped.");
+                                    ready(None)
+                                }
+                            })
+                            .left_stream(),
+                        Err(err) => {
+                            futures::stream::once(
+                                async move { Err(ExchangeError::Other(err.into())) },
+                            )
+                            .right_stream()
+                        }
                     })
                     .boxed();
                 Ok(stream)

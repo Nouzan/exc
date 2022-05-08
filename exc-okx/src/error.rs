@@ -9,6 +9,9 @@ use crate::websocket::types::{
 /// All OKX errors.
 #[derive(Debug, Error)]
 pub enum OkxError {
+    /// Stream dropped.
+    #[error("stream is dropped")]
+    StreamDropped,
     /// Websocket error.
     #[error("weboscket: {0}")]
     Websocket(#[from] tokio_tungstenite::tungstenite::Error),
