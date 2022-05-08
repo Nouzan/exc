@@ -8,7 +8,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
 
+mod instrument;
 mod ticker;
+
+pub use instrument::OkxInstrumentMeta;
 
 /// Message with code.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,6 +76,15 @@ pub struct Change {
 
     /// Data.
     pub data: Vec<Value>,
+}
+
+impl Change {
+    pub(crate) fn deserialize_data<T>(self) -> impl Iterator<Item = Result<T, serde_json::Error>>
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        self.data.into_iter().map(serde_json::from_value)
+    }
 }
 
 /// Okx weboscket event.

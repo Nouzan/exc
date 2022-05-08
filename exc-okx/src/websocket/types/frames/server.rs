@@ -1,4 +1,4 @@
-use crate::error::OkxError;
+use crate::{error::OkxError, websocket::types::messages::event::Change};
 
 use super::super::messages::event::{Event, ResponseKind};
 use exc::types::ticker::Ticker;
@@ -17,6 +17,13 @@ impl ServerFrame {
             self.inner,
             Event::Response(ResponseKind::Unsubscribe { arg: _ } | ResponseKind::Error(_))
         )
+    }
+
+    pub(crate) fn into_change(self) -> Option<Change> {
+        match self.inner {
+            Event::Response(_) => None,
+            Event::Change(change) => Some(change),
+        }
     }
 }
 

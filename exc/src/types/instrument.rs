@@ -1,3 +1,4 @@
+use derive_more::Display;
 use futures::stream::BoxStream;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -20,7 +21,11 @@ pub enum InstrumentMetaError<E> {
 }
 
 /// Instrument Meta.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Display)]
+#[display(bound = "Num: std::fmt::Display")]
+#[display(
+    fmt = "name={name} r={is_reversed} unit={unit} pt={price_tick} st={size_tick} min={min_size}"
+)]
 pub struct InstrumentMeta<Num> {
     /// Name.
     pub name: String,
