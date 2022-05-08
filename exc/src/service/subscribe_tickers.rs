@@ -1,6 +1,6 @@
 use tower::{util::Oneshot, ServiceExt};
 
-use crate::types::subscriptions::SubscribeTickers;
+use crate::types::ticker::SubscribeTickers;
 
 use super::{ExcMut, ExchangeService};
 
