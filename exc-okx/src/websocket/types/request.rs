@@ -1,7 +1,7 @@
 use super::{callback::Callback, frames::client::ClientFrame, messages::Args};
 use crate::websocket::types::messages::request::WsRequest;
 use async_stream::stream;
-use exc::{types::subscriptions::SubscribeTickers, ExchangeError};
+use exc::{types::ticker::SubscribeTickers, ExchangeError};
 use futures::stream::{BoxStream, StreamExt};
 use std::collections::BTreeMap;
 
