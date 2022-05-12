@@ -1,28 +1,31 @@
 use super::{channel::Channel, connection::Connection};
 use crate::error::OkxError;
 use http::Uri;
+use std::time::Duration;
 use tower::{buffer::Buffer, timeout::Timeout, ServiceExt};
 
 const DEFAULT_BUFFER_SIZE: usize = 1024;
+const DEFAULT_PING_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// Okx websocket endpoint.
 /// Builder for channels.
 pub struct Endpoint {
     pub(crate) uri: Uri,
-    pub(crate) request_timeout: Option<std::time::Duration>,
-    pub(crate) connection_timeout: Option<std::time::Duration>,
+    pub(crate) request_timeout: Option<Duration>,
+    pub(crate) connection_timeout: Option<Duration>,
+    pub(crate) ping_timeout: Duration,
     pub(crate) buffer_size: Option<usize>,
 }
 
 impl Endpoint {
     /// Set request timeout. Default to `None`.
-    pub fn request_timeout(mut self, duration: std::time::Duration) -> Self {
+    pub fn request_timeout(mut self, duration: Duration) -> Self {
         self.request_timeout = Some(duration);
         self
     }
 
     /// Set request timeout. Default to `None`.
-    pub fn connection_timeout(mut self, duration: std::time::Duration) -> Self {
+    pub fn connection_timeout(mut self, duration: Duration) -> Self {
         self.connection_timeout = Some(duration);
         self
     }
@@ -30,6 +33,12 @@ impl Endpoint {
     /// Set buffer size. Default to `DEFAULT_BUFFER_SIZE`.
     pub fn buffer_size(mut self, buffer_size: usize) -> Self {
         self.buffer_size = Some(buffer_size);
+        self
+    }
+
+    /// Set ping timeout. Default to `DEFAULT_PING_TIMEOUT`.
+    pub fn ping_timeout(mut self, duration: Duration) -> Self {
+        self.ping_timeout = duration;
         self
     }
 }
@@ -41,6 +50,7 @@ impl Default for Endpoint {
             request_timeout: None,
             connection_timeout: None,
             buffer_size: None,
+            ping_timeout: DEFAULT_PING_TIMEOUT,
         }
     }
 }

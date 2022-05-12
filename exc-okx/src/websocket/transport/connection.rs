@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::endpoint::Endpoint;
 use super::protocol::Protocol;
 use crate::error::OkxError;
@@ -13,11 +15,15 @@ use tower::{Service, ServiceBuilder, ServiceExt};
 /// Create a connection to okx websocket api.
 pub(crate) struct Connect {
     inner: WsConnector,
+    ping_timeout: Duration,
 }
 
 impl Connect {
-    fn new(inner: WsConnector) -> Self {
-        Self { inner }
+    fn new(inner: WsConnector, ping_timeout: Duration) -> Self {
+        Self {
+            inner,
+            ping_timeout,
+        }
     }
 }
 
@@ -35,9 +41,10 @@ impl tower::Service<Uri> for Connect {
 
     fn call(&mut self, req: Uri) -> Self::Future {
         let conn = self.inner.call(req);
+        let ping_timeout = self.ping_timeout;
         async move {
             let conn = conn.await?;
-            let svc = Protocol::init(conn)
+            let svc = Protocol::init(conn, ping_timeout)
                 .await
                 .map_err(|err| OkxError::Protocol(err.into()))?
                 .map_err(|err| OkxError::Protocol(err.into()))
@@ -58,7 +65,7 @@ impl Connection {
     pub(crate) fn new(endpoint: &Endpoint) -> Self {
         let connector = ServiceBuilder::default()
             .option_layer(endpoint.connection_timeout.map(TimeoutLayer::new))
-            .service(Connect::new(WsConnector::default()))
+            .service(Connect::new(WsConnector::default(), endpoint.ping_timeout))
             .boxed();
         let conn = Reconnect::new::<<Connect as Service<Uri>>::Response, Uri>(
             connector,

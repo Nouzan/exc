@@ -27,13 +27,14 @@ pub enum PingPongError {
 
 pub(super) fn layer<T, E>(
     transport: T,
+    ping_timeout: Duration,
 ) -> impl Sink<String, Error = PingPongError> + Stream<Item = Result<String, PingPongError>>
 where
     T: Stream<Item = Result<String, E>>,
     T: Sink<String, Error = E>,
     E: Into<anyhow::Error>,
 {
-    PingPong::new(transport)
+    PingPong::new(transport, ping_timeout)
 }
 
 #[derive(Clone, Copy)]
@@ -47,6 +48,7 @@ enum PingState {
 
 pin_project! {
     pub(super) struct PingPong<S> {
+    timeout: Duration,
         #[pin]
         inner: S,
         #[pin]
@@ -59,14 +61,14 @@ pin_project! {
 }
 
 impl<S> PingPong<S> {
-    const MESSAGE_TIMEOUT: Duration = Duration::from_secs(20);
     const PING: &'static str = "ping";
 
-    fn new(inner: S) -> Self {
-        let next = Instant::now() + Self::MESSAGE_TIMEOUT;
+    fn new(inner: S, timeout: Duration) -> Self {
+        let next = Instant::now() + timeout;
         let message_deadline = tokio::time::sleep_until(next);
         let ping_deadline = tokio::time::sleep_until(next);
         Self {
+            timeout,
             inner,
             message_deadline,
             ping_deadline,
@@ -122,13 +124,14 @@ where
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
+        let timeout = *this.timeout;
         if *this.close {
             return Poll::Ready(None);
         }
         while let Poll::Ready(s) = this.inner.as_mut().poll_next(cx) {
             match s {
                 Some(Ok(s)) => {
-                    let next = Instant::now() + Self::MESSAGE_TIMEOUT;
+                    let next = Instant::now() + timeout;
                     this.message_deadline.as_mut().reset(next);
                     *this.state = PingState::Idle;
                     trace!("ping pong; timer reset");
@@ -153,7 +156,7 @@ where
                 PingState::Idle => {
                     ready!(this.message_deadline.as_mut().poll(cx));
                     trace!("ping pong; need ping");
-                    let next = Instant::now() + Self::MESSAGE_TIMEOUT;
+                    let next = Instant::now() + timeout;
                     this.ping_deadline.as_mut().reset(next);
                     *this.state = PingState::Ping;
                 }

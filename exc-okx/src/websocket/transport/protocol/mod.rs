@@ -6,8 +6,11 @@ use atomic_waker::AtomicWaker;
 use exc::transport::websocket::WsStream;
 use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, StreamExt, TryStreamExt};
 use pin_project_lite::pin_project;
-use std::task::{Context, Poll};
 use std::{pin::Pin, sync::Arc};
+use std::{
+    task::{Context, Poll},
+    time::Duration,
+};
 use thiserror::Error;
 use tokio_tower::multiplex::{Client, TagStore};
 use tokio_tungstenite::tungstenite::Message;
@@ -66,7 +69,11 @@ pin_project! {
 }
 
 impl Transport {
-    pub(crate) fn new<S, Err>(transport: S, waker: Arc<AtomicWaker>) -> Transport
+    pub(crate) fn new<S, Err>(
+        transport: S,
+        ping_timeout: Duration,
+        waker: Arc<AtomicWaker>,
+    ) -> Transport
     where
         S: 'static + Send,
         Err: 'static,
@@ -74,7 +81,7 @@ impl Transport {
         S: Stream<Item = Result<String, Err>>,
         Err: Into<anyhow::Error>,
     {
-        let transport = ping_pong::layer(transport);
+        let transport = ping_pong::layer(transport, ping_timeout);
         let transport = message::layer(transport);
         let transport = frame::layer(transport);
         let transport = stream::layer(transport, waker);
@@ -152,7 +159,10 @@ pub struct Protocol {
 }
 
 impl Protocol {
-    pub(crate) async fn init(websocket: WsStream) -> Result<Self, ProtocolError> {
+    pub(crate) async fn init(
+        websocket: WsStream,
+        ping_timeout: Duration,
+    ) -> Result<Self, ProtocolError> {
         let transport = websocket
             .with(|msg: String| async move { Ok(Message::Text(msg)) })
             .filter_map(|msg| async move {
@@ -165,7 +175,7 @@ impl Protocol {
                 }
             });
         let waker = Arc::new(AtomicWaker::default());
-        let transport = Transport::new(transport, waker.clone());
+        let transport = Transport::new(transport, ping_timeout, waker.clone());
         Ok(Self {
             waker,
             inner: Client::with_error_handler(transport, |e| {

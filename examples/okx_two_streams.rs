@@ -18,7 +18,9 @@ async fn main() -> anyhow::Result<()> {
         .with(fmt)
         .init();
 
-    let endpoint = Endpoint::default().connection_timeout(std::time::Duration::from_secs(5));
+    let endpoint = Endpoint::default()
+        .ping_timeout(std::time::Duration::from_secs(5))
+        .connection_timeout(std::time::Duration::from_secs(5));
     let exchange = ServiceBuilder::new()
         .timeout(std::time::Duration::from_secs(5))
         .layer(ExchangeLayer::default())
