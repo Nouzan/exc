@@ -35,7 +35,9 @@ impl tower::Service<Uri> for WsConnector {
 
     fn call(&mut self, req: Uri) -> Self::Future {
         async move {
+            tracing::trace!("ws connecting {req}");
             let (conn, _) = connect_async(req).await?;
+            tracing::trace!("ws connected");
             Ok(conn)
         }
         .boxed()

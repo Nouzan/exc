@@ -1,3 +1,5 @@
+use std::ops::Bound;
+
 use exc::{
     transport::http::endpoint::Endpoint,
     types::candle::{Period, QueryCandles},
@@ -23,11 +25,11 @@ async fn main() -> anyhow::Result<()> {
         .layer(OkxHttpApiLayer::default().retry_on_error())
         .service(Endpoint::default().connect_https());
 
-    let query = QueryCandles::new(
-        "BTC-USDT",
-        Period::minutes(offset!(+8), 1),
-        datetime!(2020-04-15 00:00:00 +08:00)..=datetime!(2021-04-16 00:00:00 +08:00),
+    let range = (
+        Bound::Excluded(datetime!(2020-04-15 00:00:00 +08:00)),
+        Bound::Excluded(datetime!(2020-04-15 00:10:00 +08:00)),
     );
+    let query = QueryCandles::new("BTC-USDT", Period::minutes(offset!(+8), 1), range);
     let mut stream = (&mut svc).oneshot(query).await?;
     while let Some(c) = stream.next().await {
         match c {

@@ -2,15 +2,20 @@ use exc::{ExchangeLayer, SubscribeTickersService};
 use exc_okx::websocket::Endpoint;
 use futures::StreamExt;
 use tower::ServiceBuilder;
+use tracing_subscriber::prelude::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::fmt()
+    let fmt = tracing_subscriber::fmt::layer()
         .with_writer(std::io::stderr)
-        .with_env_filter(tracing_subscriber::EnvFilter::new(
+        .with_filter(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
                 .unwrap_or_else(|_| "exc_okx=debug,okx_two_streams=debug".into()),
-        ))
+        ));
+    let console = console_subscriber::spawn();
+    tracing_subscriber::registry()
+        .with(console)
+        .with(fmt)
         .init();
 
     let endpoint = Endpoint::default().connection_timeout(std::time::Duration::from_secs(5));

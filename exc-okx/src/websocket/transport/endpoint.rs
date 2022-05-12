@@ -55,7 +55,17 @@ impl Endpoint {
             None => Connection::new(self).boxed(),
         };
         let buffer_size = self.buffer_size.unwrap_or(DEFAULT_BUFFER_SIZE);
-        let svc = Buffer::new(svc, buffer_size);
+        let (svc, worker) = Buffer::pair(svc, buffer_size);
+        let handle = tokio::spawn(async move {
+            worker.await;
+            error!("buffer worker is dead");
+        });
+        tokio::spawn(async move {
+            if let Err(err) = handle.await {
+                error!("buffer worker task error: {err}");
+            }
+        });
+
         Channel { svc }
     }
 }

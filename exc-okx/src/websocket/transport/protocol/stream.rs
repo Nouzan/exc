@@ -5,6 +5,7 @@ use crate::websocket::types::frames::server::ServerFrame;
 use crate::websocket::types::request::ClientStream;
 use crate::websocket::types::response::Status;
 use crate::websocket::types::response::{ServerStream, StatusKind};
+use atomic_waker::AtomicWaker;
 use futures::channel::mpsc::{self, SendError, UnboundedReceiver, UnboundedSender};
 use futures::SinkExt;
 use futures::{Sink, Stream, StreamExt};
@@ -12,6 +13,7 @@ use pin_project_lite::pin_project;
 use std::collections::hash_map::RandomState;
 use std::collections::{BTreeMap, HashSet};
 use std::pin::Pin;
+use std::sync::Arc;
 use std::task::{Context, Poll};
 use thiserror::Error;
 
@@ -76,6 +78,7 @@ pub enum StreamingError<E> {
 
 pub(super) fn layer<T, E>(
     transport: T,
+    waker: Arc<AtomicWaker>,
 ) -> impl Sink<ClientStream, Error = StreamingError<E>>
        + Stream<Item = Result<Result<ServerStream, Status>, StreamingError<E>>>
 where
@@ -176,6 +179,7 @@ where
                 }
                 Some(server_frame) = rx.next() => {
                     let frame = server_frame?;
+            trace!("received a server frame: {frame:?}");
                     let id = frame.stream_id;
                     let is_end_stream = frame.is_end_stream();
                     if let Some(ctx) = streams.get_mut(&id) {
@@ -224,10 +228,11 @@ where
         if let Err(err) = worker.await {
             error!("streaming worker: {err}");
             let _ = last_server_stream_tx.send(Err(err)).await;
+            trace!("streaming worker finished");
         }
     });
     Streaming {
-        close: false,
+        waker,
         sender,
         receiver,
     }
@@ -235,7 +240,7 @@ where
 
 pin_project! {
     struct Streaming<E> {
-    close: bool,
+    waker: Arc<AtomicWaker>,
         #[pin]
         sender: UnboundedSender<ClientStream>,
         #[pin]
@@ -248,42 +253,34 @@ impl<E> Sink<ClientStream> for Streaming<E> {
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         let this = self.project();
-        if *this.close {
-            return Poll::Ready(Err(StreamingError::BlokenStreamingLayer));
-        }
-        this.sender
-            .poll_ready(cx)
-            .map_err(|err| StreamingError::Sender(err))
+        this.sender.poll_ready(cx).map_err(|err| {
+            this.waker.wake();
+            StreamingError::Sender(err)
+        })
     }
 
     fn start_send(self: Pin<&mut Self>, item: ClientStream) -> Result<(), Self::Error> {
         let this = self.project();
-        if *this.close {
-            return Err(StreamingError::BlokenStreamingLayer);
-        }
-        this.sender
-            .start_send(item)
-            .map_err(|err| StreamingError::Sender(err))
+        this.sender.start_send(item).map_err(|err| {
+            this.waker.wake();
+            StreamingError::Sender(err)
+        })
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         let this = self.project();
-        if *this.close {
-            return Poll::Ready(Err(StreamingError::BlokenStreamingLayer));
-        }
-        this.sender
-            .poll_flush(cx)
-            .map_err(|err| StreamingError::Sender(err))
+        this.sender.poll_flush(cx).map_err(|err| {
+            this.waker.wake();
+            StreamingError::Sender(err)
+        })
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         let this = self.project();
-        if *this.close {
-            return Poll::Ready(Err(StreamingError::BlokenStreamingLayer));
-        }
-        this.sender
-            .poll_close(cx)
-            .map_err(|err| StreamingError::Sender(err))
+        this.sender.poll_close(cx).map_err(|err| {
+            this.waker.wake();
+            StreamingError::Sender(err)
+        })
     }
 }
 
@@ -295,14 +292,12 @@ impl<E> Stream for Streaming<E> {
         match this.receiver.poll_next(cx) {
             Poll::Pending => Poll::Pending,
             Poll::Ready(None) => {
-                trace!("streaming poll stream; stream end, close the transport");
-                *this.close = true;
+                trace!("streaming poll stream; stream end.");
                 Poll::Ready(None)
             }
             Poll::Ready(Some(Ok(stream))) => Poll::Ready(Some(Ok(stream))),
             Poll::Ready(Some(Err(err))) => {
-                trace!("streaming poll stream; stream error, close the transport");
-                *this.close = true;
+                trace!("streaming poll stream; stream error.");
                 Poll::Ready(Some(Err(err)))
             }
         }

@@ -2,11 +2,12 @@ use crate::websocket::types::{
     request::{ClientStream, Request},
     response::{Response, ServerStream, Status, StatusKind},
 };
+use atomic_waker::AtomicWaker;
 use exc::transport::websocket::WsStream;
 use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, StreamExt, TryStreamExt};
 use pin_project_lite::pin_project;
-use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::{pin::Pin, sync::Arc};
 use thiserror::Error;
 use tokio_tower::multiplex::{Client, TagStore};
 use tokio_tungstenite::tungstenite::Message;
@@ -65,7 +66,7 @@ pin_project! {
 }
 
 impl Transport {
-    pub(crate) fn new<S, Err>(transport: S) -> Transport
+    pub(crate) fn new<S, Err>(transport: S, waker: Arc<AtomicWaker>) -> Transport
     where
         S: 'static + Send,
         Err: 'static,
@@ -76,7 +77,7 @@ impl Transport {
         let transport = ping_pong::layer(transport);
         let transport = message::layer(transport);
         let transport = frame::layer(transport);
-        let transport = stream::layer(transport);
+        let transport = stream::layer(transport, waker);
         let inner = transport
             .sink_map_err(ProtocolError::from)
             .map_err(ProtocolError::from);
@@ -146,6 +147,7 @@ impl From<tokio_tower::Error<Transport, Req>> for ProtocolError {
 
 /// Okx websocket api protocol.
 pub struct Protocol {
+    waker: Arc<AtomicWaker>,
     inner: Client<Transport, ProtocolError, Req>,
 }
 
@@ -162,9 +164,13 @@ impl Protocol {
                     Err(err) => Some(Err(err)),
                 }
             });
-        let transport = Transport::new(transport);
+        let waker = Arc::new(AtomicWaker::default());
+        let transport = Transport::new(transport, waker.clone());
         Ok(Self {
-            inner: Client::new(transport),
+            waker,
+            inner: Client::with_error_handler(transport, |e| {
+                tracing::error!("protocol error: {e}");
+            }),
         })
     }
 }
@@ -175,6 +181,8 @@ impl Service<Request> for Protocol {
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        // wake up when the transport is dead.
+        self.waker.register(cx.waker());
         self.inner.poll_ready(cx)
     }
 
