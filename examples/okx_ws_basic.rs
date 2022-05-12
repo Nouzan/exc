@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let channel = Endpoint::default()
-        .timeout(std::time::Duration::from_secs(5))
+        .request_timeout(std::time::Duration::from_secs(5))
         .connect();
     let mut client = Exchange::new(channel);
     loop {

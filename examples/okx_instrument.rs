@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
         .layer(ExchangeLayer::<Request>::default())
         .service(
             Endpoint::default()
-                .timeout(Duration::from_secs(5))
+                .request_timeout(Duration::from_secs(5))
                 .connection_timeout(Duration::from_secs(5))
                 .connect(),
         );

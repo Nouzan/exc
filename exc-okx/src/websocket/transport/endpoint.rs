@@ -9,15 +9,15 @@ const DEFAULT_BUFFER_SIZE: usize = 1024;
 /// Builder for channels.
 pub struct Endpoint {
     pub(crate) uri: Uri,
-    pub(crate) timeout: Option<std::time::Duration>,
+    pub(crate) request_timeout: Option<std::time::Duration>,
     pub(crate) connection_timeout: Option<std::time::Duration>,
     pub(crate) buffer_size: Option<usize>,
 }
 
 impl Endpoint {
     /// Set request timeout. Default to `None`.
-    pub fn timeout(mut self, duration: std::time::Duration) -> Self {
-        self.timeout = Some(duration);
+    pub fn request_timeout(mut self, duration: std::time::Duration) -> Self {
+        self.request_timeout = Some(duration);
         self
     }
 
@@ -38,7 +38,7 @@ impl Default for Endpoint {
     fn default() -> Self {
         Self {
             uri: Uri::from_static("wss://ws.okex.com:8443/ws/v5/public"),
-            timeout: None,
+            request_timeout: None,
             connection_timeout: None,
             buffer_size: None,
         }
@@ -48,7 +48,7 @@ impl Default for Endpoint {
 impl Endpoint {
     /// Create a okx websocket channel.
     pub fn connect(&self) -> Channel {
-        let svc = match self.timeout {
+        let svc = match self.request_timeout {
             Some(timeout) => Timeout::new(Connection::new(self), timeout)
                 .map_err(OkxError::Layer)
                 .boxed(),
