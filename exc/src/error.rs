@@ -1,5 +1,13 @@
 use thiserror::Error;
 
+/// Instrument Errors.
+#[derive(Debug, Error)]
+pub enum InstrumentError {
+    /// Instrument does not exist.
+    #[error("instrument does not exist")]
+    NotFound,
+}
+
 /// Exchange Errors.
 #[derive(Debug, Error)]
 pub enum ExchangeError {
@@ -13,4 +21,23 @@ pub enum ExchangeError {
     /// All other errors.
     #[error(transparent)]
     Other(#[from] anyhow::Error),
+    /// All other api errors.
+    #[error("api: {0}")]
+    Api(anyhow::Error),
+    /// Unavailable.
+    #[error("unavailable: {0}")]
+    Unavailable(anyhow::Error),
+    /// Instrument errors.
+    #[error("instrument: {0}")]
+    Instrument(InstrumentError),
+    /// Rate limited.
+    #[error("rate limited: {0}")]
+    RateLimited(anyhow::Error),
+}
+
+impl ExchangeError {
+    /// Is temporary.
+    pub fn is_temporary(&self) -> bool {
+        matches!(self, Self::RateLimited(_) | Self::Unavailable(_))
+    }
 }

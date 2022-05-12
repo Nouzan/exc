@@ -1,8 +1,7 @@
-use std::ops::RangeBounds;
-
 use exc::types::candle::{Candle, QueryLastCandles};
 use exc::types::Adaptor;
 use exc::ExchangeError;
+use std::ops::RangeBounds;
 
 use crate::http::types::request::history_candles::HistoryCandles;
 use crate::http::types::request::Get;
@@ -40,34 +39,25 @@ impl Adaptor<QueryLastCandles> for HttpRequest {
     fn into_response(
         resp: Self::Response,
     ) -> Result<<QueryLastCandles as exc::types::Request>::Response, exc::ExchangeError> {
-        match resp.code.as_str() {
-            "0" => {
-                let stream = stream! {
-                        for data in resp.data {
-                trace!("received a data: {data:?}");
-                    if let ResponseData::Candle(c) = data {
-                        if let Some(ts) = millis_to_ts(c.0) {
-                        yield Ok(Candle {
-                            ts,
-                            open: c.1,
-                            high: c.2,
-                            low: c.3,
-                            close: c.4,
-                            volume: c.5,
-                        });
-                        } else {
-                        yield Err(ExchangeError::Other(anyhow::anyhow!("cannot parse ts")));
-                        }
-                    }
-                    }
-                        };
-                Ok(stream.boxed())
+        let stream = stream! {
+                for data in resp.data {
+        trace!("received a data: {data:?}");
+            if let ResponseData::Candle(c) = data {
+                if let Some(ts) = millis_to_ts(c.0) {
+                yield Ok(Candle {
+                    ts,
+                    open: c.1,
+                    high: c.2,
+                    low: c.3,
+                    close: c.4,
+                    volume: c.5,
+                });
+                } else {
+                yield Err(ExchangeError::Other(anyhow::anyhow!("cannot parse ts")));
+                }
             }
-            _ => Err(ExchangeError::Other(anyhow::anyhow!(
-                "code={}, msg={}",
-                resp.code,
-                resp.msg
-            ))),
-        }
+            }
+                };
+        Ok(stream.boxed())
     }
 }
