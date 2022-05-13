@@ -12,7 +12,7 @@ pub enum InstrumentError {
 #[derive(Debug, Error)]
 pub enum ExchangeError {
     /// Error from layers.
-    #[error(transparent)]
+    #[error("layer: {0}")]
     Layer(#[from] Box<dyn std::error::Error + Send + Sync>),
     #[cfg(feature = "http")]
     /// Http errors.
@@ -39,5 +39,16 @@ impl ExchangeError {
     /// Is temporary.
     pub fn is_temporary(&self) -> bool {
         matches!(self, Self::RateLimited(_) | Self::Unavailable(_))
+    }
+
+    /// Flatten.
+    pub fn flatten(self) -> Self {
+        match self {
+            Self::Layer(err) => match err.downcast::<Self>() {
+                Ok(err) => (*err).flatten(),
+                Err(err) => Self::Other(anyhow::anyhow!("{err}")),
+            },
+            err => err,
+        }
     }
 }

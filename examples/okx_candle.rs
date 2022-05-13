@@ -23,13 +23,14 @@ async fn main() -> anyhow::Result<()> {
         .rate_limit(19, std::time::Duration::from_secs(2))
         .layer(ExchangeLayer::default())
         .layer(OkxHttpApiLayer::default().retry_on(ExchangeError::is_temporary))
-        .service(Endpoint::default().connect_https());
+        .service(Endpoint::default().connect_https())
+        .map_err(ExchangeError::flatten);
 
     let range = (
         Bound::Excluded(datetime!(2020-04-15 00:00:00 +08:00)),
         Bound::Excluded(datetime!(2021-04-15 00:10:00 +08:00)),
     );
-    let query = QueryCandles::new("BTC-USDT", Period::minutes(offset!(+8), 1), range);
+    let query = QueryCandles::new("BTC_USDT", Period::minutes(offset!(+8), 1), range);
     let mut stream = (&mut svc).oneshot(query).await?;
     while let Some(c) = stream.next().await {
         match c {
