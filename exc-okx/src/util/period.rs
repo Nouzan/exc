@@ -1,6 +1,6 @@
 use exc::types::candle::{Period, PeriodKind};
 use std::time::Duration;
-use time::macros::offset;
+use time::{macros::offset, UtcOffset};
 
 const W1: Duration = Duration::from_secs(7 * 24 * 3600);
 const D3: Duration = Duration::from_secs(3 * 24 * 3600);
@@ -17,11 +17,13 @@ const M5: Duration = Duration::from_secs(300);
 const M3: Duration = Duration::from_secs(180);
 const M1: Duration = Duration::from_secs(60);
 
+const HK: UtcOffset = offset!(+8);
+
 /// Period to bar.
 pub fn period_to_bar(period: &Period) -> Option<&'static str> {
     let utc_offset = period.utc_offset();
     let is_utc = utc_offset.is_utc();
-    let is_hk = utc_offset == offset!(+8);
+    let is_hk = utc_offset == HK;
 
     match period.kind() {
         PeriodKind::Year => {
@@ -107,5 +109,34 @@ pub fn period_to_bar(period: &Period) -> Option<&'static str> {
             M1 => Some("1m"),
             _ => None,
         },
+    }
+}
+
+/// Bar to period.
+pub fn bar_to_period(bar: &str) -> Option<Period> {
+    match bar {
+        "1m" => Some(Period::minutes(HK, 1)),
+        "3m" => Some(Period::minutes(HK, 3)),
+        "5m" => Some(Period::minutes(HK, 5)),
+        "15m" => Some(Period::minutes(HK, 15)),
+        "30m" => Some(Period::minutes(HK, 30)),
+        "1H" => Some(Period::hours(HK, 1)),
+        "2H" => Some(Period::hours(HK, 2)),
+        "4H" => Some(Period::hours(HK, 4)),
+        "6H" => Some(Period::hours(HK, 6)),
+        "6Hutc" => Some(Period::hours(UtcOffset::UTC, 6)),
+        "12H" => Some(Period::hours(HK, 12)),
+        "12Hutc" => Some(Period::hours(UtcOffset::UTC, 12)),
+        "1D" => Some(Period::day(HK)),
+        "1Dutc" => Some(Period::day(UtcOffset::UTC)),
+        "3D" => Some(Period::days(HK, 3)),
+        "3Dutc" => Some(Period::days(UtcOffset::UTC, 3)),
+        "1W" => Some(Period::weeks(HK, 1)),
+        "1Wutc" => Some(Period::weeks(UtcOffset::UTC, 1)),
+        "1M" => Some(Period::month(HK)),
+        "1Mutc" => Some(Period::month(UtcOffset::UTC)),
+        "1Y" => Some(Period::year(HK)),
+        "1Yutc" => Some(Period::year(UtcOffset::UTC)),
+        _ => None,
     }
 }
