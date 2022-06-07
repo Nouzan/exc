@@ -3,6 +3,7 @@ use rust_decimal::Decimal;
 
 /// A [`Place`] describes how exchange build an order, i.e. the order builder.
 /// The sign of `size` representants the side of the order.
+#[derive(Debug, Clone, Copy)]
 pub struct Place {
     /// Size.
     pub size: Decimal,

@@ -30,6 +30,7 @@ indicator = "0.2"
 derive_more = "0.99"
 async-stream = "0.3"
 num-traits = "0.2.15"
+positions = "0.1"
 
 [dependencies.tokio-tungstenite]
 version = "0.17.1"
