@@ -17,8 +17,6 @@ pub enum OrderKind {
 /// Order Status.
 #[derive(Debug, Clone, Copy)]
 pub enum OrderStatus {
-    /// Placing.
-    Placing,
     /// Pending.
     Pending,
     /// Finished.
@@ -29,6 +27,15 @@ pub enum OrderStatus {
 pub struct OrderState<Rep> {
     filled: Position<Rep, Decimal>,
     status: OrderStatus,
+}
+
+impl<Rep: Representation> Default for OrderState<Rep> {
+    fn default() -> Self {
+        Self {
+            filled: Position::default(),
+            status: OrderStatus::Pending,
+        }
+    }
 }
 
 impl<Rep: Representation> fmt::Debug for OrderState<Rep> {
@@ -45,6 +52,23 @@ pub struct Order<Rep> {
     id: OrderId,
     target: Place,
     state: OrderState<Rep>,
+}
+
+impl<Rep: Representation> Order<Rep> {
+    /// Create a new [`Order`].
+    pub fn new(id: OrderId, target: Place) -> Self {
+        Self {
+            id,
+            target,
+            state: OrderState::default(),
+        }
+    }
+
+    /// Change the state.
+    pub fn with_state(&mut self, state: OrderState<Rep>) -> &mut Self {
+        self.state = state;
+        self
+    }
 }
 
 impl<Rep: Representation> fmt::Debug for Order<Rep> {
