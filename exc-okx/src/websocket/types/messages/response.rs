@@ -37,29 +37,29 @@ impl WsResponse {
         self.status.as_ref()
     }
 
-    /// Get response tag.
-    pub fn tag(&self) -> String {
-        match &self.id {
-            Either::Left(id) => id.clone(),
-            Either::Right(args) => match &self.kind {
-                WsResponseKind::Streaming(_) => {
-                    format!("sub:{args}")
-                }
-                WsResponseKind::Unsubscribe => {
-                    format!("unsub:{args}")
-                }
-                _ => {
-                    format!("unary:{args}")
-                }
-            },
-        }
-    }
+    // /// Get response tag.
+    // pub fn tag(&self) -> String {
+    //     match &self.id {
+    //         Either::Left(id) => id.clone(),
+    //         Either::Right(args) => match &self.kind {
+    //             WsResponseKind::Streaming(_) => {
+    //                 format!("sub:{args}")
+    //             }
+    //             WsResponseKind::Unsubscribe => {
+    //                 format!("unsub:{args}")
+    //             }
+    //             _ => {
+    //                 format!("unary:{args}")
+    //             }
+    //         },
+    //     }
+    // }
 
-    /// Convert into a stream.
-    pub fn into_stream(self) -> BoxStream<'static, Change> {
-        match self.kind {
-            WsResponseKind::Streaming(s) => UnboundedReceiverStream::new(s.0).boxed(),
-            WsResponseKind::Unary | WsResponseKind::Unsubscribe => futures::stream::empty().boxed(),
-        }
-    }
+    // /// Convert into a stream.
+    // pub fn into_stream(self) -> BoxStream<'static, Change> {
+    //     match self.kind {
+    //         WsResponseKind::Streaming(s) => UnboundedReceiverStream::new(s.0).boxed(),
+    //         WsResponseKind::Unary | WsResponseKind::Unsubscribe => futures::stream::empty().boxed(),
+    //     }
+    // }
 }

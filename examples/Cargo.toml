@@ -16,6 +16,10 @@ name = "okx-http-basic"
 path = "okx_http_basic.rs"
 
 [[bin]]
+name = "okx-ws-login"
+path = "okx_ws_login.rs"
+
+[[bin]]
 name = "okx-two-streams"
 path = "okx_two_streams.rs"
 

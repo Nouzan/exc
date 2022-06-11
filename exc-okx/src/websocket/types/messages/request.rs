@@ -1,5 +1,6 @@
 use super::Args;
 use crate::error::OkxError;
+use crate::key::{Key, Signature};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
@@ -13,8 +14,8 @@ pub enum Op {
     Subscribe,
     /// Unsubsribe.
     Unsubscribe,
-    // /// Login.
-    // Login,
+    /// Login.
+    Login,
 }
 
 /// Okx websocket request messagee.
@@ -45,6 +46,8 @@ pub enum WsRequest {
     Subscribe(Args),
     /// Unsubscribe.
     Unsubscribe(Args),
+    /// Login.
+    Login(Args),
 }
 
 impl fmt::Display for WsRequest {
@@ -55,6 +58,9 @@ impl fmt::Display for WsRequest {
             }
             Self::Unsubscribe(args) => {
                 write!(f, "unsub:{args}")
+            }
+            Self::Login(_args) => {
+                write!(f, "login")
             }
         }
     }
@@ -76,6 +82,16 @@ impl WsRequest {
             ("instId".to_string(), inst.to_string()),
         ])))
     }
+
+    /// Login request.
+    pub(crate) fn login(key: Key, signature: Signature) -> Self {
+        Self::Login(Args(BTreeMap::from([
+            ("apiKey".to_string(), key.apikey),
+            ("passphrase".to_string(), key.passphrase),
+            ("timestamp".to_string(), signature.timestamp),
+            ("sign".to_string(), signature.signature),
+        ])))
+    }
 }
 
 impl From<WsRequest> for WsRequestMessage {
@@ -89,6 +105,11 @@ impl From<WsRequest> for WsRequestMessage {
             WsRequest::Unsubscribe(args) => Self {
                 id: None,
                 op: Op::Unsubscribe,
+                args: vec![args],
+            },
+            WsRequest::Login(args) => Self {
+                id: None,
+                op: Op::Login,
                 args: vec![args],
             },
         }

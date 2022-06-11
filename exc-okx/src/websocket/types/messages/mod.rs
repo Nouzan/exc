@@ -4,8 +4,8 @@ pub mod event;
 /// Request.
 pub mod request;
 
-/// Response.
-pub mod response;
+// /// Response.
+// pub mod response;
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;

@@ -2,7 +2,7 @@ use crate::error::OkxError;
 
 use super::{callback::Callback, frames::server::ServerFrame};
 use exc::{types::ticker::Ticker, ExchangeError};
-use futures::{stream::BoxStream, Stream, StreamExt, TryStreamExt};
+use futures::{future::BoxFuture, stream::BoxStream, FutureExt, Stream, StreamExt, TryStreamExt};
 use pin_project_lite::pin_project;
 use thiserror::Error;
 
@@ -20,6 +20,10 @@ pub enum StatusKind {
     /// Empty response.
     #[error("empty response")]
     EmptyResponse,
+
+    /// Unexpected response type.
+    #[error("unexpected response type")]
+    UnexpectedResponseType,
 }
 
 /// Responsee error status.
@@ -72,6 +76,20 @@ impl Response {
             Self::Streaming(stream) => Ok(stream),
             Self::Error(status) => Err(status),
         }
+    }
+
+    /// Convert into a unary response.
+    pub fn into_unary(
+        self,
+    ) -> Result<BoxFuture<'static, Result<ServerFrame, OkxError>>, StatusKind> {
+        let mut stream = self.into_result()?;
+        Ok(async move {
+            match stream.next().await {
+                Some(result) => result,
+                None => Err(OkxError::Api(StatusKind::EmptyResponse)),
+            }
+        }
+        .boxed())
     }
 }
 

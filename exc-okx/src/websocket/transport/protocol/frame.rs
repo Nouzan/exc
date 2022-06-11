@@ -12,6 +12,8 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use thiserror::Error;
 
+const LOGIN_TAG: &str = "login:login";
+
 /// Frame layer errors.
 #[derive(Debug, Error)]
 pub enum FrameError<E> {
@@ -25,6 +27,7 @@ fn client_message_to_tag(msg: &WsRequest) -> String {
         WsRequest::Subscribe(args) | WsRequest::Unsubscribe(args) => {
             format!("sub:{args}")
         }
+        WsRequest::Login(_) => LOGIN_TAG.to_string(),
     }
 }
 
@@ -35,7 +38,7 @@ fn server_message_to_tag(msg: &Event) -> Option<String> {
             ResponseKind::Subscribe { arg } | ResponseKind::Unsubscribe { arg } => {
                 Some(format!("sub:{arg}"))
             }
-            ResponseKind::Login(_) => Some("login:login".to_string()),
+            ResponseKind::Login(_) => Some(LOGIN_TAG.to_string()),
             _ => None,
         },
     }

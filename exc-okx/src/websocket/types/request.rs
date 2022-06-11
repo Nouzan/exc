@@ -1,5 +1,8 @@
 use super::{callback::Callback, frames::client::ClientFrame, messages::Args};
-use crate::websocket::types::messages::request::WsRequest;
+use crate::{
+    key::{Key, SignError},
+    websocket::types::messages::request::WsRequest,
+};
 use async_stream::stream;
 use exc::{types::ticker::SubscribeTickers, ExchangeError};
 use futures::stream::{BoxStream, StreamExt};
@@ -41,6 +44,21 @@ impl Request {
             cb,
             inner: stream.boxed(),
         }
+    }
+
+    /// Login request.
+    pub(crate) fn login(key: Key) -> Result<Self, SignError> {
+        let (cb, rx) = Callback::new();
+        let signature = key.sign_now("GET", "/users/self/verify", true)?;
+        let stream = stream! {
+            yield ClientFrame { stream_id: 0, inner: WsRequest::login(key, signature) };
+            let _ = rx.await;
+        };
+
+        Ok(Self {
+            cb,
+            inner: stream.boxed(),
+        })
     }
 }
 

@@ -15,7 +15,11 @@ impl ServerFrame {
     pub(crate) fn is_end_stream(&self) -> bool {
         matches!(
             self.inner,
-            Event::Response(ResponseKind::Unsubscribe { arg: _ } | ResponseKind::Error(_))
+            Event::Response(
+                ResponseKind::Unsubscribe { arg: _ }
+                    | ResponseKind::Error(_)
+                    | ResponseKind::Login(_)
+            )
         )
     }
 
@@ -23,6 +27,13 @@ impl ServerFrame {
         match self.inner {
             Event::Response(_) => None,
             Event::Change(change) => Some(change),
+        }
+    }
+
+    pub(crate) fn into_response(self) -> Option<ResponseKind> {
+        match self.inner {
+            Event::Response(resp) => Some(resp),
+            _ => None,
         }
     }
 }
