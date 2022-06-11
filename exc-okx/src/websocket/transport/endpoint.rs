@@ -1,5 +1,5 @@
 use super::{channel::Channel, connection::Connection};
-use crate::error::OkxError;
+use crate::{error::OkxError, key::Key};
 use http::Uri;
 use std::time::Duration;
 use tower::{buffer::Buffer, timeout::Timeout, ServiceExt};
@@ -15,6 +15,7 @@ pub struct Endpoint {
     pub(crate) connection_timeout: Option<Duration>,
     pub(crate) ping_timeout: Duration,
     pub(crate) buffer_size: Option<usize>,
+    pub(crate) login: Option<Key>,
 }
 
 impl Endpoint {
@@ -51,6 +52,7 @@ impl Default for Endpoint {
             connection_timeout: None,
             buffer_size: None,
             ping_timeout: DEFAULT_PING_TIMEOUT,
+            login: None,
         }
     }
 }

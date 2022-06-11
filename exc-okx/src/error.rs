@@ -1,9 +1,12 @@
 use exc::error::ExchangeError;
 use thiserror::Error;
 
-use crate::websocket::types::{
-    messages::{request::WsRequest, Args},
-    response::StatusKind,
+use crate::{
+    key::SignError,
+    websocket::types::{
+        messages::{request::WsRequest, Args},
+        response::StatusKind,
+    },
 };
 
 /// All OKX errors.
@@ -66,6 +69,9 @@ pub enum OkxError {
     /// Unexpected data type.
     #[error("unpexpected data type: {0}")]
     UnexpectedDataType(anyhow::Error),
+    /// Sign error.
+    #[error("okx key sign error: {0}")]
+    SignError(#[from] SignError),
 }
 
 impl From<OkxError> for ExchangeError {

@@ -11,6 +11,9 @@ pub mod http;
 /// All errors.
 pub mod error;
 
+/// Key.
+pub mod key;
+
 /// Util
 pub mod util;
 
