@@ -45,7 +45,7 @@ impl Endpoint {
 
     /// Switch to private channel.
     pub fn private(mut self, key: Key) -> Self {
-        self.uri = Uri::from_static("wss://wsaws.okx.com:8443/ws/v5/private");
+        self.uri = Uri::from_static("wss://ws.okx.com:8443/ws/v5/private");
         self.login = Some(key);
         self
     }
@@ -54,7 +54,7 @@ impl Endpoint {
 impl Default for Endpoint {
     fn default() -> Self {
         Self {
-            uri: Uri::from_static("wss://ws.okex.com:8443/ws/v5/public"),
+            uri: Uri::from_static("wss://ws.okx.com:8443/ws/v5/public"),
             request_timeout: None,
             connection_timeout: None,
             buffer_size: None,
