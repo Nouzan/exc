@@ -42,6 +42,13 @@ impl Endpoint {
         self.ping_timeout = duration;
         self
     }
+
+    /// Switch to private channel.
+    pub fn private(mut self, key: Key) -> Self {
+        self.uri = Uri::from_static("wss://wsaws.okx.com:8443/ws/v5/private");
+        self.login = Some(key);
+        self
+    }
 }
 
 impl Default for Endpoint {
