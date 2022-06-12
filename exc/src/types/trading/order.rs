@@ -1,6 +1,5 @@
-use std::{fmt, sync::Arc};
+use std::sync::Arc;
 
-use positions::{Position, Representation};
 use rust_decimal::Decimal;
 
 use super::place::Place;
@@ -24,37 +23,41 @@ pub enum OrderStatus {
 }
 
 /// Order State.
-pub struct OrderState<Rep> {
-    filled: Position<Rep, Decimal>,
-    status: OrderStatus,
+#[derive(Debug)]
+pub struct OrderState {
+    /// Filled size.
+    pub filled: Decimal,
+    /// Average cost.
+    pub cost: Decimal,
+    /// Fee or bonus.
+    pub fee: Decimal,
+    /// Status.
+    pub status: OrderStatus,
 }
 
-impl<Rep: Representation> Default for OrderState<Rep> {
+impl Default for OrderState {
     fn default() -> Self {
         Self {
-            filled: Position::default(),
+            filled: Decimal::ZERO,
+            cost: Decimal::ONE,
+            fee: Decimal::ZERO,
             status: OrderStatus::Pending,
         }
     }
 }
 
-impl<Rep: Representation> fmt::Debug for OrderState<Rep> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("OrderState")
-            .field("filled", &self.filled)
-            .field("status", &self.status)
-            .finish()
-    }
-}
-
 /// Order.
-pub struct Order<Rep> {
-    id: OrderId,
-    target: Place,
-    state: OrderState<Rep>,
+#[derive(Debug)]
+pub struct Order {
+    /// Id.
+    pub id: OrderId,
+    /// The target of the order.
+    pub target: Place,
+    /// Current state.
+    pub state: OrderState,
 }
 
-impl<Rep: Representation> Order<Rep> {
+impl Order {
     /// Create a new [`Order`].
     pub fn new(id: OrderId, target: Place) -> Self {
         Self {
@@ -65,19 +68,9 @@ impl<Rep: Representation> Order<Rep> {
     }
 
     /// Change the state.
-    pub fn with_state(&mut self, state: OrderState<Rep>) -> &mut Self {
+    pub fn with_state(&mut self, state: OrderState) -> &mut Self {
         self.state = state;
         self
-    }
-}
-
-impl<Rep: Representation> fmt::Debug for Order<Rep> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Order")
-            .field("id", &self.id.inner)
-            .field("target", &self.target)
-            .field("state", &self.state)
-            .finish()
     }
 }
 
