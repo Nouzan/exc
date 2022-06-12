@@ -24,3 +24,16 @@ pub struct PlaceOrder {
 impl Request for PlaceOrder {
     type Response = BoxFuture<'static, Result<OrderId, ExchangeError>>;
 }
+
+/// Cancel order.
+#[derive(Debug, Clone)]
+pub struct CancelOrder {
+    /// Instrument.
+    pub instrument: String,
+    /// Id.
+    pub id: OrderId,
+}
+
+impl Request for CancelOrder {
+    type Response = BoxFuture<'static, Result<(), ExchangeError>>;
+}

@@ -9,7 +9,7 @@ use tokio_tungstenite::tungstenite::Message;
 
 /// Okx websocket operation.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub enum Op {
     /// Subscribe.
     Subscribe,
@@ -19,6 +19,8 @@ pub enum Op {
     Login,
     /// Order.
     Order,
+    /// Cancel order.
+    CancelOrder,
 }
 
 /// Okx websocket request messagee.
@@ -53,6 +55,8 @@ pub enum WsRequest {
     Login(Args),
     /// Order.
     Order(String, Args),
+    /// Cancel order.
+    CancelOrder(String, Args),
 }
 
 impl fmt::Display for WsRequest {
@@ -69,6 +73,9 @@ impl fmt::Display for WsRequest {
             }
             Self::Order(id, args) => {
                 write!(f, "order:{id}:{args}")
+            }
+            Self::CancelOrder(id, args) => {
+                write!(f, "cancel-order:{id}:{args}")
             }
         }
     }
@@ -128,6 +135,17 @@ impl WsRequest {
         }
         Self::Order(format!("{:x}", uuid::Uuid::new_v4().as_u128()), Args(map))
     }
+
+    /// Cancel order request.
+    pub(crate) fn cancel_order(inst: &str, id: &str) -> Self {
+        Self::CancelOrder(
+            format!("{:x}", uuid::Uuid::new_v4().as_u128()),
+            Args(BTreeMap::from([
+                ("instId".to_string(), inst.to_string()),
+                ("ordId".to_string(), id.to_string()),
+            ])),
+        )
+    }
 }
 
 impl From<WsRequest> for WsRequestMessage {
@@ -151,6 +169,11 @@ impl From<WsRequest> for WsRequestMessage {
             WsRequest::Order(id, args) => Self {
                 id: Some(id),
                 op: Op::Order,
+                args: vec![args],
+            },
+            WsRequest::CancelOrder(id, args) => Self {
+                id: Some(id),
+                op: Op::CancelOrder,
                 args: vec![args],
             },
         }

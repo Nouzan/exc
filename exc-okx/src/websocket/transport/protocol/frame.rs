@@ -28,7 +28,7 @@ fn client_message_to_tag(msg: &WsRequest) -> String {
             format!("sub:{args}")
         }
         WsRequest::Login(_) => LOGIN_TAG.to_string(),
-        WsRequest::Order(id, _) => id.clone(),
+        WsRequest::Order(id, _) | WsRequest::CancelOrder(id, _) => id.clone(),
     }
 }
 
@@ -43,7 +43,9 @@ fn server_message_to_tag(msg: &Event) -> Option<String> {
             ResponseKind::Error(_) => None,
         },
         Event::TradeResponse(resp) => match resp {
-            TradeResponse::Order { id, .. } => Some(id.clone()),
+            TradeResponse::Order { id, .. } | TradeResponse::CancelOrder { id, .. } => {
+                Some(id.clone())
+            }
         },
     }
 }

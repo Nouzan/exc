@@ -94,3 +94,10 @@ impl From<String> for OrderId {
         }
     }
 }
+
+impl OrderId {
+    /// Convert to [`&str`]
+    pub fn as_str(&self) -> &str {
+        self.inner.as_str()
+    }
+}

@@ -1,5 +1,5 @@
 use exc::{
-    types::trading::{Place, PlaceOrder},
+    types::trading::{CancelOrder, Place, PlaceOrder},
     ExchangeLayer,
 };
 use exc_okx::{key::Key, websocket::Endpoint};
@@ -36,5 +36,13 @@ async fn main() -> anyhow::Result<()> {
     };
     let id = (&mut svc).oneshot(req).await?.await?;
     tracing::info!("id={id:?}");
+    (&mut svc)
+        .oneshot(CancelOrder {
+            instrument: "DOGE-USDT".to_string(),
+            id,
+        })
+        .await?
+        .await?;
+    tracing::info!("cancelled");
     Ok(())
 }

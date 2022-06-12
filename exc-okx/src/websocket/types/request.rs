@@ -79,6 +79,22 @@ impl Request {
             inner: stream.boxed(),
         }
     }
+
+    /// Cancel order request.
+    pub fn cancel_order(inst: &str, id: &str) -> Self {
+        let (cb, _rx) = Callback::new();
+        let inst = inst.to_string();
+        let id = id.to_string();
+        let stream = stream! {
+            yield ClientFrame { stream_id: 0, inner: WsRequest::cancel_order(&inst, &id) };
+            // let _ = rx.await;
+        };
+
+        Self {
+            cb,
+            inner: stream.boxed(),
+        }
+    }
 }
 
 /// Client stream.

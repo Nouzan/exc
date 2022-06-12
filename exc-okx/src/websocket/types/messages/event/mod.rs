@@ -37,7 +37,7 @@ pub struct OrderData {
     /// Order id.
     pub ord_id: String,
     /// Tag.
-    pub tag: String,
+    pub tag: Option<String>,
     /// Code.
     pub s_code: String,
     /// Message.
@@ -66,10 +66,21 @@ pub enum ResponseKind {
 
 /// Okx websocket trade response type.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "op", rename_all = "camelCase")]
+#[serde(tag = "op", rename_all = "kebab-case")]
 pub enum TradeResponse {
     /// Order.
     Order {
+        /// Id.
+        id: String,
+        /// Code.
+        code: String,
+        /// Msg.
+        msg: String,
+        /// Data.
+        data: Vec<OrderData>,
+    },
+    /// Order.
+    CancelOrder {
         /// Id.
         id: String,
         /// Code.

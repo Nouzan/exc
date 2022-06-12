@@ -38,7 +38,7 @@ where
                         Some(Ok(event))
                     }
                     Err(err) => {
-                        warn!("message layer; deserializing message error: {err}; ignored");
+                        warn!("message layer; deserializing message error: {err}, msg={msg}; ignored");
                         None
                     }
                 },
