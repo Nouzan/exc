@@ -77,7 +77,7 @@ impl Endpoint {
         let (svc, worker) = Buffer::pair(svc, buffer_size);
         let handle = tokio::spawn(async move {
             worker.await;
-            error!("buffer worker is dead");
+            debug!("buffer worker is dead");
         });
         tokio::spawn(async move {
             if let Err(err) = handle.await {

@@ -1,11 +1,8 @@
-use exc::{
-    types::trading::{CancelOrder, Place, PlaceOrder},
-    ExchangeLayer,
-};
+use exc::{service::trading::TradingService, types::trading::Place, ExchangeLayer};
 use exc_okx::{key::Key, websocket::Endpoint};
 use rust_decimal_macros::dec;
 use std::env::var;
-use tower::{ServiceBuilder, ServiceExt};
+use tower::ServiceBuilder;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -29,20 +26,11 @@ async fn main() -> anyhow::Result<()> {
     let mut svc = ServiceBuilder::default()
         .layer(ExchangeLayer::default())
         .service(channel);
-    let place = Place::with_size(dec!(10)).limit(dec!(0.06));
-    let req = PlaceOrder {
-        instrument: "DOGE-USDT".to_string(),
-        place,
-    };
-    let id = (&mut svc).oneshot(req).await?.await?;
-    tracing::info!("id={id:?}");
-    (&mut svc)
-        .oneshot(CancelOrder {
-            instrument: "DOGE-USDT".to_string(),
-            id,
-        })
-        .await?
+    let id = svc
+        .place("DOGE-USDT", &Place::with_size(dec!(10)).limit(dec!(0.06)))
         .await?;
+    tracing::info!("id={id:?}");
+    svc.cancel("DOGE-USDT", &id).await?;
     tracing::info!("cancelled");
     Ok(())
 }
