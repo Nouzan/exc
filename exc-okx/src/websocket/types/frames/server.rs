@@ -1,4 +1,7 @@
-use crate::{error::OkxError, websocket::types::messages::event::Change};
+use crate::{
+    error::OkxError,
+    websocket::types::messages::event::{Change, TradeResponse},
+};
 
 use super::super::messages::event::{Event, ResponseKind};
 use exc::types::ticker::Ticker;
@@ -25,14 +28,21 @@ impl ServerFrame {
 
     pub(crate) fn into_change(self) -> Option<Change> {
         match self.inner {
-            Event::Response(_) => None,
             Event::Change(change) => Some(change),
+            _ => None,
         }
     }
 
     pub(crate) fn into_response(self) -> Option<ResponseKind> {
         match self.inner {
             Event::Response(resp) => Some(resp),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn into_trade_response(self) -> Option<TradeResponse> {
+        match self.inner {
+            Event::TradeResponse(resp) => Some(resp),
             _ => None,
         }
     }

@@ -14,7 +14,7 @@ pub struct Place {
 impl Place {
     /// Create a new order placement (order builder) with default config.
     /// The sign of `size` representants the side of the order.
-    pub fn new(size: Decimal) -> Self {
+    pub fn with_size(size: Decimal) -> Self {
         Self {
             size,
             kind: OrderKind::Market,

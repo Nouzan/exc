@@ -59,3 +59,7 @@ features = ["serde-human-readable", "macros"]
 [dependencies.hyper]
 version = "0.14"
 features = ["client", "http1"]
+
+[dependencies.uuid]
+version = "1"
+features = ["v4"]

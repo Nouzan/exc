@@ -28,6 +28,22 @@ impl fmt::Display for CodeMessage {
     }
 }
 
+/// Okx order response data.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderData {
+    /// Client order id.
+    pub cl_ord_id: String,
+    /// Order id.
+    pub ord_id: String,
+    /// Tag.
+    pub tag: String,
+    /// Code.
+    pub s_code: String,
+    /// Message.
+    pub s_msg: String,
+}
+
 /// Okx websocket response type.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "lowercase")]
@@ -46,6 +62,23 @@ pub enum ResponseKind {
     },
     /// Error response.
     Error(CodeMessage),
+}
+
+/// Okx websocket trade response type.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "op", rename_all = "camelCase")]
+pub enum TradeResponse {
+    /// Order.
+    Order {
+        /// Id.
+        id: String,
+        /// Code.
+        code: String,
+        /// Msg.
+        msg: String,
+        /// Data.
+        data: Vec<OrderData>,
+    },
 }
 
 /// Action kind.
@@ -95,6 +128,8 @@ pub enum Event {
     Response(ResponseKind),
     /// Change.
     Change(Change),
+    /// Trade.
+    TradeResponse(TradeResponse),
 }
 
 impl TryFrom<Event> for Vec<Result<Ticker, OkxError>> {
@@ -102,9 +137,6 @@ impl TryFrom<Event> for Vec<Result<Ticker, OkxError>> {
 
     fn try_from(event: Event) -> Result<Self, Self::Error> {
         match event {
-            Event::Response(resp) => Err(OkxError::UnexpectedDataType(anyhow::anyhow!(
-                "response: {resp:?}"
-            ))),
             Event::Change(change) => Ok(change
                 .data
                 .into_iter()
@@ -114,6 +146,12 @@ impl TryFrom<Event> for Vec<Result<Ticker, OkxError>> {
                         .map_err(OkxError::from)
                 })
                 .collect()),
+            Event::Response(resp) => Err(OkxError::UnexpectedDataType(anyhow::anyhow!(
+                "response: {resp:?}"
+            ))),
+            Event::TradeResponse(resp) => Err(OkxError::UnexpectedDataType(anyhow::anyhow!(
+                "response: {resp:?}"
+            ))),
         }
     }
 }

@@ -1,6 +1,7 @@
 use super::Args;
 use crate::error::OkxError;
 use crate::key::{Key, Signature};
+use exc::types::trading::{OrderKind, Place};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
@@ -16,6 +17,8 @@ pub enum Op {
     Unsubscribe,
     /// Login.
     Login,
+    /// Order.
+    Order,
 }
 
 /// Okx websocket request messagee.
@@ -48,6 +51,8 @@ pub enum WsRequest {
     Unsubscribe(Args),
     /// Login.
     Login(Args),
+    /// Order.
+    Order(String, Args),
 }
 
 impl fmt::Display for WsRequest {
@@ -61,6 +66,9 @@ impl fmt::Display for WsRequest {
             }
             Self::Login(_args) => {
                 write!(f, "login")
+            }
+            Self::Order(id, args) => {
+                write!(f, "order:{id}:{args}")
             }
         }
     }
@@ -92,6 +100,34 @@ impl WsRequest {
             ("sign".to_string(), signature.signature),
         ])))
     }
+
+    /// Order request.
+    pub(crate) fn order(inst: &str, place: &Place) -> Self {
+        let size = place.size.abs();
+        let side = if place.size.is_sign_negative() {
+            "sell"
+        } else {
+            "buy"
+        };
+        let mut map = BTreeMap::from([
+            ("instId".to_string(), inst.to_string()),
+            ("tdMode".to_string(), "cross".to_string()),
+            ("side".to_string(), side.to_string()),
+            ("posSide".to_string(), "net".to_string()),
+            ("sz".to_string(), size.to_string()),
+        ]);
+        match place.kind {
+            OrderKind::Market => {
+                map.insert("ordType".to_string(), "market".to_string());
+                map.insert("tgtCcy".to_string(), "base_ccy".to_string());
+            }
+            OrderKind::Limit(price) => {
+                map.insert("ordType".to_string(), "limit".to_string());
+                map.insert("px".to_string(), price.to_string());
+            }
+        }
+        Self::Order(format!("{:x}", uuid::Uuid::new_v4().as_u128()), Args(map))
+    }
 }
 
 impl From<WsRequest> for WsRequestMessage {
@@ -110,6 +146,11 @@ impl From<WsRequest> for WsRequestMessage {
             WsRequest::Login(args) => Self {
                 id: None,
                 op: Op::Login,
+                args: vec![args],
+            },
+            WsRequest::Order(id, args) => Self {
+                id: Some(id),
+                op: Op::Order,
                 args: vec![args],
             },
         }
