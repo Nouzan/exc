@@ -3,14 +3,23 @@ use std::collections::BTreeMap;
 use exc::{
     types::{
         instrument::{InstrumentMeta, SubscribeInstruments},
+        trading::{OrderId, PlaceOrder},
         Adaptor,
     },
     ExchangeError,
 };
-use futures::{future::ready, stream::iter, StreamExt};
+use futures::{future::ready, stream::iter, FutureExt, StreamExt};
+
+use crate::error::OkxError;
 
 use super::{
-    types::messages::{event::OkxInstrumentMeta, Args},
+    types::{
+        messages::{
+            event::{Event, OkxInstrumentMeta, TradeResponse},
+            Args,
+        },
+        response::StatusKind,
+    },
     Request, Response,
 };
 
@@ -61,5 +70,55 @@ impl Adaptor<SubscribeInstruments> for Request {
                 Ok(stream)
             }
         }
+    }
+}
+
+impl Adaptor<PlaceOrder> for Request {
+    fn from_request(req: PlaceOrder) -> Result<Self, ExchangeError>
+    where
+        Self: Sized,
+    {
+        Ok(Self::order(&req.instrument, &req.place))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<PlaceOrder as exc::types::Request>::Response, ExchangeError> {
+        let resp = resp.into_unary().map_err(OkxError::Api)?;
+
+        Ok(async move {
+            let event = resp.await?.inner;
+            let id = if let Event::TradeResponse(TradeResponse::Order {
+                code,
+                msg,
+                mut data,
+                ..
+            }) = event
+            {
+                if code == "0" {
+                    if let Some(data) = data.pop() {
+                        Ok(OrderId::from(data.ord_id))
+                    } else {
+                        Err(OkxError::Api(StatusKind::EmptyResponse))
+                    }
+                } else {
+                    if let Some(data) = data.pop() {
+                        Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
+                            "code={} msg={}",
+                            data.s_code,
+                            data.s_msg
+                        ))))
+                    } else {
+                        Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
+                            "code={code} msg={msg}"
+                        ))))
+                    }
+                }
+            } else {
+                Err(OkxError::UnexpectedDataType(anyhow::anyhow!("{event:?}")))
+            }?;
+            Ok(id)
+        }
+        .boxed())
     }
 }

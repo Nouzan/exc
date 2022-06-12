@@ -24,6 +24,10 @@ pub enum StatusKind {
     /// Unexpected response type.
     #[error("unexpected response type")]
     UnexpectedResponseType,
+
+    /// Other.
+    #[error(transparent)]
+    Other(anyhow::Error),
 }
 
 /// Responsee error status.

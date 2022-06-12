@@ -86,3 +86,11 @@ impl<Rep: Representation> fmt::Debug for Order<Rep> {
 pub struct OrderId {
     inner: Arc<String>,
 }
+
+impl From<String> for OrderId {
+    fn from(inner: String) -> Self {
+        Self {
+            inner: Arc::new(inner),
+        }
+    }
+}

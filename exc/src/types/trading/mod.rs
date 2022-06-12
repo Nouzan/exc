@@ -4,13 +4,23 @@ pub mod place;
 /// Order.
 pub mod order;
 
-use either::Either;
+use futures::future::BoxFuture;
 pub use order::{Order, OrderId, OrderKind};
 pub use place::Place;
-use positions::{Normal, Reversed};
+
+use crate::ExchangeError;
 
 use super::Request;
 
-impl Request for Place {
-    type Response = Either<Order<Normal>, Order<Reversed>>;
+/// Place order.
+#[derive(Debug, Clone)]
+pub struct PlaceOrder {
+    /// Instrument.
+    pub instrument: String,
+    /// Place.
+    pub place: Place,
+}
+
+impl Request for PlaceOrder {
+    type Response = BoxFuture<'static, Result<OrderId, ExchangeError>>;
 }
