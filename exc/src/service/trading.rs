@@ -2,7 +2,7 @@ use futures::{future::BoxFuture, FutureExt};
 use tower::ServiceExt;
 
 use crate::{
-    types::trading::{CancelOrder, OrderId, Place, PlaceOrder, GetOrder, Order},
+    types::trading::{CancelOrder, GetOrder, Order, OrderId, Place, PlaceOrder},
     ExchangeError,
 };
 
@@ -46,7 +46,7 @@ pub trait TradingService: ExchangeService<PlaceOrder> + ExchangeService<CancelOr
 impl<S> TradingService for S where S: ExchangeService<PlaceOrder> + ExchangeService<CancelOrder> {}
 
 /// Check order service.
-pub trait CheckOrderService: ExchangeService<GetOrder>{
+pub trait CheckOrderService: ExchangeService<GetOrder> {
     /// Check the current status of an order.
     fn check(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, Result<Order, ExchangeError>>
     where

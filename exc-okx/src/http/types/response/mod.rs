@@ -5,7 +5,11 @@ use serde::Deserialize;
 /// Candle.
 pub mod candle;
 
+/// Trading.
+pub mod trading;
+
 pub use candle::Candle;
+pub use trading::OrderDetail;
 
 /// Okx HTTP API Response (with `code` and `msg`).
 #[derive(Debug, Deserialize)]
@@ -48,6 +52,6 @@ impl TryFrom<FullHttpResponse> for HttpResponse {
 pub enum ResponseData {
     /// Candle.
     Candle(Candle),
-    /// Placeholder.
-    Placeholder,
+    /// Order.
+    Order(OrderDetail),
 }

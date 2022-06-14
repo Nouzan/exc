@@ -5,7 +5,7 @@ pub mod place;
 pub mod order;
 
 use futures::future::BoxFuture;
-pub use order::{Order, OrderId, OrderKind};
+pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus};
 pub use place::Place;
 
 use crate::ExchangeError;

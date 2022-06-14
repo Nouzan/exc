@@ -29,8 +29,10 @@ pub struct OrderState {
     pub filled: Decimal,
     /// Average cost.
     pub cost: Decimal,
-    /// Fee or bonus.
-    pub fee: Decimal,
+    /// Fee or bonus in base currency.
+    pub base_fee: Decimal,
+    /// Fee or bonus in quote currency.
+    pub quote_fee: Decimal,
     /// Status.
     pub status: OrderStatus,
 }
@@ -40,7 +42,8 @@ impl Default for OrderState {
         Self {
             filled: Decimal::ZERO,
             cost: Decimal::ONE,
-            fee: Decimal::ZERO,
+            base_fee: Decimal::ZERO,
+            quote_fee: Decimal::ZERO,
             status: OrderStatus::Pending,
         }
     }

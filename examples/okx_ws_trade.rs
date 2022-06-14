@@ -1,5 +1,14 @@
-use exc::{service::trading::TradingService, types::trading::Place, ExchangeLayer};
-use exc_okx::{key::Key, websocket::Endpoint};
+use exc::{
+    service::trading::{CheckOrderService, TradingService},
+    transport::http::endpoint::Endpoint as HttpEndpoint,
+    types::trading::Place,
+    ExchangeLayer,
+};
+use exc_okx::{
+    http::{layer::OkxHttpApiLayer, types::request::HttpRequest},
+    key::Key,
+    websocket::Endpoint,
+};
 use rust_decimal_macros::dec;
 use std::env::var;
 use tower::ServiceBuilder;
@@ -21,16 +30,28 @@ async fn main() -> anyhow::Result<()> {
 
     let channel = Endpoint::default()
         .request_timeout(std::time::Duration::from_secs(5))
-        .private(key)
+        .private(key.clone())
         .connect();
-    let mut svc = ServiceBuilder::default()
+    let mut ws = ServiceBuilder::default()
         .layer(ExchangeLayer::default())
         .service(channel);
-    let id = svc
-        .place("DOGE-USDT", &Place::with_size(dec!(10)).limit(dec!(0.06)))
+
+    let mut http = ServiceBuilder::default()
+        .rate_limit(59, std::time::Duration::from_secs(2))
+        .layer(ExchangeLayer::<HttpRequest>::default())
+        .layer(OkxHttpApiLayer::default().private(key))
+        .service(HttpEndpoint::default().connect_https());
+
+    let inst = "DOGE-USDT";
+    let id = ws
+        .place(inst, &Place::with_size(dec!(-10)).limit(dec!(0.06)))
         .await?;
     tracing::info!("id={id:?}");
-    svc.cancel("DOGE-USDT", &id).await?;
+    let order = http.check(inst, &id).await?;
+    tracing::info!("order={order:?}");
+    ws.cancel(inst, &id).await?;
     tracing::info!("cancelled");
+    let order = http.check(inst, &id).await?;
+    tracing::info!("order={order:?}");
     Ok(())
 }

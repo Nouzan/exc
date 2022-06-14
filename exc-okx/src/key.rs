@@ -13,6 +13,10 @@ pub enum SignError {
     #[error("format timestamp error: {0}")]
     FormatTimestamp(#[from] Format),
 
+    /// Convert timetsamp error.
+    #[error("convert timestamp error: {0}")]
+    ConvertTimestamp(#[from] time::error::ComponentRange),
+
     /// SecretKey length error.
     #[error("secretkey length error")]
     SecretKeyLength,
@@ -59,6 +63,7 @@ impl Key {
         use_unix_timestamp: bool,
     ) -> Result<Signature, SignError> {
         let secret = self.secretkey.as_str();
+        let timestamp = timestamp.replace_millisecond(timestamp.millisecond())?;
         let timestamp = if use_unix_timestamp {
             timestamp.unix_timestamp().to_string()
         } else {
