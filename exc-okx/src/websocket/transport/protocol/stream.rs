@@ -190,7 +190,7 @@ where
                             StreamState::Open => {
                                 if is_end_stream {
                                     ctx.state = StreamState::RemoteClosed;
-                                    warn!("streaming worker; received a remote close frame: id={id}");
+                                    debug!("streaming worker; received a remote close frame: id={id}");
                     trace!("stream {id}; open -> remote-closed");
                                 }
                                 let _ = ctx.sender.send(Ok(frame)).await;

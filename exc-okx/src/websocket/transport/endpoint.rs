@@ -1,5 +1,5 @@
 use super::{channel::Channel, connection::Connection};
-use crate::error::OkxError;
+use crate::{error::OkxError, key::Key};
 use http::Uri;
 use std::time::Duration;
 use tower::{buffer::Buffer, timeout::Timeout, ServiceExt};
@@ -15,6 +15,7 @@ pub struct Endpoint {
     pub(crate) connection_timeout: Option<Duration>,
     pub(crate) ping_timeout: Duration,
     pub(crate) buffer_size: Option<usize>,
+    pub(crate) login: Option<Key>,
 }
 
 impl Endpoint {
@@ -41,16 +42,24 @@ impl Endpoint {
         self.ping_timeout = duration;
         self
     }
+
+    /// Switch to private channel.
+    pub fn private(mut self, key: Key) -> Self {
+        self.uri = Uri::from_static("wss://ws.okx.com:8443/ws/v5/private");
+        self.login = Some(key);
+        self
+    }
 }
 
 impl Default for Endpoint {
     fn default() -> Self {
         Self {
-            uri: Uri::from_static("wss://ws.okex.com:8443/ws/v5/public"),
+            uri: Uri::from_static("wss://ws.okx.com:8443/ws/v5/public"),
             request_timeout: None,
             connection_timeout: None,
             buffer_size: None,
             ping_timeout: DEFAULT_PING_TIMEOUT,
+            login: None,
         }
     }
 }
@@ -68,7 +77,7 @@ impl Endpoint {
         let (svc, worker) = Buffer::pair(svc, buffer_size);
         let handle = tokio::spawn(async move {
             worker.await;
-            error!("buffer worker is dead");
+            debug!("buffer worker is dead");
         });
         tokio::spawn(async move {
             if let Err(err) = handle.await {

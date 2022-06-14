@@ -3,6 +3,9 @@ use std::time::Duration;
 use super::endpoint::Endpoint;
 use super::protocol::Protocol;
 use crate::error::OkxError;
+use crate::key::Key;
+use crate::websocket::types::messages::event::ResponseKind;
+use crate::websocket::types::response::StatusKind;
 use crate::websocket::types::{request::Request, response::Response};
 use exc::transport::websocket::connector::WsConnector;
 use futures::future::BoxFuture;
@@ -16,13 +19,15 @@ use tower::{Service, ServiceBuilder, ServiceExt};
 pub(crate) struct Connect {
     inner: WsConnector,
     ping_timeout: Duration,
+    key: Option<Key>,
 }
 
 impl Connect {
-    fn new(inner: WsConnector, ping_timeout: Duration) -> Self {
+    fn new(inner: WsConnector, ping_timeout: Duration, key: Option<&Key>) -> Self {
         Self {
             inner,
             ping_timeout,
+            key: key.cloned(),
         }
     }
 }
@@ -42,13 +47,35 @@ impl tower::Service<Uri> for Connect {
     fn call(&mut self, req: Uri) -> Self::Future {
         let conn = self.inner.call(req);
         let ping_timeout = self.ping_timeout;
+        let key = self.key.clone();
         async move {
             let conn = conn.await?;
-            let svc = Protocol::init(conn, ping_timeout)
+            let mut svc = Protocol::init(conn, ping_timeout)
                 .await
                 .map_err(|err| OkxError::Protocol(err.into()))?
                 .map_err(|err| OkxError::Protocol(err.into()))
                 .boxed();
+            tracing::trace!("protocol initialized");
+            if let Some(key) = key {
+                svc.ready().await?;
+                let resp = svc
+                    .call(Request::login(key)?)
+                    .await?
+                    .into_unary()
+                    .map_err(OkxError::Api)?
+                    .await?
+                    .into_response()
+                    .ok_or_else(|| OkxError::Api(StatusKind::EmptyResponse))?;
+                match resp {
+                    ResponseKind::Login(_) => {
+                        tracing::trace!("login; login success");
+                    }
+                    resp => {
+                        tracing::trace!("login; unexpected response: {resp:?}");
+                        return Err(OkxError::LoginError);
+                    }
+                }
+            }
             Ok(svc)
         }
         .boxed()
@@ -65,7 +92,11 @@ impl Connection {
     pub(crate) fn new(endpoint: &Endpoint) -> Self {
         let connector = ServiceBuilder::default()
             .option_layer(endpoint.connection_timeout.map(TimeoutLayer::new))
-            .service(Connect::new(WsConnector::default(), endpoint.ping_timeout))
+            .service(Connect::new(
+                WsConnector::default(),
+                endpoint.ping_timeout,
+                endpoint.login.as_ref(),
+            ))
             .boxed();
         let conn = Reconnect::new::<<Connect as Service<Uri>>::Response, Uri>(
             connector,

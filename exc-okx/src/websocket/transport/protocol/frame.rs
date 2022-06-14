@@ -1,7 +1,7 @@
 use crate::websocket::types::{
     frames::{client::ClientFrame, server::ServerFrame},
     messages::{
-        event::{Event, ResponseKind},
+        event::{Event, ResponseKind, TradeResponse},
         request::WsRequest,
     },
 };
@@ -11,6 +11,8 @@ use std::collections::HashMap;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use thiserror::Error;
+
+const LOGIN_TAG: &str = "login:login";
 
 /// Frame layer errors.
 #[derive(Debug, Error)]
@@ -25,6 +27,8 @@ fn client_message_to_tag(msg: &WsRequest) -> String {
         WsRequest::Subscribe(args) | WsRequest::Unsubscribe(args) => {
             format!("sub:{args}")
         }
+        WsRequest::Login(_) => LOGIN_TAG.to_string(),
+        WsRequest::Order(id, _) | WsRequest::CancelOrder(id, _) => id.clone(),
     }
 }
 
@@ -35,8 +39,13 @@ fn server_message_to_tag(msg: &Event) -> Option<String> {
             ResponseKind::Subscribe { arg } | ResponseKind::Unsubscribe { arg } => {
                 Some(format!("sub:{arg}"))
             }
-            ResponseKind::Login(_) => Some("login:login".to_string()),
-            _ => None,
+            ResponseKind::Login(_) => Some(LOGIN_TAG.to_string()),
+            ResponseKind::Error(_) => None,
+        },
+        Event::TradeResponse(resp) => match resp {
+            TradeResponse::Order { id, .. } | TradeResponse::CancelOrder { id, .. } => {
+                Some(id.clone())
+            }
         },
     }
 }

@@ -15,6 +15,9 @@ pub mod subscribe_tickers;
 /// Fetch candles.
 pub mod fetch_candles;
 
+/// Trading service.
+pub mod trading;
+
 /// Exchange Service,
 /// an alias of [`tower::Service`].
 pub trait ExchangeService<R>

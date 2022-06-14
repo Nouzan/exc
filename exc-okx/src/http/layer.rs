@@ -1,3 +1,5 @@
+use crate::key::Key;
+
 use super::types::{
     request::HttpRequest,
     response::{FullHttpResponse, HttpResponse},
@@ -76,18 +78,26 @@ where
 /// Okx HTTP API layer.
 pub struct OkxHttpApiLayer<'a, F> {
     host: &'a str,
+    key: Option<Key>,
     retry_policy: RetryPolicy<F>,
 }
 
 impl<'a, F> OkxHttpApiLayer<'a, F> {
+    /// Set key.
+    pub fn private(mut self, key: Key) -> Self {
+        self.key = Some(key);
+        self
+    }
+
     /// Set retry policy.
-    pub fn with_retry<F2>(self, policy: RetryPolicy<F2>) -> OkxHttpApiLayer<'a, F2>
+    pub fn retry<F2>(self, policy: RetryPolicy<F2>) -> OkxHttpApiLayer<'a, F2>
     where
         F2: Clone,
     {
         OkxHttpApiLayer {
             host: self.host,
             retry_policy: policy,
+            key: self.key,
         }
     }
 
@@ -97,12 +107,12 @@ impl<'a, F> OkxHttpApiLayer<'a, F> {
         F2: Fn(&ExchangeError) -> bool,
         F2: Send + 'static + Clone,
     {
-        self.with_retry(RetryPolicy::On { f, times: 0 })
+        self.retry(RetryPolicy::On { f, times: 0 })
     }
 
     /// Always retry on errors.
     pub fn retry_on_error(self) -> OkxHttpApiLayer<'a, fn(&ExchangeError) -> bool> {
-        self.with_retry(RetryPolicy::On {
+        self.retry(RetryPolicy::On {
             f: |_| true,
             times: 0,
         })
@@ -121,6 +131,7 @@ impl<'a> OkxHttpApiLayer<'a, fn(&ExchangeError) -> bool> {
         Self {
             host,
             retry_policy: RetryPolicy::Never,
+            key: None,
         }
     }
 }
@@ -140,6 +151,7 @@ where
         let svc = OkxHttpApi {
             host: self.host.to_string(),
             http: inner,
+            key: self.key.clone(),
         };
         ServiceBuilder::default()
             .retry(self.retry_policy.clone())
@@ -151,6 +163,7 @@ where
 #[derive(Clone)]
 pub struct OkxHttpApi<S> {
     host: String,
+    key: Option<Key>,
     http: S,
 }
 
@@ -182,6 +195,15 @@ where
                         .body(Body::empty())
                         .map_err(|err| ExchangeError::Other(err.into()))
                 }),
+            HttpRequest::PrivateGet(get) => {
+                if let Some(key) = self.key.as_ref() {
+                    get.to_request(&self.host, &key)
+                } else {
+                    Err(ExchangeError::KeyError(anyhow::anyhow!(
+                        "key has not been set"
+                    )))
+                }
+            }
         };
         match req {
             Ok(req) => self

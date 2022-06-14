@@ -9,6 +9,12 @@ pub mod candle;
 /// Instrument.
 pub mod instrument;
 
+/// Key.
+pub mod key;
+
+/// Trading.
+pub mod trading;
+
 /// Request and Response binding.
 pub trait Request {
     /// Response type.

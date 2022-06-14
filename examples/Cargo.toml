@@ -16,12 +16,20 @@ name = "okx-http-basic"
 path = "okx_http_basic.rs"
 
 [[bin]]
+name = "okx-ws-login"
+path = "okx_ws_login.rs"
+
+[[bin]]
 name = "okx-two-streams"
 path = "okx_two_streams.rs"
 
 [[bin]]
 name = "okx-candle"
 path = "okx_candle.rs"
+
+[[bin]]
+name = "okx-ws-trade"
+path = "okx_ws_trade.rs"
 
 [dependencies]
 anyhow = "1"
@@ -34,3 +42,5 @@ futures = "0.3.21"
 tower = { version = "0.4.12", features = ["util", "limit", "buffer", "retry"] }
 time = { version = "0.3", features = ["macros"] }
 console-subscriber = "0.1.5"
+rust_decimal = "1.24.0"
+rust_decimal_macros = "1.24.0"
