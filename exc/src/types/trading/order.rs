@@ -23,7 +23,7 @@ pub enum OrderStatus {
 }
 
 /// Order State.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct OrderState {
     /// Filled size.
     pub filled: Decimal,
@@ -50,7 +50,7 @@ impl Default for OrderState {
 }
 
 /// Order.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Order {
     /// Id.
     pub id: OrderId,

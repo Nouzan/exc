@@ -32,7 +32,7 @@ version = "1.0.136"
 features = ["derive"]
 
 [dependencies.exc]
-version = "0.2.2"
+version = "0.2.3"
 path = "../exc"
 features = ["websocket", "driven"]
 
