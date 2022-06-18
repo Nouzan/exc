@@ -5,7 +5,7 @@ use rust_decimal::Decimal;
 use super::place::Place;
 
 /// Order types.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OrderKind {
     /// Market.
     Market,
@@ -14,7 +14,7 @@ pub enum OrderKind {
 }
 
 /// Order Status.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OrderStatus {
     /// Pending.
     Pending,
@@ -23,7 +23,7 @@ pub enum OrderStatus {
 }
 
 /// Order State.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OrderState {
     /// Filled size.
     pub filled: Decimal,
@@ -78,7 +78,7 @@ impl Order {
 }
 
 /// Order identity.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrderId {
     inner: Arc<String>,
 }
