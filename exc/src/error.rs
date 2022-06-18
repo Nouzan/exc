@@ -36,6 +36,9 @@ pub enum ExchangeError {
     /// Key error.
     #[error("key error: {0}")]
     KeyError(anyhow::Error),
+    /// Order not found.
+    #[error("order not found")]
+    OrderNotFound,
 }
 
 impl ExchangeError {

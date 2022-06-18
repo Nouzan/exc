@@ -41,6 +41,7 @@ impl TryFrom<FullHttpResponse> for HttpResponse {
             "51001" => Err(ExchangeError::Instrument(InstrumentError::NotFound)),
             "50011" => Err(ExchangeError::RateLimited(anyhow!("{msg}"))),
             "50013" => Err(ExchangeError::Unavailable(anyhow!("{msg}"))),
+            "51603" => Err(ExchangeError::OrderNotFound),
             _ => Err(ExchangeError::Api(anyhow!("code={code} msg={msg}",))),
         }
     }
