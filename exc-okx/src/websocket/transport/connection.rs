@@ -70,9 +70,15 @@ impl tower::Service<Uri> for Connect {
                     ResponseKind::Login(_) => {
                         tracing::trace!("login; login success");
                     }
+                    ResponseKind::Error(err) => {
+                        tracing::error!("login error; {err}");
+                        return Err(OkxError::LoginError(anyhow::anyhow!("{err}")));
+                    }
                     resp => {
-                        tracing::trace!("login; unexpected response: {resp:?}");
-                        return Err(OkxError::LoginError);
+                        tracing::error!("login error; unexpected response: {resp:?}");
+                        return Err(OkxError::LoginError(anyhow::anyhow!(
+                            "unexpected response: {resp:?}"
+                        )));
                     }
                 }
             }

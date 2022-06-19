@@ -40,7 +40,14 @@ fn server_message_to_tag(msg: &Event) -> Option<String> {
                 Some(format!("sub:{arg}"))
             }
             ResponseKind::Login(_) => Some(LOGIN_TAG.to_string()),
-            ResponseKind::Error(_) => None,
+            ResponseKind::Error(err) => match err.code.as_str() {
+                "60001" | "60002" | "60003" | "60004" | "60005" | "60006" | "60007" | "60008"
+                | "60009" | "60024" => Some(LOGIN_TAG.to_string()),
+                _ => {
+                    tracing::error!("failed to extract tag from api error: {err}");
+                    None
+                }
+            },
         },
         Event::TradeResponse(resp) => match resp {
             TradeResponse::Order { id, .. } | TradeResponse::CancelOrder { id, .. } => {

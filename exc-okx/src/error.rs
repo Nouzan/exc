@@ -73,8 +73,8 @@ pub enum OkxError {
     #[error("okx key sign error: {0}")]
     SignError(#[from] SignError),
     /// Login error.
-    #[error("login error")]
-    LoginError,
+    #[error("login error: {0}")]
+    LoginError(anyhow::Error),
 }
 
 impl From<OkxError> for ExchangeError {

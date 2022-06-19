@@ -18,7 +18,7 @@ pub enum StatusKind {
     CloseIdleStream,
 
     /// Empty response.
-    #[error("empty response")]
+    #[error("received no response")]
     EmptyResponse,
 
     /// Unexpected response type.
