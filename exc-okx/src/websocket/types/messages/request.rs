@@ -126,7 +126,10 @@ impl WsRequest {
         match place.kind {
             OrderKind::Market => {
                 map.insert("ordType".to_string(), "market".to_string());
-                map.insert("tgtCcy".to_string(), "base_ccy".to_string());
+                if inst.split('-').count() == 2 {
+                    // spot-market
+                    map.insert("tgtCcy".to_string(), "base_ccy".to_string());
+                }
             }
             OrderKind::Limit(price) => {
                 map.insert("ordType".to_string(), "limit".to_string());
