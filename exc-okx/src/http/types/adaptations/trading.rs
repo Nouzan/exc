@@ -70,7 +70,20 @@ impl Adaptor<GetOrder> for HttpRequest {
                     let mut filled = order.filled_size;
                     filled.set_sign_positive(buy);
                     let cost = order.avg_price.unwrap_or(Decimal::ONE);
-                    // TODO: parse fee and bouns.
+                    if let Some((ccy, fee)) = order
+                        .fee
+                        .and_then(|fee| order.fee_currency.map(|ccy| (ccy, fee)))
+                    {
+                        let f = state.fees.entry(ccy).or_default();
+                        *f += fee;
+                    }
+                    if let Some((ccy, fee)) = order
+                        .rebate
+                        .and_then(|fee| order.rebate_currency.map(|ccy| (ccy, fee)))
+                    {
+                        let f = state.fees.entry(ccy).or_default();
+                        *f += fee;
+                    }
                     state.status = status;
                     state.filled = filled;
                     state.cost = cost;

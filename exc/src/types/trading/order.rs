@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use rust_decimal::Decimal;
 
@@ -23,7 +23,7 @@ pub enum OrderStatus {
 }
 
 /// Order State.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrderState {
     /// Filled size.
     pub filled: Decimal,
@@ -35,6 +35,8 @@ pub struct OrderState {
     pub quote_fee: Decimal,
     /// Status.
     pub status: OrderStatus,
+    /// Fees.
+    pub fees: HashMap<String, Decimal>,
 }
 
 impl Default for OrderState {
@@ -45,6 +47,7 @@ impl Default for OrderState {
             base_fee: Decimal::ZERO,
             quote_fee: Decimal::ZERO,
             status: OrderStatus::Pending,
+            fees: HashMap::default(),
         }
     }
 }
