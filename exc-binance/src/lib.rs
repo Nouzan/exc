@@ -1,8 +1,15 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+//! Exc-binance: Binance exchange services.
+
+#![deny(missing_docs)]
+
+/// Error.
+pub mod error;
+
+/// Rest API support.
+pub mod http;
+
+/// Websocket API support.
+pub mod websocket;
+
+/// Types.
+pub mod types;

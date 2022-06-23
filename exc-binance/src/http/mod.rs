@@ -1,0 +1,2 @@
+/// Error.
+pub mod error;
