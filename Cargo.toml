@@ -2,5 +2,6 @@
 members = [
     "exc",
     "exc-okx",
+    "exc-binance",
     "examples",
 ]
