@@ -10,7 +10,8 @@ use tokio_tungstenite::tungstenite::Message;
 
 use crate::websocket::error::WsError;
 
-pub(super) fn layer<T>(
+/// Keep-alive protocol layer.
+pub fn layer<T>(
     transport: T,
     timeout: Duration,
 ) -> impl Sink<String, Error = WsError> + Stream<Item = Result<String, WsError>>
@@ -61,6 +62,7 @@ where
                 if let PingState::WaitReady(msg) = this.state {
                     let msg = Message::Pong(msg.drain(..).collect());
                     *this.state = PingState::WaitSent;
+                    tracing::trace!("keep-alive; {:?}", this.state);
                     if let Err(err) = this.inner.start_send(msg) {
                         *this.close = true;
                         return Poll::Ready(Err(err));
@@ -85,6 +87,7 @@ where
             Ok(()) => {
                 if let PingState::WaitSent = this.state {
                     *this.state = PingState::Idle;
+                    tracing::trace!("keep-alive; {:?}", this.state);
                 }
                 Poll::Ready(Ok(()))
             }
@@ -112,7 +115,7 @@ where
         if *this.close {
             return Poll::Ready(None);
         }
-
+        tracing::trace!("keep-alive; poll next message, state={:?}", this.state);
         loop {
             match this.state {
                 PingState::WaitReady(msg) => match this.inner.as_mut().poll_ready(cx) {
@@ -123,6 +126,7 @@ where
                         }
                         let msg = Message::Pong(msg.drain(..).collect());
                         *this.state = PingState::WaitSent;
+                        tracing::trace!("keep-alive; {:?}", this.state);
                         if let Err(err) = this.inner.as_mut().start_send(msg) {
                             *this.close = true;
                             return Poll::Ready(Some(Err(err)));
@@ -139,6 +143,7 @@ where
                             return Poll::Ready(Some(Err(err)));
                         }
                         *this.state = PingState::Idle;
+                        tracing::trace!("keep-alive; {:?}", this.state);
                         break;
                     }
                     Poll::Pending => {
@@ -157,48 +162,62 @@ where
                     Some(msg) => {
                         let next = Instant::now() + *this.duration;
                         this.deadline.as_mut().reset(next);
+                        tracing::trace!("keep-alive; deadline reset");
                         match msg {
-                            Ok(Message::Ping(msg)) => loop {
-                                match this.state {
-                                    PingState::Idle => {
-                                        *this.state = PingState::WaitReady(msg.clone());
-                                    }
-                                    PingState::WaitReady(msg) => {
-                                        if let Poll::Ready(res) = this.inner.as_mut().poll_ready(cx)
-                                        {
-                                            if let Err(err) = res {
-                                                *this.close = true;
-                                                return Poll::Ready(Some(Err(err)));
+                            Ok(Message::Ping(msg)) => {
+                                tracing::trace!("keep-alive; received ping: {msg:?}");
+                                loop {
+                                    match this.state {
+                                        PingState::Idle => {
+                                            *this.state = PingState::WaitReady(msg.clone());
+                                            tracing::trace!("keep-alive; {:?}", this.state);
+                                        }
+                                        PingState::WaitReady(msg) => {
+                                            if let Poll::Ready(res) =
+                                                this.inner.as_mut().poll_ready(cx)
+                                            {
+                                                if let Err(err) = res {
+                                                    *this.close = true;
+                                                    return Poll::Ready(Some(Err(err)));
+                                                }
+                                                let msg = Message::Pong(msg.drain(..).collect());
+                                                *this.state = PingState::WaitSent;
+                                                tracing::trace!("keep-alive; {:?}", this.state);
+                                                if let Err(err) =
+                                                    this.inner.as_mut().start_send(msg)
+                                                {
+                                                    return Poll::Ready(Some(Err(err)));
+                                                }
+                                            } else {
+                                                break;
                                             }
-                                            let msg = Message::Pong(msg.drain(..).collect());
-                                            *this.state = PingState::WaitSent;
-                                            if let Err(err) = this.inner.as_mut().start_send(msg) {
-                                                return Poll::Ready(Some(Err(err)));
+                                        }
+                                        PingState::WaitSent => {
+                                            if let Poll::Ready(res) =
+                                                this.inner.as_mut().poll_flush(cx)
+                                            {
+                                                if let Err(err) = res {
+                                                    *this.close = true;
+                                                    return Poll::Ready(Some(Err(err)));
+                                                }
+                                                *this.state = PingState::Idle;
+                                                tracing::trace!("keep-alive; {:?}", this.state);
                                             }
-                                        } else {
                                             break;
                                         }
                                     }
-                                    PingState::WaitSent => {
-                                        if let Poll::Ready(res) = this.inner.as_mut().poll_flush(cx)
-                                        {
-                                            if let Err(err) = res {
-                                                *this.close = true;
-                                                return Poll::Ready(Some(Err(err)));
-                                            }
-                                            *this.state = PingState::Idle;
-                                        }
-                                        break;
-                                    }
                                 }
-                            },
+                            }
                             Ok(Message::Text(msg)) => {
+                                tracing::trace!("keep-alive; new text frame: {msg}");
                                 return Poll::Ready(Some(Ok(msg)));
                             }
                             Err(err) => {
                                 return Poll::Ready(Some(Err(err)));
                             }
-                            _ => {}
+                            Ok(msg) => {
+                                tracing::trace!("keep-alive; received other message: {msg:?}");
+                            }
                         }
                     }
                     None => {

@@ -1,7 +1,5 @@
 use thiserror::Error;
 
-use super::{protocol::Protocol, request::WsRequest};
-
 /// Websocket API errors.
 #[derive(Debug, Error)]
 pub enum WsError {
@@ -14,14 +12,7 @@ pub enum WsError {
     /// Websocket errors.
     #[error("websocket: {0}")]
     Websocket(#[from] tokio_tungstenite::tungstenite::Error),
-}
-
-impl From<tokio_tower::Error<Protocol, WsRequest>> for WsError {
-    fn from(err: tokio_tower::Error<Protocol, WsRequest>) -> Self {
-        match err {
-            tokio_tower::Error::BrokenTransportSend(err)
-            | tokio_tower::Error::BrokenTransportRecv(Some(err)) => err,
-            err => Self::TokioTower(err.into()),
-        }
-    }
+    /// Json errors.
+    #[error("json: {0}")]
+    Json(#[from] serde_json::Error),
 }

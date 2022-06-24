@@ -12,14 +12,21 @@ use futures::{future::BoxFuture, Sink, SinkExt, Stream, TryStreamExt};
 use tokio_tower::multiplex::{Client as Multiplex, TagStore};
 use tower::Service;
 
-mod keep_alive;
+/// Frame protocol.
+pub mod frame;
 
-trait Transport: Sink<WsRequest, Error = WsError> + Stream<Item = Result<WsResponse, WsError>> {}
+/// Keep-alive protocol.
+pub mod keep_alive;
+
+type Req = WsRequest;
+type Resp = WsResponse;
+
+trait Transport: Sink<Req, Error = WsError> + Stream<Item = Result<Resp, WsError>> {}
 
 impl<T> Transport for T
 where
-    T: Sink<WsRequest, Error = WsError>,
-    T: Stream<Item = Result<WsResponse, WsError>>,
+    T: Sink<Req, Error = WsError>,
+    T: Stream<Item = Result<Resp, WsError>>,
 {
 }
 
@@ -44,14 +51,14 @@ impl Protocol {
     }
 }
 
-impl Sink<WsRequest> for Protocol {
+impl Sink<Req> for Protocol {
     type Error = WsError;
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.project().transport.poll_ready(cx)
     }
 
-    fn start_send(self: Pin<&mut Self>, item: WsRequest) -> Result<(), Self::Error> {
+    fn start_send(self: Pin<&mut Self>, item: Req) -> Result<(), Self::Error> {
         self.project().transport.start_send(item)
     }
 
@@ -65,7 +72,7 @@ impl Sink<WsRequest> for Protocol {
 }
 
 impl Stream for Protocol {
-    type Item = Result<WsResponse, WsError>;
+    type Item = Result<Resp, WsError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.project().transport.poll_next(cx)
@@ -76,25 +83,37 @@ impl Stream for Protocol {
     }
 }
 
-impl TagStore<WsRequest, WsResponse> for Protocol {
-    type Tag = usize;
+impl TagStore<Req, Resp> for Protocol {
+    type Tag = ();
 
-    fn assign_tag(self: Pin<&mut Self>, r: &mut WsRequest) -> Self::Tag {
-        let this = self.project();
-        let id = *this.next_stream_id;
-        *this.next_stream_id += 1;
-        r.id = id;
-        id
+    fn assign_tag(self: Pin<&mut Self>, r: &mut Req) -> Self::Tag {
+        // let this = self.project();
+        // let id = *this.next_stream_id;
+        // *this.next_stream_id += 1;
+        // r.id = id;
+        // id
+        ()
     }
 
-    fn finish_tag(self: Pin<&mut Self>, r: &WsResponse) -> Self::Tag {
-        r.id
+    fn finish_tag(self: Pin<&mut Self>, r: &Resp) -> Self::Tag {
+        // r.id
+        ()
+    }
+}
+
+impl From<tokio_tower::Error<Protocol, Req>> for WsError {
+    fn from(err: tokio_tower::Error<Protocol, Req>) -> Self {
+        match err {
+            tokio_tower::Error::BrokenTransportSend(err)
+            | tokio_tower::Error::BrokenTransportRecv(Some(err)) => err,
+            err => Self::TokioTower(err.into()),
+        }
     }
 }
 
 /// Binance websocket api service.
 pub struct BinanceWsApi {
-    svc: Multiplex<Protocol, WsError, WsRequest>,
+    svc: Multiplex<Protocol, WsError, Req>,
 }
 
 impl BinanceWsApi {
@@ -108,8 +127,8 @@ impl BinanceWsApi {
     }
 }
 
-impl Service<WsRequest> for BinanceWsApi {
-    type Response = WsResponse;
+impl Service<Req> for BinanceWsApi {
+    type Response = Resp;
     type Error = WsError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -117,7 +136,7 @@ impl Service<WsRequest> for BinanceWsApi {
         self.svc.poll_ready(cx)
     }
 
-    fn call(&mut self, req: WsRequest) -> Self::Future {
+    fn call(&mut self, req: Req) -> Self::Future {
         self.svc.call(req)
     }
 }
