@@ -8,7 +8,7 @@ use super::error::WsError;
 use super::request::WsRequest;
 use super::response::WsResponse;
 use exc::transport::websocket::WsStream;
-use futures::{future::BoxFuture, Sink, Stream};
+use futures::{future::BoxFuture, Sink, SinkExt, Stream, TryStreamExt};
 use tokio_tower::multiplex::{Client as Multiplex, TagStore};
 use tower::Service;
 
@@ -36,6 +36,10 @@ pin_project_lite::pin_project! {
 
 impl Protocol {
     fn new(websocket: WsStream, timeout: Duration) -> Self {
+        let transport = keep_alive::layer(
+            websocket.sink_map_err(WsError::from).map_err(WsError::from),
+            timeout,
+        );
         todo!()
     }
 }
@@ -94,7 +98,8 @@ pub struct BinanceWsApi {
 }
 
 impl BinanceWsApi {
-    pub(crate) fn new(websocket: WsStream, timeout: Duration) -> Result<Self, WsError> {
+    /// Create a [`BinanceWsApi`] using the given websocket stream.
+    pub fn with_websocket(websocket: WsStream, timeout: Duration) -> Result<Self, WsError> {
         let protocol = Protocol::new(websocket, timeout);
         let svc = Multiplex::with_error_handler(protocol, |err| {
             tracing::error!("protocol error: {err}");
