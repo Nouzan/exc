@@ -16,10 +16,7 @@ use futures::{
 
 use crate::websocket::error::WsError;
 
-use super::{
-    frame::{ClientFrame, RequestFrame},
-    Shared,
-};
+use super::frame::{RequestFrame, ServerFrame};
 
 /// Multiplex request.
 pub struct MultiplexRequest {
@@ -31,7 +28,7 @@ pub struct MultiplexRequest {
 pub struct MultiplexResponse {}
 
 /// Stream protocol layer.
-pub(crate) fn layer<T>(
+pub(super) fn layer<T>(
     transport: T,
 ) -> (
     impl Sink<MultiplexRequest, Error = WsError> + Stream<Item = Result<MultiplexResponse, WsError>>,
@@ -39,7 +36,7 @@ pub(crate) fn layer<T>(
 )
 where
     T: Sink<RequestFrame, Error = WsError> + Send + 'static,
-    T: Stream<Item = Result<ClientFrame, WsError>>,
+    T: Stream<Item = Result<ServerFrame, WsError>>,
 {
     let (streaming, worker, cancel) = Streaming::new(transport);
     tokio::spawn(async move {
@@ -56,6 +53,18 @@ where
     (streaming, state)
 }
 
+#[derive(Default)]
+pub(super) struct Shared {
+    waker: AtomicWaker,
+}
+
+impl Shared {
+    pub(super) fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), WsError>> {
+        self.waker.register(cx.waker());
+        Poll::Ready(Ok(()))
+    }
+}
+
 struct StreamingContext<T> {
     transport: T,
     c2w_rx: UnboundedReceiver<MultiplexRequest>,
@@ -66,7 +75,7 @@ struct StreamingContext<T> {
 impl<T> StreamingContext<T>
 where
     T: Sink<RequestFrame, Error = WsError>,
-    T: Stream<Item = Result<ClientFrame, WsError>>,
+    T: Stream<Item = Result<ServerFrame, WsError>>,
 {
     async fn into_worker(self) {
         let Self {
@@ -81,7 +90,7 @@ where
                 c2w = c2w_rx.next() => {
 
                 },
-                frame = rx.next() => {
+                server_frame = rx.next() => {
 
                 }
             }
@@ -105,7 +114,7 @@ impl Streaming {
     fn new<T>(transport: T) -> (Self, impl Future<Output = ()>, oneshot::Receiver<()>)
     where
         T: Sink<RequestFrame, Error = WsError>,
-        T: Stream<Item = Result<ClientFrame, WsError>>,
+        T: Stream<Item = Result<ServerFrame, WsError>>,
     {
         let (c2w_tx, c2w_rx) = mpsc::unbounded();
         let (w2c_tx, w2c_rx) = mpsc::unbounded();

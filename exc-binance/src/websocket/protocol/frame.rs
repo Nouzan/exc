@@ -73,10 +73,10 @@ pub struct ResponseFrame {
     pub result: Option<serde_json::Value>,
 }
 
-/// Client frame.
+/// Server frame.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
-pub enum ClientFrame {
+pub enum ServerFrame {
     /// Response.
     Response(ResponseFrame),
     /// Stream.
@@ -90,7 +90,7 @@ pub struct StreamFrame {}
 /// Frame protocol layer.
 pub fn layer<T>(
     transport: T,
-) -> impl Sink<RequestFrame, Error = WsError> + Stream<Item = Result<ClientFrame, WsError>>
+) -> impl Sink<RequestFrame, Error = WsError> + Stream<Item = Result<ServerFrame, WsError>>
 where
     T: Sink<String, Error = WsError>,
     T: Stream<Item = Result<String, WsError>>,
@@ -101,7 +101,7 @@ where
             stream::once(future::ready(msg))
         })
         .and_then(|msg| {
-            let f = serde_json::from_str::<ClientFrame>(&msg).map_err(WsError::from);
+            let f = serde_json::from_str::<ServerFrame>(&msg).map_err(WsError::from);
             future::ready(f)
         })
 }
