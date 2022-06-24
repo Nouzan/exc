@@ -8,8 +8,11 @@ use super::error::WsError;
 use super::request::WsRequest;
 use super::response::WsResponse;
 use exc::transport::websocket::WsStream;
-use futures::{Sink, Stream};
+use futures::{future::BoxFuture, Sink, Stream};
 use tokio_tower::multiplex::{Client as Multiplex, TagStore};
+use tower::Service;
+
+mod keep_alive;
 
 trait Transport: Sink<WsRequest, Error = WsError> + Stream<Item = Result<WsResponse, WsError>> {}
 
@@ -97,5 +100,19 @@ impl BinanceWsApi {
             tracing::error!("protocol error: {err}");
         });
         Ok(Self { svc })
+    }
+}
+
+impl Service<WsRequest> for BinanceWsApi {
+    type Response = WsResponse;
+    type Error = WsError;
+    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.svc.poll_ready(cx)
+    }
+
+    fn call(&mut self, req: WsRequest) -> Self::Future {
+        self.svc.call(req)
     }
 }
