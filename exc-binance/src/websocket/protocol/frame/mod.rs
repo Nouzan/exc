@@ -6,6 +6,11 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::websocket::error::WsError;
 
+use self::agg_trade::AggTrade;
+
+/// Aggregate trade.
+pub mod agg_trade;
+
 /// Operations.
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "UPPERCASE")]
@@ -17,7 +22,7 @@ pub enum Op {
 }
 
 /// Stream name.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Name {
     inst: String,
     channel: String,
@@ -49,7 +54,7 @@ pub struct RequestFrame {
     pub method: Op,
     /// Params.
     #[serde_as(as = "Vec<DisplayFromStr>")]
-    pub params: Vec<Name>,
+    pub(super) params: Vec<Name>,
 }
 
 impl RequestFrame {
@@ -58,6 +63,15 @@ impl RequestFrame {
         Self {
             id,
             method: Op::Subscribe,
+            params: vec![stream],
+        }
+    }
+
+    /// Unssubscribe a stream.
+    pub fn unsubscribe(id: usize, stream: Name) -> Self {
+        Self {
+            id,
+            method: Op::Unsubscribe,
             params: vec![stream],
         }
     }
@@ -73,6 +87,12 @@ pub struct ResponseFrame {
     pub result: Option<serde_json::Value>,
 }
 
+impl ResponseFrame {
+    pub(super) fn is_close_stream(&self) -> bool {
+        false
+    }
+}
+
 /// Server frame.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
@@ -80,12 +100,34 @@ pub enum ServerFrame {
     /// Response.
     Response(ResponseFrame),
     /// Stream.
-    Stream(serde_json::Value),
+    Stream(StreamFrame),
+}
+
+/// Payload that with stream name.
+pub trait Nameable {
+    /// Get name.
+    fn to_name(&self) -> Name;
 }
 
 /// Stream frame.
 #[derive(Debug, Clone, Deserialize)]
-pub struct StreamFrame {}
+#[serde(untagged)]
+pub enum StreamFrame {
+    /// Aggregate Trade.
+    AggTrade(AggTrade),
+    /// Unknwon.
+    Unknwon(serde_json::Value),
+}
+
+impl StreamFrame {
+    /// Get stream name.
+    pub fn to_name(&self) -> Option<Name> {
+        match self {
+            Self::AggTrade(f) => Some(f.to_name()),
+            Self::Unknwon(_) => None,
+        }
+    }
+}
 
 /// Frame protocol layer.
 pub fn layer<T>(

@@ -18,4 +18,7 @@ pub enum WsError {
     /// Json errors.
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),
+    /// Duplicate stream id.
+    #[error("duplicate stream id")]
+    DuplicateStreamId,
 }

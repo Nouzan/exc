@@ -45,6 +45,9 @@ async fn main() -> anyhow::Result<()> {
     });
     tx.send(RequestFrame::subscribe(2, Name::agg_trade("btcusdt")))
         .await?;
-    tokio::time::sleep(Duration::from_secs(60 * 60)).await;
+    tokio::time::sleep(Duration::from_secs(10)).await;
+    tx.send(RequestFrame::unsubscribe(2, Name::agg_trade("btcusdt")))
+        .await?;
+    tokio::time::sleep(Duration::from_secs(60)).await;
     Ok(())
 }

@@ -20,6 +20,7 @@ serde_with = "1.11"
 async-stream = "0.3.3"
 tokio-tower = "0.6.0"
 pin-project-lite = "0.2.8"
+rust_decimal = "1"
 
 [dependencies.serde]
 version = "1.0.136"
