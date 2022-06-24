@@ -9,6 +9,9 @@ pub enum WsError {
     /// Transport timeout.
     #[error("transport timeout")]
     TransportTimeout,
+    /// Transport is borken.
+    #[error("transport is broken")]
+    TransportIsBoken,
     /// Websocket errors.
     #[error("websocket: {0}")]
     Websocket(#[from] tokio_tungstenite::tungstenite::Error),

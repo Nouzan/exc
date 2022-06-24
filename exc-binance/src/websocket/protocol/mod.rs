@@ -1,5 +1,6 @@
 use std::{
     pin::Pin,
+    sync::Arc,
     task::{Context, Poll},
     time::Duration,
 };
@@ -8,9 +9,12 @@ use super::error::WsError;
 use super::request::WsRequest;
 use super::response::WsResponse;
 use exc::transport::websocket::WsStream;
-use futures::{future::BoxFuture, Sink, SinkExt, Stream, TryStreamExt};
+use futures::{future::BoxFuture, task::AtomicWaker, Sink, SinkExt, Stream, TryStreamExt};
 use tokio_tower::multiplex::{Client as Multiplex, TagStore};
 use tower::Service;
+
+/// Multiplex protocol.
+pub mod stream;
 
 /// Frame protocol.
 pub mod frame;
@@ -32,6 +36,18 @@ where
 
 type BoxTransport = Pin<Box<dyn Transport + Send>>;
 
+#[derive(Default)]
+pub(crate) struct Shared {
+    waker: AtomicWaker,
+}
+
+impl Shared {
+    fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), WsError>> {
+        self.waker.register(cx.waker());
+        Poll::Ready(Ok(()))
+    }
+}
+
 pin_project_lite::pin_project! {
     /// Binance websocket protocol.
     pub struct Protocol {
@@ -42,12 +58,13 @@ pin_project_lite::pin_project! {
 }
 
 impl Protocol {
-    fn new(websocket: WsStream, timeout: Duration) -> Self {
+    fn new(websocket: WsStream, timeout: Duration) -> (Self, Arc<Shared>) {
         let transport = keep_alive::layer(
             websocket.sink_map_err(WsError::from).map_err(WsError::from),
             timeout,
         );
         let transport = frame::layer(transport);
+        let (transport, state) = stream::layer(transport);
         todo!()
     }
 }
@@ -114,17 +131,18 @@ impl From<tokio_tower::Error<Protocol, Req>> for WsError {
 
 /// Binance websocket api service.
 pub struct BinanceWsApi {
+    state: Arc<Shared>,
     svc: Multiplex<Protocol, WsError, Req>,
 }
 
 impl BinanceWsApi {
     /// Create a [`BinanceWsApi`] using the given websocket stream.
     pub fn with_websocket(websocket: WsStream, timeout: Duration) -> Result<Self, WsError> {
-        let protocol = Protocol::new(websocket, timeout);
+        let (protocol, state) = Protocol::new(websocket, timeout);
         let svc = Multiplex::with_error_handler(protocol, |err| {
             tracing::error!("protocol error: {err}");
         });
-        Ok(Self { svc })
+        Ok(Self { svc, state })
     }
 }
 
@@ -134,6 +152,9 @@ impl Service<Req> for BinanceWsApi {
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        if let Err(err) = futures::ready!(self.state.poll_ready(cx)) {
+            return Poll::Ready(Err(err));
+        }
         self.svc.poll_ready(cx)
     }
 
