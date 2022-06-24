@@ -47,6 +47,7 @@ impl Protocol {
             websocket.sink_map_err(WsError::from).map_err(WsError::from),
             timeout,
         );
+        let transport = frame::layer(transport);
         todo!()
     }
 }

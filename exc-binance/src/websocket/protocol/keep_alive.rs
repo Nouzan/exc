@@ -225,6 +225,7 @@ where
                     }
                 },
                 Poll::Pending => {
+                    tracing::trace!("keep-alive; pending message");
                     break;
                 }
             }
