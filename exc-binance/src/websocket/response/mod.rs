@@ -1,2 +1,4 @@
 /// Binance websocket response.
-pub struct WsResponse;
+pub struct WsResponse {
+    pub(super) id: usize,
+}
