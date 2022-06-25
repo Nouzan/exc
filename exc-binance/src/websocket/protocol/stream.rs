@@ -19,15 +19,42 @@ use crate::websocket::{error::WsError, protocol::frame::Op};
 
 use super::frame::{Name, RequestFrame, ResponseFrame, ServerFrame, StreamFrame};
 
+pub(crate) type ResponseToken = tokio::sync::mpsc::UnboundedReceiver<()>;
+type RequestToken = tokio::sync::mpsc::UnboundedSender<()>;
+
 /// Multiplex request.
 pub struct MultiplexRequest {
-    id: usize,
-    stream: BoxStream<'static, RequestFrame>,
+    pub(crate) id: usize,
+    token: RequestToken,
+    pub(crate) stream: BoxStream<'static, RequestFrame>,
+}
+
+impl MultiplexRequest {
+    pub(crate) fn new<S, F>(stream: F) -> Self
+    where
+        F: FnOnce(ResponseToken) -> S,
+        S: Stream<Item = RequestFrame> + Send + 'static,
+    {
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let stream = stream(rx).boxed();
+        Self {
+            id: 0,
+            token: tx,
+            stream,
+        }
+    }
 }
 
 /// Multiplex response.
 pub struct MultiplexResponse {
+    pub(crate) id: usize,
     rx: tokio::sync::mpsc::UnboundedReceiver<Result<ServerFrame, WsError>>,
+}
+
+impl MultiplexResponse {
+    pub(crate) fn into_stream(self) -> impl Stream<Item = Result<ServerFrame, WsError>> {
+        tokio_stream::wrappers::UnboundedReceiverStream::new(self.rx)
+    }
 }
 
 /// Stream protocol layer.
@@ -79,6 +106,7 @@ enum State {
 struct StreamState {
     id: usize,
     tx: tokio::sync::mpsc::UnboundedSender<Result<ServerFrame, WsError>>,
+    token: RequestToken,
     state: State,
     topic: Option<Name>,
 }
@@ -156,7 +184,13 @@ impl StreamState {
             State::Idle => true,
             State::Open | State::LocalClosed => {
                 // TODO: send a close stream frame when error in open state.
-                self.tx.send(Ok(ServerFrame::Stream(frame))).is_ok()
+                match self.tx.send(Ok(ServerFrame::Stream(frame))) {
+                    Ok(_) => true,
+                    Err(_) => {
+                        let _ = self.token.send(());
+                        false
+                    }
+                }
             }
             State::RemoteClosed => false,
         }
@@ -198,29 +232,31 @@ impl ContextShared {
         responser: &mut UnboundedSender<Result<MultiplexResponse, WsError>>,
         mut request: MultiplexRequest,
     ) -> bool {
+        let id = request.id;
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        if let Err(err) = responser.send(Ok(MultiplexResponse { rx })).await {
+        if let Err(err) = responser.send(Ok(MultiplexResponse { rx, id })).await {
             tracing::trace!("stream worker; failed to send response: err={err}");
             return false;
         }
         {
             let mut streams = self.streams.lock().unwrap();
-            if streams.0.contains_key(&request.id) {
+            if streams.0.contains_key(&id) {
                 let _ = tx.send(Err(WsError::DuplicateStreamId));
             } else {
                 streams.0.insert(
-                    request.id,
+                    id,
                     StreamState {
                         id: request.id,
-                        tx,
+                        tx: tx.clone(),
                         state: State::Idle,
+                        token: request.token,
                         topic: None,
                     },
                 );
             }
         }
         let ctx = self.clone();
-        tokio::spawn(async move {
+        let response_stream_worker = async move {
             let id = request.id;
             tracing::trace!("response stream worker; start: id={id}");
             let c_tx = ctx.c_tx.clone();
@@ -235,6 +271,22 @@ impl ContextShared {
                 }
             }
             tracing::trace!("response stream worker; finished: id={id}");
+        };
+        let ctx = self.clone();
+        tokio::spawn(async move {
+            tokio::select! {
+                _ = response_stream_worker => {},
+                _ = tx.closed() => {
+
+                }
+            }
+            tracing::trace!("response stream worker; cancel stream: id={id}");
+            {
+                let (streams, topics) = &mut (*ctx.streams.lock().unwrap());
+                if let Some(topic) = streams.remove(&id).and_then(|state| state.topic) {
+                    topics.remove(&topic);
+                }
+            }
         });
         true
     }

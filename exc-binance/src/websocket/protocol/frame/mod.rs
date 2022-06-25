@@ -103,6 +103,16 @@ pub enum ServerFrame {
     Stream(StreamFrame),
 }
 
+impl ServerFrame {
+    pub(crate) fn into_stream_frame(self) -> Result<StreamFrame, WsError> {
+        if let Self::Stream(frame) = self {
+            Ok(frame)
+        } else {
+            Err(WsError::UnexpectedFrame(anyhow::anyhow!("{self:?}")))
+        }
+    }
+}
+
 /// Payload that with stream name.
 pub trait Nameable {
     /// Get name.

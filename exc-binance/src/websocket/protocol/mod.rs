@@ -53,7 +53,16 @@ impl Protocol {
         );
         let transport = frame::layer(transport);
         let (transport, state) = stream::layer(transport);
-        todo!()
+        let transport = transport
+            .with_flat_map(|req: Req| futures::stream::once(futures::future::ready(Ok(req.into()))))
+            .and_then(|resp| futures::future::ready(Ok(resp.into())));
+        (
+            Self {
+                transport: Box::pin(transport),
+                next_stream_id: 1,
+            },
+            state,
+        )
     }
 }
 
@@ -90,20 +99,18 @@ impl Stream for Protocol {
 }
 
 impl TagStore<Req, Resp> for Protocol {
-    type Tag = ();
+    type Tag = usize;
 
     fn assign_tag(self: Pin<&mut Self>, r: &mut Req) -> Self::Tag {
-        // let this = self.project();
-        // let id = *this.next_stream_id;
-        // *this.next_stream_id += 1;
-        // r.id = id;
-        // id
-        ()
+        let this = self.project();
+        let id = *this.next_stream_id;
+        *this.next_stream_id += 1;
+        r.inner.id = id;
+        id
     }
 
     fn finish_tag(self: Pin<&mut Self>, r: &Resp) -> Self::Tag {
-        // r.id
-        ()
+        r.inner.id
     }
 }
 

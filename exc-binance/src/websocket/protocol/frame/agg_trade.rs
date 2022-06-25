@@ -1,7 +1,9 @@
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
-use super::{Name, Nameable};
+use crate::websocket::error::WsError;
+
+use super::{Name, Nameable, StreamFrame};
 
 /// # Example
 /// A [`AggTrade`] in JSON format:
@@ -21,26 +23,36 @@ use super::{Name, Nameable};
 /// ```
 #[derive(Debug, Clone, Deserialize)]
 pub struct AggTrade {
+    /// Event type.
     #[serde(rename = "e")]
-    event: String,
+    pub event: String,
+    /// Event time.
     #[serde(rename = "E")]
-    event_timestamp: i64,
+    pub event_timestamp: i64,
+    /// Symbol.
     #[serde(rename = "s")]
-    symbol: String,
+    pub symbol: String,
+    /// Aggregate trade ID.
     #[serde(rename = "a")]
-    aggregate_id: usize,
+    pub aggregate_id: usize,
+    /// Price.
     #[serde(rename = "p")]
-    price: Decimal,
+    pub price: Decimal,
+    /// Quantity.
     #[serde(rename = "q")]
-    size: Decimal,
+    pub size: Decimal,
+    /// First trade ID.
     #[serde(rename = "f")]
-    first_id: usize,
+    pub first_id: usize,
+    /// Last trade ID.
     #[serde(rename = "l")]
-    last_id: usize,
+    pub last_id: usize,
+    /// Trade time.
     #[serde(rename = "T")]
-    trade_timestamp: i64,
+    pub trade_timestamp: i64,
+    /// Is the buyer the market maker.
     #[serde(rename = "m")]
-    buy_maker: bool,
+    pub buy_maker: bool,
 }
 
 impl Nameable for AggTrade {
@@ -48,6 +60,18 @@ impl Nameable for AggTrade {
         Name {
             inst: self.symbol.to_lowercase(),
             channel: self.event.clone(),
+        }
+    }
+}
+
+impl TryFrom<StreamFrame> for AggTrade {
+    type Error = WsError;
+
+    fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
+        if let StreamFrame::AggTrade(trade) = frame {
+            Ok(trade)
+        } else {
+            Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}")))
         }
     }
 }

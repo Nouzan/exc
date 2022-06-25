@@ -4,12 +4,12 @@ use exc_binance::websocket::{
     error::WsError,
     protocol::{
         frame::{self, Name, RequestFrame},
-        keep_alive, BinanceWsApi,
+        keep_alive,
     },
 };
 use futures::{SinkExt, StreamExt, TryStreamExt};
 use http::Uri;
-use tower::{Service, ServiceExt};
+use tower::ServiceExt;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

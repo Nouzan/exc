@@ -21,4 +21,10 @@ pub enum WsError {
     /// Duplicate stream id.
     #[error("duplicate stream id")]
     DuplicateStreamId,
+    /// No response.
+    #[error("no response")]
+    NoResponse,
+    /// Unexpected frame.
+    #[error("unexpected frame: {0}")]
+    UnexpectedFrame(anyhow::Error),
 }
