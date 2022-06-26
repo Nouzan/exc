@@ -12,6 +12,9 @@ use tower::Service;
 /// Subscribe tickers.
 pub mod subscribe_tickers;
 
+/// Subscribe instruments.
+pub mod subscribe_instruments;
+
 /// Fetch candles.
 pub mod fetch_candles;
 

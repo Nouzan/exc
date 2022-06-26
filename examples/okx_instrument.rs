@@ -1,6 +1,9 @@
 use std::time::Duration;
 
-use exc::{types::instrument::SubscribeInstruments, ExchangeLayer};
+use exc::{
+    service::subscribe_instruments::SubscribeInstrumentsService,
+    types::instrument::SubscribeInstruments, ExchangeLayer,
+};
 use exc_okx::websocket::{Endpoint, Request};
 use futures::StreamExt;
 use tower::{ServiceBuilder, ServiceExt};
@@ -28,10 +31,7 @@ async fn main() -> anyhow::Result<()> {
             let mut svc = svc.clone();
             tokio::spawn(async move {
                 loop {
-                    match (&mut svc)
-                        .oneshot(SubscribeInstruments { tag: tag.clone() })
-                        .await
-                    {
+                    match svc.subscribe_instruments(&tag).await {
                         Ok(mut stream) => {
                             while let Some(meta) = stream.next().await {
                                 match meta {
