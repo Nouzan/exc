@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
     api.ready().await?;
     let mut stream = api
         .call(Request::Ws(WsRequest::subscribe(Name::agg_trade(
-            "btcusdt",
+            "btcbusd",
         ))))
         .await?
         .as_stream::<AggTrade>()
@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
         api.ready().await?;
         match api
             .call(Request::Ws(WsRequest::subscribe(Name::agg_trade(
-                "btcusdt",
+                "btcbusd",
             ))))
             .await
         {
