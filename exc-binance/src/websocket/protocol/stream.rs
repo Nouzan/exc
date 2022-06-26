@@ -235,15 +235,24 @@ struct ContextShared {
     c_tx: tokio::sync::mpsc::UnboundedSender<RequestFrame>,
     streams: Mutex<(HashMap<usize, StreamState>, HashMap<Name, usize>)>,
     timeout: Duration,
+    cancel: tokio::sync::mpsc::UnboundedSender<()>,
 }
 
 impl ContextShared {
-    fn new(c_tx: tokio::sync::mpsc::UnboundedSender<RequestFrame>, timeout: Duration) -> Self {
-        Self {
-            c_tx,
-            streams: Mutex::new((HashMap::default(), HashMap::default())),
-            timeout,
-        }
+    fn new(
+        c_tx: tokio::sync::mpsc::UnboundedSender<RequestFrame>,
+        timeout: Duration,
+    ) -> (Self, tokio::sync::mpsc::UnboundedReceiver<()>) {
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        (
+            Self {
+                c_tx,
+                streams: Mutex::new((HashMap::default(), HashMap::default())),
+                timeout,
+                cancel: tx,
+            },
+            rx,
+        )
     }
 
     fn handle_client_frame(&self, frame: &RequestFrame) -> bool {
@@ -325,7 +334,12 @@ impl ContextShared {
         };
         let ctx = self.clone();
         tokio::spawn(async move {
-            let _ = response_stream_worker.await;
+            tokio::select! {
+                _ = ctx.cancel.closed() => {
+                    tracing::trace!("response stream worker of {id}; cancelled");
+                }
+                _ = response_stream_worker => {}
+            }
             {
                 let (streams, topics) = &mut (*ctx.streams.lock().unwrap());
                 if let Some(stream) = streams.get_mut(&id) {
@@ -403,7 +417,8 @@ where
         } = self;
         let (tx, mut rx) = transport.split();
         let (c_tx, c_rx) = tokio::sync::mpsc::unbounded_channel();
-        let shared = Arc::new(ContextShared::new(c_tx, timeout));
+        let (ctx, mut cancel) = ContextShared::new(c_tx, timeout);
+        let shared = Arc::new(ctx);
         let c_rx = tokio_stream::wrappers::UnboundedReceiverStream::new(c_rx).map(Ok);
         let sink_worker = async move {
             match c_rx.forward(tx).await {
@@ -473,6 +488,7 @@ where
             }
         }
         state.waker.wake();
+        cancel.close();
     }
 }
 
