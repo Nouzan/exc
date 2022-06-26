@@ -1,5 +1,3 @@
-use self::instrument::ExchangeInfo;
-
 use super::error::RestError;
 use anyhow::anyhow;
 use exc::ExchangeError;
@@ -8,6 +6,8 @@ use serde::{de::DeserializeOwned, Deserialize};
 
 /// Instrument.
 pub mod instrument;
+
+pub use self::instrument::ExchangeInfo;
 
 /// Binance rest api response data.
 #[derive(Debug, Deserialize)]

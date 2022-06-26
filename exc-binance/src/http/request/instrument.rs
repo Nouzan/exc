@@ -41,8 +41,7 @@ mod test {
                 ExchangeInfo::default(),
             ))))
             .await?
-            .into_response::<crate::http::response::instrument::ExchangeInfo>()
-            .unwrap()?;
+            .into_response::<crate::http::response::instrument::ExchangeInfo>()?;
         println!("{:?}", resp);
         Ok(())
     }

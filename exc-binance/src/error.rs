@@ -1,3 +1,5 @@
+use anyhow::anyhow;
+use exc::ExchangeError;
 use thiserror::Error;
 
 use crate::{http::error::RestError, websocket::error::WsError};
@@ -17,4 +19,18 @@ pub enum Error {
     /// Wrong response type.
     #[error("wrong response type")]
     WrongResponseType,
+}
+
+impl From<Error> for ExchangeError {
+    fn from(err: Error) -> Self {
+        match err {
+            Error::Unknown(err) => Self::Other(err),
+            Error::WrongResponseType => Self::Other(anyhow!("wrong response type")),
+            Error::Rest(err) => match err {
+                RestError::Exchange(err) => err,
+                _ => Self::Other(err.into()),
+            },
+            Error::Ws(err) => Self::Other(err.into()),
+        }
+    }
 }

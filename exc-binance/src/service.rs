@@ -1,12 +1,12 @@
 use std::task::{Context, Poll};
 
-use exc::transport::http::channel::HttpsChannel;
+use exc::{transport::http::channel::HttpsChannel, Exchange, ExchangeError, ExchangeLayer};
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
 use tower::{
     buffer::Buffer,
     ready_cache::{error::Failed, ReadyCache},
     util::Either,
-    Service,
+    Service, ServiceBuilder,
 };
 
 use crate::{
@@ -116,11 +116,18 @@ impl Binance {
     pub fn usd_margin_futures() -> Endpoint {
         Endpoint::usd_margin_futures()
     }
+
+    /// Convert into an exchange.
+    pub fn into_exchange(self) -> Exchange<Self, Request> {
+        ServiceBuilder::default()
+            .layer(ExchangeLayer::default())
+            .service(self)
+    }
 }
 
 impl Service<Request> for Binance {
     type Response = Response;
-    type Error = Error;
+    type Error = ExchangeError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -130,6 +137,7 @@ impl Service<Request> for Binance {
                 Ok(err) => *err,
                 Err(err) => Error::Unknown(anyhow::anyhow!("{}", err)),
             })
+            .map_err(ExchangeError::from)
     }
 
     fn call(&mut self, req: Request) -> Self::Future {
@@ -139,6 +147,7 @@ impl Service<Request> for Binance {
                 Ok(err) => *err,
                 Err(err) => Error::Unknown(anyhow::anyhow!("{}", err)),
             })
+            .map_err(ExchangeError::from)
             .boxed()
     }
 }

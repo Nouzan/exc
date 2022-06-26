@@ -31,13 +31,13 @@ impl Response {
     }
 
     /// Convert to a response of the given type.
-    pub fn into_response<T>(self) -> Option<Result<T, Error>>
+    pub fn into_response<T>(self) -> Result<T, Error>
     where
         T: TryFrom<Data, Error = RestError>,
     {
         match self {
-            Self::Http(resp) => Some(resp.into_response().map_err(Error::from)),
-            Self::Ws(_) => None,
+            Self::Http(resp) => resp.into_response().map_err(Error::from),
+            Self::Ws(_) => Err(Error::WrongResponseType),
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::{service::subscribe_instruments::SubscribeInstrumentsService, ExchangeLayer};
+use exc::{service::instrument::SubscribeInstrumentsService, ExchangeLayer};
 use exc_okx::websocket::{Endpoint, Request};
 use futures::StreamExt;
 use tower::ServiceBuilder;

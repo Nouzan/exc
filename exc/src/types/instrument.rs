@@ -91,6 +91,17 @@ pub struct SubscribeInstruments {
     pub tag: String,
 }
 
+/// Fetch instruments.
+#[derive(Debug, Clone)]
+pub struct FetchInstruments {
+    /// Tag.
+    pub tag: String,
+}
+
 impl Request for SubscribeInstruments {
+    type Response = InstrumentStream;
+}
+
+impl Request for FetchInstruments {
     type Response = InstrumentStream;
 }

@@ -8,6 +8,8 @@ pub mod utils;
 /// Instrument.
 pub mod instrument;
 
+pub use self::instrument::ExchangeInfo;
+
 /// Payload.
 pub struct Payload {
     inner: Box<dyn Rest + Send + Sync + 'static>,
