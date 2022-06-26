@@ -3,6 +3,7 @@ use std::task::{Context, Poll};
 use exc::transport::http::channel::HttpsChannel;
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
 use tower::{
+    buffer::Buffer,
     ready_cache::{error::Failed, ReadyCache},
     util::Either,
     Service,
@@ -67,19 +68,11 @@ impl Service<Request> for Ws {
     }
 }
 
-/// Binance.
-pub struct Binance {
+pub(crate) struct BinanceInner {
     pub(crate) svcs: ReadyCache<&'static str, Either<Http, Ws>, Request>,
 }
 
-impl Binance {
-    /// Usd-margin futures endpoint.
-    pub fn usd_margin_futures() -> Endpoint {
-        Endpoint::usd_margin_futures()
-    }
-}
-
-impl Service<Request> for Binance {
+impl Service<Request> for BinanceInner {
     type Response = Response;
     type Error = Error;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
@@ -109,5 +102,43 @@ impl Service<Request> for Binance {
                 })
                 .boxed(),
         }
+    }
+}
+
+/// Binance.
+#[derive(Clone)]
+pub struct Binance {
+    pub(crate) inner: Buffer<BinanceInner, Request>,
+}
+
+impl Binance {
+    /// Usd-margin futures endpoint.
+    pub fn usd_margin_futures() -> Endpoint {
+        Endpoint::usd_margin_futures()
+    }
+}
+
+impl Service<Request> for Binance {
+    type Response = Response;
+    type Error = Error;
+    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner
+            .poll_ready(cx)
+            .map_err(|err| match err.downcast::<Error>() {
+                Ok(err) => *err,
+                Err(err) => Error::Unknown(anyhow::anyhow!("{}", err)),
+            })
+    }
+
+    fn call(&mut self, req: Request) -> Self::Future {
+        self.inner
+            .call(req)
+            .map_err(|err| match err.downcast::<Error>() {
+                Ok(err) => *err,
+                Err(err) => Error::Unknown(anyhow::anyhow!("{}", err)),
+            })
+            .boxed()
     }
 }

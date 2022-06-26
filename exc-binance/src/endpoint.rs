@@ -1,11 +1,11 @@
 use std::time::Duration;
 
 use exc::transport::http::endpoint::Endpoint as HttpEndpoint;
-use tower::{ready_cache::ReadyCache, util::Either, ServiceBuilder};
+use tower::{buffer::Buffer, ready_cache::ReadyCache, util::Either, ServiceBuilder};
 
 use crate::{
     http::layer::BinanceRestApiLayer,
-    service::{Binance, HTTP_KEY, WS_KEY},
+    service::{Binance, BinanceInner, HTTP_KEY, WS_KEY},
     websocket::{endpoint::WsEndpoint, BinanceWebsocketApi},
 };
 
@@ -46,6 +46,7 @@ impl Endpoint {
         let mut svcs = ReadyCache::default();
         svcs.push(HTTP_KEY, Either::A(http));
         svcs.push(WS_KEY, Either::B(ws));
-        Binance { svcs }
+        let inner = Buffer::new(BinanceInner { svcs }, 256);
+        Binance { inner }
     }
 }
