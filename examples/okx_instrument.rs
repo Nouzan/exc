@@ -1,12 +1,9 @@
 use std::time::Duration;
 
-use exc::{
-    service::subscribe_instruments::SubscribeInstrumentsService,
-    types::instrument::SubscribeInstruments, ExchangeLayer,
-};
+use exc::{service::subscribe_instruments::SubscribeInstrumentsService, ExchangeLayer};
 use exc_okx::websocket::{Endpoint, Request};
 use futures::StreamExt;
-use tower::{ServiceBuilder, ServiceExt};
+use tower::ServiceBuilder;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
