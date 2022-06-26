@@ -28,7 +28,7 @@ pub struct BinanceWebsocketApi {
 impl BinanceWebsocketApi {
     /// Endpoint of USD-M Futures API.
     pub fn usd_margin_futures() -> WsEndpoint {
-        WsEndpoint::from_static("wss://fstream.binance.com/ws/bnbusdt@aggTrade")
+        WsEndpoint::from_static("wss://fstream.binance.com/ws/bnbusdt@markPrice")
     }
 }
 
