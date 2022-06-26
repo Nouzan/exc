@@ -1,23 +1,26 @@
+use self::instrument::ExchangeInfo;
+
 use super::error::RestError;
 use anyhow::anyhow;
 use exc::ExchangeError;
 use http::StatusCode;
 use serde::{de::DeserializeOwned, Deserialize};
 
-/// Empty.
-#[derive(Debug, Clone, Copy, Default, Deserialize)]
-pub struct Empty {}
+/// Instrument.
+pub mod instrument;
 
 /// Binance rest api response data.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Data {
-    /// Empty.
-    Empty(Empty),
+    /// Exchange info.
+    ExchangeInfo(ExchangeInfo),
+    /// Unknwon.
+    Unknwon(serde_json::Value),
 }
 
 /// Binance rest api response.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct RestResponse<T> {
     data: T,
 }
@@ -26,6 +29,14 @@ impl<T> RestResponse<T> {
     /// Into inner data.
     pub fn into_inner(self) -> T {
         self.data
+    }
+
+    /// Convert into a response of the given type.
+    pub fn into_response<U>(self) -> Result<U, RestError>
+    where
+        U: TryFrom<T, Error = RestError>,
+    {
+        U::try_from(self.into_inner())
     }
 
     pub(crate) async fn from_http(resp: http::Response<hyper::Body>) -> Result<Self, RestError>

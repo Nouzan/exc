@@ -2,9 +2,9 @@ use super::{Rest, RestEndpoint, RestError};
 
 /// Ping USD-M Futures API.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct UsdMPing;
+pub struct Ping;
 
-impl Rest for UsdMPing {
+impl Rest for Ping {
     fn endpoint(&self) -> RestEndpoint {
         super::RestEndpoint::UsdMarginFutures
     }

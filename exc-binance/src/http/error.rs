@@ -16,4 +16,7 @@ pub enum RestError {
     /// Standard exchange errors.
     #[error("exchange: {0}")]
     Exchange(#[from] ExchangeError),
+    /// Unexpected response type.
+    #[error("unexpected response type: {0}")]
+    UnexpectedResponseType(anyhow::Error),
 }

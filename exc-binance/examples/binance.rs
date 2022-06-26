@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use exc_binance::{
-    http::request::{utils::UsdMPing, Payload, RestRequest},
+    http::request::{utils::Ping, Payload, RestRequest},
     websocket::{
         protocol::frame::{agg_trade::AggTrade, Name},
         request::WsRequest,
@@ -51,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
     api.ready().await?;
     let resp = api
         .call(Request::Http(RestRequest::from(Payload::new(
-            UsdMPing::default(),
+            Ping::default(),
         ))))
         .await?;
     tracing::info!("ping response: {resp:?}");

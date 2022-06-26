@@ -5,6 +5,9 @@ use super::error::RestError;
 /// Utils.
 pub mod utils;
 
+/// Instrument.
+pub mod instrument;
+
 /// Payload.
 pub struct Payload {
     inner: Box<dyn Rest + Send + Sync + 'static>,

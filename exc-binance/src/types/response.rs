@@ -1,7 +1,10 @@
 use futures::{Stream, TryStreamExt};
 
 use crate::{
-    http::response::{Data, RestResponse},
+    http::{
+        error::RestError,
+        response::{Data, RestResponse},
+    },
     websocket::{error::WsError, protocol::frame::StreamFrame, response::WsResponse},
     Error,
 };
@@ -23,7 +26,18 @@ impl Response {
     {
         match self {
             Self::Http(_) => None,
-            Self::Ws(resp) => resp.as_stream().map(|stream| stream.map_err(Error::from)),
+            Self::Ws(resp) => resp.into_stream().map(|stream| stream.map_err(Error::from)),
+        }
+    }
+
+    /// Convert to a response of the given type.
+    pub fn into_response<T>(self) -> Option<Result<T, Error>>
+    where
+        T: TryFrom<Data, Error = RestError>,
+    {
+        match self {
+            Self::Http(resp) => Some(resp.into_response().map_err(Error::from)),
+            Self::Ws(_) => None,
         }
     }
 }

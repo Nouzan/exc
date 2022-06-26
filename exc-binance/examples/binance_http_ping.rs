@@ -1,7 +1,7 @@
 use exc::transport::http::endpoint::Endpoint;
 use exc_binance::http::{
     layer::BinanceRestApiLayer,
-    request::{utils::UsdMPing, RestRequest},
+    request::{utils::Ping, RestRequest},
     response::Data,
 };
 use tower::{ServiceBuilder, ServiceExt};
@@ -21,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
         .layer(BinanceRestApiLayer)
         .service(http);
     let resp: Data = svc
-        .oneshot(RestRequest::from(UsdMPing::default()))
+        .oneshot(RestRequest::from(Ping::default()))
         .await?
         .into_inner();
     tracing::info!("{resp:?}");

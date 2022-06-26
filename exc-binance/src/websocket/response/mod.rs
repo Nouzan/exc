@@ -28,7 +28,7 @@ impl fmt::Debug for WsResponse {
 
 impl WsResponse {
     /// As a stream of the given type.
-    pub fn as_stream<T>(self) -> Option<impl Stream<Item = Result<T, WsError>>>
+    pub fn into_stream<T>(self) -> Option<impl Stream<Item = Result<T, WsError>>>
     where
         T: TryFrom<StreamFrame, Error = WsError>,
     {
