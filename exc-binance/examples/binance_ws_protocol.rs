@@ -25,7 +25,8 @@ async fn main() -> anyhow::Result<()> {
             "wss://fstream.binance.com/ws/bnbusdt@aggTrade",
         ))
         .await?;
-    let mut api = BinanceWsApi::with_websocket(ws, Duration::from_secs(30))?;
+    let mut api =
+        BinanceWsApi::with_websocket(ws, Duration::from_secs(30), Duration::from_secs(30))?;
     api.ready().await?;
     let mut stream = api
         .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))
@@ -50,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
     drop(stream);
-
+    tokio::time::sleep(Duration::from_secs(5)).await;
     api.ready().await?;
     let mut stream = api
         .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))

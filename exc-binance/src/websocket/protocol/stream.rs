@@ -28,6 +28,7 @@ type RequestToken = tokio::sync::oneshot::Sender<()>;
 pub struct MultiplexRequest {
     pub(crate) id: usize,
     token: RequestToken,
+    timeout: Option<Duration>,
     pub(crate) stream: BoxStream<'static, RequestFrame>,
 }
 
@@ -42,8 +43,14 @@ impl MultiplexRequest {
         Self {
             id: 0,
             token: tx,
+            timeout: None,
             stream,
         }
+    }
+
+    pub(crate) fn timeout(mut self, duration: Duration) -> Self {
+        self.timeout = Some(duration);
+        self
     }
 }
 
@@ -64,6 +71,7 @@ impl MultiplexResponse {
 /// Stream protocol layer.
 pub(super) fn layer<T>(
     transport: T,
+    default_stream_timeout: Duration,
 ) -> (
     impl Sink<MultiplexRequest, Error = WsError> + Stream<Item = Result<MultiplexResponse, WsError>>,
     Arc<Shared>,
@@ -72,7 +80,7 @@ where
     T: Sink<RequestFrame, Error = WsError> + Send + 'static,
     T: Stream<Item = Result<ServerFrame, WsError>>,
 {
-    let (streaming, worker, cancel) = Streaming::new(transport);
+    let (streaming, worker, cancel) = Streaming::new(transport, default_stream_timeout);
     tokio::spawn(async move {
         tokio::select! {
             _ = worker => {
@@ -293,7 +301,7 @@ impl ContextShared {
                         tx: tx.clone(),
                         state: State::Idle,
                         topic: None,
-                        timeout: self.timeout,
+                        timeout: request.timeout.unwrap_or(self.timeout),
                     },
                 );
             }
@@ -481,7 +489,10 @@ pin_project_lite::pin_project! {
 }
 
 impl Streaming {
-    fn new<T>(transport: T) -> (Self, impl Future<Output = ()>, oneshot::Receiver<()>)
+    fn new<T>(
+        transport: T,
+        default_stream_timeout: Duration,
+    ) -> (Self, impl Future<Output = ()>, oneshot::Receiver<()>)
     where
         T: Sink<RequestFrame, Error = WsError>,
         T: Stream<Item = Result<ServerFrame, WsError>>,
@@ -501,7 +512,7 @@ impl Streaming {
             w2c_tx,
             c2w_rx,
             state,
-            timeout: Duration::from_secs(30),
+            timeout: default_stream_timeout,
         };
         (streaming, ctx.into_worker(), cancel)
     }

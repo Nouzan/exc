@@ -46,13 +46,17 @@ pin_project_lite::pin_project! {
 }
 
 impl Protocol {
-    fn new(websocket: WsStream, timeout: Duration) -> (Self, Arc<stream::Shared>) {
+    fn new(
+        websocket: WsStream,
+        keep_alive_timeout: Duration,
+        default_stream_timeout: Duration,
+    ) -> (Self, Arc<stream::Shared>) {
         let transport = keep_alive::layer(
             websocket.sink_map_err(WsError::from).map_err(WsError::from),
-            timeout,
+            keep_alive_timeout,
         );
         let transport = frame::layer(transport);
-        let (transport, state) = stream::layer(transport);
+        let (transport, state) = stream::layer(transport, default_stream_timeout);
         let transport = transport
             .with_flat_map(|req: Req| futures::stream::once(futures::future::ready(Ok(req.into()))))
             .and_then(|resp| futures::future::ready(Ok(resp.into())));
@@ -132,8 +136,13 @@ pub struct BinanceWsApi {
 
 impl BinanceWsApi {
     /// Create a [`BinanceWsApi`] using the given websocket stream.
-    pub fn with_websocket(websocket: WsStream, timeout: Duration) -> Result<Self, WsError> {
-        let (protocol, state) = Protocol::new(websocket, timeout);
+    pub fn with_websocket(
+        websocket: WsStream,
+        keep_alive_timeout: Duration,
+        default_stream_timeout: Duration,
+    ) -> Result<Self, WsError> {
+        let (protocol, state) =
+            Protocol::new(websocket, keep_alive_timeout, default_stream_timeout);
         let svc = Multiplex::with_error_handler(protocol, |err| {
             tracing::error!("protocol error: {err}");
         });

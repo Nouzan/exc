@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::protocol::{
     frame::{Name, RequestFrame},
     stream::MultiplexRequest,
@@ -21,6 +23,12 @@ impl WsRequest {
                 }
             }),
         }
+    }
+
+    /// Set stream timeout. Default to the `default_stream_timeout` in protocol config.
+    pub fn timeout(mut self, duration: Duration) -> Self {
+        self.inner = self.inner.timeout(duration);
+        self
     }
 }
 
