@@ -1,9 +1,12 @@
 use std::time::Duration;
 
-use exc_binance::websocket::{
-    protocol::frame::{agg_trade::AggTrade, Name},
-    request::WsRequest,
-    BinanceWebsocketApi,
+use exc_binance::{
+    http::request::{utils::UsdMPing, Payload, RestRequest},
+    websocket::{
+        protocol::frame::{agg_trade::AggTrade, Name},
+        request::WsRequest,
+    },
+    Binance, Request,
 };
 use futures::StreamExt;
 use tower::{Service, ServiceExt};
@@ -13,16 +16,17 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::fmt()
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "error,exc_binance=trace,binance_ws_api=debug".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "error,binance=debug".into()),
         ))
         .init();
-    let mut api = BinanceWebsocketApi::usd_margin_futures()
-        .keep_alive_timeout(Duration::from_secs(30))
+    let mut api = Binance::usd_margin_futures()
+        .ws_keep_alive_timeout(Duration::from_secs(30))
         .connect();
-    ServiceExt::<WsRequest>::ready(&mut api).await?;
+    api.ready().await?;
     let mut stream = api
-        .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))
+        .call(Request::Ws(WsRequest::subscribe(Name::agg_trade(
+            "btcusdt",
+        ))))
         .await?
         .as_stream::<AggTrade>()
         .unwrap()
@@ -44,12 +48,22 @@ async fn main() -> anyhow::Result<()> {
         }
     }
     drop(stream);
+    api.ready().await?;
+    let resp = api
+        .call(Request::Http(RestRequest::from(Payload::new(
+            UsdMPing::default(),
+        ))))
+        .await?;
+    tracing::info!("ping response: {resp:?}");
+    tokio::time::sleep(Duration::from_secs(2)).await;
     let mut count = 1;
     loop {
         count += 1;
-        ServiceExt::<WsRequest>::ready(&mut api).await?;
+        api.ready().await?;
         match api
-            .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))
+            .call(Request::Ws(WsRequest::subscribe(Name::agg_trade(
+                "btcusdt",
+            ))))
             .await
         {
             Ok(resp) => {

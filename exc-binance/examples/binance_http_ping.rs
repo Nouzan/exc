@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "error,exc_binance=trace,binance_ping=debug".into()),
+                .unwrap_or_else(|_| "error,exc_binance=trace,binance_http_ping=debug".into()),
         ))
         .init();
 

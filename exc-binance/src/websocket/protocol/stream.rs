@@ -55,6 +55,7 @@ impl MultiplexRequest {
 }
 
 /// Multiplex response.
+#[derive(Debug)]
 pub struct MultiplexResponse {
     pub(crate) id: usize,
     token: RequestToken,

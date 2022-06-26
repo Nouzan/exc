@@ -1,3 +1,5 @@
+use std::fmt;
+
 use futures::{stream::BoxStream, Stream, StreamExt, TryStreamExt};
 
 use crate::websocket::protocol::frame::ServerFrame;
@@ -13,6 +15,15 @@ pub enum WsResponse {
     Raw(MultiplexResponse),
     /// Stream.
     Stream(BoxStream<'static, Result<StreamFrame, WsError>>),
+}
+
+impl fmt::Debug for WsResponse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Raw(resp) => write!(f, "Raw({resp:?})"),
+            Self::Stream(_) => write!(f, "Stream(_)"),
+        }
+    }
 }
 
 impl WsResponse {

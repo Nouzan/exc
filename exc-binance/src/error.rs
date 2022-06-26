@@ -4,7 +4,7 @@ use crate::{http::error::RestError, websocket::error::WsError};
 
 /// All errors in [`exc-binance`]
 #[derive(Debug, Error)]
-pub enum BinanceError {
+pub enum Error {
     /// Rest API errors.
     #[error("rest: {0}")]
     Rest(#[from] RestError),
@@ -14,4 +14,7 @@ pub enum BinanceError {
     /// All other errors.
     #[error("unknown: {0}")]
     Unknown(#[from] anyhow::Error),
+    /// Wrong response type.
+    #[error("wrong response type")]
+    WrongResponseType,
 }
