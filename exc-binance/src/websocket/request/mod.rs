@@ -13,12 +13,11 @@ impl WsRequest {
     /// Subscribe to a stream.
     pub fn subscribe(stream: Name) -> Self {
         Self {
-            inner: MultiplexRequest::new(|mut token| {
+            inner: MultiplexRequest::new(|token| {
                 stream! {
                     yield RequestFrame::subscribe(0, stream.clone());
-                    let _ = token.recv().await;
+                    let _ = token.await;
                     yield RequestFrame::unsubscribe(0, stream);
-                    let _ = token.recv().await;
                 }
             }),
         }

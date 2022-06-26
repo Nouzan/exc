@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use super::protocol::frame::Name;
+
 /// Websocket API errors.
 #[derive(Debug, Error)]
 pub enum WsError {
@@ -27,4 +29,10 @@ pub enum WsError {
     /// Unexpected frame.
     #[error("unexpected frame: {0}")]
     UnexpectedFrame(anyhow::Error),
+    /// Stream has been subscribed.
+    #[error("stream {0} has been subscribed")]
+    StreamSubscribed(Name),
+    /// Empty stream name.
+    #[error("empty stream name")]
+    EmptyStreamName,
 }

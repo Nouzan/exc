@@ -50,6 +50,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
     drop(stream);
+
     api.ready().await?;
     let mut stream = api
         .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))
