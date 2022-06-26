@@ -5,11 +5,13 @@ use std::{
     time::Duration,
 };
 
+use self::stream::{MultiplexRequest, MultiplexResponse};
+
 use super::error::WsError;
 use super::request::WsRequest;
 use super::response::WsResponse;
 use exc::transport::websocket::WsStream;
-use futures::{future::BoxFuture, Sink, SinkExt, Stream, TryStreamExt};
+use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, TryFutureExt, TryStreamExt};
 use tokio_tower::multiplex::{Client as Multiplex, TagStore};
 use tower::Service;
 
@@ -22,8 +24,8 @@ pub mod frame;
 /// Keep-alive protocol.
 pub mod keep_alive;
 
-type Req = WsRequest;
-type Resp = WsResponse;
+type Req = MultiplexRequest;
+type Resp = MultiplexResponse;
 
 trait Transport: Sink<Req, Error = WsError> + Stream<Item = Result<Resp, WsError>> {}
 
@@ -57,9 +59,6 @@ impl Protocol {
         );
         let transport = frame::layer(transport);
         let (transport, state) = stream::layer(transport, default_stream_timeout);
-        let transport = transport
-            .with_flat_map(|req: Req| futures::stream::once(futures::future::ready(Ok(req.into()))))
-            .and_then(|resp| futures::future::ready(Ok(resp.into())));
         (
             Self {
                 transport: Box::pin(transport),
@@ -109,12 +108,12 @@ impl TagStore<Req, Resp> for Protocol {
         let this = self.project();
         let id = *this.next_stream_id;
         *this.next_stream_id += 1;
-        r.inner.id = id;
+        r.id = id;
         id
     }
 
     fn finish_tag(self: Pin<&mut Self>, r: &Resp) -> Self::Tag {
-        r.inner.id
+        r.id
     }
 }
 
@@ -128,13 +127,13 @@ impl From<tokio_tower::Error<Protocol, Req>> for WsError {
     }
 }
 
-/// Binance websocket api service.
-pub struct BinanceWsApi {
+/// Binance websocket service.
+pub struct WsClient {
     state: Arc<stream::Shared>,
     svc: Multiplex<Protocol, WsError, Req>,
 }
 
-impl BinanceWsApi {
+impl WsClient {
     /// Create a [`BinanceWsApi`] using the given websocket stream.
     pub fn with_websocket(
         websocket: WsStream,
@@ -150,8 +149,8 @@ impl BinanceWsApi {
     }
 }
 
-impl Service<Req> for BinanceWsApi {
-    type Response = Resp;
+impl Service<WsRequest> for WsClient {
+    type Response = WsResponse;
     type Error = WsError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -162,7 +161,18 @@ impl Service<Req> for BinanceWsApi {
         self.svc.poll_ready(cx)
     }
 
-    fn call(&mut self, req: Req) -> Self::Future {
-        self.svc.call(req)
+    fn call(&mut self, req: WsRequest) -> Self::Future {
+        let is_stream = req.stream;
+        self.svc
+            .call(req.into())
+            .and_then(move |resp| {
+                let resp: WsResponse = resp.into();
+                if is_stream {
+                    resp.stream().left_future()
+                } else {
+                    futures::future::ready(Ok(resp)).right_future()
+                }
+            })
+            .boxed()
     }
 }

@@ -1,4 +1,5 @@
 use thiserror::Error;
+use tower::BoxError;
 
 use super::protocol::frame::Name;
 
@@ -35,4 +36,7 @@ pub enum WsError {
     /// Empty stream name.
     #[error("empty stream name")]
     EmptyStreamName,
+    /// Unknown connection error.
+    #[error("unknown connection error: {0}")]
+    UnknownConnection(BoxError),
 }

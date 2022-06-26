@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use exc_binance::websocket::{
+    error::WsError,
     protocol::{
-        frame::{agg_trade::AggTrade, Name},
-        BinanceWsApi,
+        frame::{self, Name, RequestFrame},
+        keep_alive,
     },
-    request::WsRequest,
 };
-use futures::StreamExt;
+use futures::{SinkExt, StreamExt, TryStreamExt};
 use http::Uri;
-use tower::{Service, ServiceExt};
+use tower::ServiceExt;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -24,52 +24,30 @@ async fn main() -> anyhow::Result<()> {
         .oneshot(Uri::from_static(
             "wss://fstream.binance.com/ws/bnbusdt@aggTrade",
         ))
-        .await?;
-    let mut api =
-        BinanceWsApi::with_websocket(ws, Duration::from_secs(30), Duration::from_secs(30))?;
-    api.ready().await?;
-    let mut stream = api
-        .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))
         .await?
-        .into_stream::<AggTrade>()
-        .await?
-        .boxed();
-    let mut counter = 0;
-    while let Some(trade) = stream.next().await {
-        match trade {
-            Ok(trade) => {
-                counter += 1;
-                tracing::info!("[1]trade={trade:?}");
-                if counter > 100 {
+        .sink_map_err(WsError::from)
+        .map_err(WsError::from);
+    let transport = keep_alive::layer(ws, Duration::from_secs(30));
+    let transport = frame::layer(transport);
+    let (mut tx, mut rx) = transport.split();
+    tokio::spawn(async move {
+        while let Some(msg) = rx.next().await {
+            match msg {
+                Ok(msg) => {
+                    tracing::info!("msg={msg:?}");
+                }
+                Err(err) => {
+                    tracing::error!("error={err}");
                     break;
                 }
             }
-            Err(err) => {
-                tracing::error!("[1]error={err}");
-                break;
-            }
         }
-    }
-    drop(stream);
-    tokio::time::sleep(Duration::from_secs(5)).await;
-    api.ready().await?;
-    let mut stream = api
-        .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))
-        .await?
-        .into_stream::<AggTrade>()
-        .await?
-        .boxed();
-    while let Some(trade) = stream.next().await {
-        match trade {
-            Ok(trade) => {
-                counter += 1;
-                tracing::info!("[2]trade={trade:?}");
-            }
-            Err(err) => {
-                tracing::error!("[2]error={err}");
-                break;
-            }
-        }
-    }
+    });
+    tx.send(RequestFrame::subscribe(2, Name::agg_trade("btcusdt")))
+        .await?;
+    tokio::time::sleep(Duration::from_secs(10)).await;
+    tx.send(RequestFrame::unsubscribe(2, Name::agg_trade("btcusdt")))
+        .await?;
+    tokio::time::sleep(Duration::from_secs(60)).await;
     Ok(())
 }

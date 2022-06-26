@@ -9,3 +9,5 @@ pub mod request;
 
 /// Rest response.
 pub mod response;
+
+pub use layer::BinanceRestApi;

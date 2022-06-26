@@ -8,6 +8,7 @@ use async_stream::stream;
 
 /// Binance websocket request.
 pub struct WsRequest {
+    pub(crate) stream: bool,
     pub(crate) inner: MultiplexRequest,
 }
 
@@ -15,6 +16,7 @@ impl WsRequest {
     /// Subscribe to a stream.
     pub fn subscribe(stream: Name) -> Self {
         Self {
+            stream: true,
             inner: MultiplexRequest::new(|token| {
                 stream! {
                     yield RequestFrame::subscribe(0, stream.clone());
