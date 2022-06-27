@@ -10,6 +10,8 @@ repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower"]
 
 [features]
+okx = ["exc-okx"]
+binance = ["exc-binance"]
 websocket = ["exc-core/websocket"]
 driven = ["exc-core/driven"]
 http = ["exc-core/http"]
@@ -25,3 +27,6 @@ time = { version = "0.3.9", features = ["serde-well-known", "macros"] }
 tokio-stream = "0.1.9"
 rust_decimal = "1.25.0"
 either = "1.6.1"
+
+exc-okx = { version = "0.4.0-alpha.0", path = "../exc-okx", optional = true}
+exc-binance = { version = "0.4.0-alpha.0", path = "../exc-binance", optional = true }
