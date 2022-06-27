@@ -52,7 +52,7 @@ impl OkxInstrumentMeta {
         }
     }
 
-    /// Convert to [`ContractCommonMeta`].
+    /// Convert to common meta.
     pub fn as_contract(&self) -> Option<&ContractCommonMeta> {
         match self {
             Self::Futures(FuturesMeta { contract, .. })

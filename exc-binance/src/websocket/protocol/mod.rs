@@ -134,7 +134,7 @@ pub struct WsClient {
 }
 
 impl WsClient {
-    /// Create a [`BinanceWsApi`] using the given websocket stream.
+    /// Create a [`WsClient`] using the given websocket stream.
     pub fn with_websocket(
         websocket: WsStream,
         keep_alive_timeout: Duration,
