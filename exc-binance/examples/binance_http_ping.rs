@@ -21,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
         .layer(BinanceRestApiLayer::usd_margin_futures())
         .service(http);
     let resp: Data = svc
-        .oneshot(RestRequest::from(Ping::default()))
+        .oneshot(RestRequest::with_payload(Ping))
         .await?
         .into_inner();
     tracing::info!("{resp:?}");

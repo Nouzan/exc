@@ -26,3 +26,14 @@ pub enum RestError {
     #[error("unsuppored endpoint: {0}")]
     UnsupportedEndpoint(anyhow::Error),
 }
+
+impl RestError {
+    /// Is temp.
+    pub fn is_temporary(&self) -> bool {
+        if let Self::Exchange(err) = self {
+            err.is_temporary()
+        } else {
+            false
+        }
+    }
+}
