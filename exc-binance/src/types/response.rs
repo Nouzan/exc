@@ -19,14 +19,17 @@ pub enum Response {
 }
 
 impl Response {
-    /// As a stream of the given type.
-    pub fn as_stream<T>(self) -> Option<impl Stream<Item = Result<T, Error>>>
+    /// Convert into a stream of the given type.
+    pub fn into_stream<T>(self) -> Result<impl Stream<Item = Result<T, Error>>, Error>
     where
         T: TryFrom<StreamFrame, Error = WsError>,
     {
         match self {
-            Self::Http(_) => None,
-            Self::Ws(resp) => resp.into_stream().map(|stream| stream.map_err(Error::from)),
+            Self::Http(_) => Err(Error::WrongResponseType),
+            Self::Ws(resp) => resp
+                .into_stream()
+                .map(|stream| stream.map_err(Error::from))
+                .ok_or(Error::WrongResponseType),
         }
     }
 

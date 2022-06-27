@@ -147,3 +147,26 @@ where
             future::ready(f)
         })
 }
+
+#[cfg(test)]
+mod test {
+    use futures::{pin_mut, TryStreamExt};
+    use tower::ServiceExt;
+
+    use crate::{types::Name, Binance, Request};
+
+    use super::agg_trade::AggTrade;
+
+    #[tokio::test]
+    async fn test_aggregate_trade() -> anyhow::Result<()> {
+        let mut api = Binance::usd_margin_futures().connect();
+        let stream = (&mut api)
+            .oneshot(Request::subscribe(Name::agg_trade("btcbusd")))
+            .await?
+            .into_stream::<AggTrade>()?;
+        pin_mut!(stream);
+        let trade = stream.try_next().await?.unwrap();
+        println!("{trade:?}");
+        Ok(())
+    }
+}

@@ -5,6 +5,7 @@ use time::OffsetDateTime;
 
 mod candle;
 mod instrument;
+mod trade;
 
 pub(crate) fn from_timestamp(ts: i64) -> Result<OffsetDateTime, ExchangeError> {
     OffsetDateTime::from_unix_timestamp_nanos((ts as i128) * 1_000_000)

@@ -21,6 +21,7 @@ pub mod trading;
 pub use candle::{
     Candle, CandleStream, Period, PeriodKind, QueryCandles, QueryFirstCandles, QueryLastCandles,
 };
+pub use trade::{SubscribeTrades, Trade, TradeStream};
 
 /// Request and Response binding.
 pub trait Request: Sized {

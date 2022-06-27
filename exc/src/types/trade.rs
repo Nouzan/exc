@@ -11,7 +11,7 @@ pub type TradeStream = BoxStream<'static, Result<Trade, ExchangeError>>;
 
 /// Trade.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Display)]
-#[display(fmt = "")]
+#[display(fmt = "ts={ts} ({price}, {size}, {buy})")]
 pub struct Trade {
     /// Timestamp.
     #[serde(with = "time::serde::rfc3339")]

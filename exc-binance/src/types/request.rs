@@ -3,6 +3,8 @@ use crate::{
     websocket::request::WsRequest,
 };
 
+use super::Name;
+
 /// Binance request.
 pub enum Request {
     /// Http request.
@@ -18,5 +20,10 @@ impl Request {
         T: Rest,
     {
         Self::Http(RestRequest::with_payload(payload))
+    }
+
+    /// Create a request to subscribe to a ws stream.
+    pub fn subscribe(stream: Name) -> Self {
+        Self::Ws(WsRequest::subscribe(stream))
     }
 }

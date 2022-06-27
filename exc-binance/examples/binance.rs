@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
             "btcbusd",
         ))))
         .await?
-        .as_stream::<AggTrade>()
+        .into_stream::<AggTrade>()
         .unwrap()
         .boxed();
     let mut counter = 0;
@@ -67,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
             .await
         {
             Ok(resp) => {
-                let mut stream = resp.as_stream::<AggTrade>().unwrap().boxed();
+                let mut stream = resp.into_stream::<AggTrade>().unwrap().boxed();
                 while let Some(trade) = stream.next().await {
                     match trade {
                         Ok(trade) => {
