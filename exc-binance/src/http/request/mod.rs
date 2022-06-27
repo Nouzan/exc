@@ -28,11 +28,20 @@ pub trait Rest: Send + Sync + 'static {
 
     /// Get request body.
     fn to_body(&self, endpoint: &RestEndpoint) -> Result<hyper::Body, RestError>;
+
+    /// Clone.
+    fn to_payload(&self) -> Payload;
 }
 
 /// Payload.
 pub struct Payload {
     inner: Box<dyn Rest>,
+}
+
+impl Clone for Payload {
+    fn clone(&self) -> Self {
+        self.inner.to_payload()
+    }
 }
 
 impl Payload {
@@ -58,6 +67,10 @@ impl Rest for Payload {
 
     fn to_body(&self, endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
         self.inner.to_body(endpoint)
+    }
+
+    fn to_payload(&self) -> Payload {
+        self.clone()
     }
 }
 

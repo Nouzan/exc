@@ -16,6 +16,7 @@ websocket = [
 ]
 driven = ["tokio/sync", "tokio/rt", "tokio-stream", "pin-project-lite"]
 http = ["hyper/client", "hyper/http1", "hyper-tls", "dep:http"]
+retry = ["tower/retry", "tokio/time"]
 
 [dependencies]
 anyhow = "1"

@@ -17,6 +17,10 @@ pub mod error;
 /// Service.
 pub mod service;
 
+#[cfg(feature = "retry")]
+/// Retry.
+pub mod retry;
+
 /// Utils.
 pub mod util;
 

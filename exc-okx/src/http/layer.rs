@@ -4,82 +4,20 @@ use super::types::{
     request::HttpRequest,
     response::{FullHttpResponse, HttpResponse},
 };
-use exc::ExchangeError;
+use exc::{retry::RetryPolicy, ExchangeError};
 use futures::{
     future::{ready, BoxFuture},
     FutureExt, TryFutureExt,
 };
 use http::{Request, Response};
 use hyper::Body;
-use tower::{
-    retry::{Policy, Retry},
-    Layer, Service, ServiceBuilder,
-};
-
-/// Retry Policy.
-#[derive(Debug, Clone, Copy)]
-pub enum RetryPolicy<F> {
-    /// On.
-    On {
-        /// Error filter.
-        f: F,
-        /// Rety times.
-        times: usize,
-    },
-    /// Never.
-    Never,
-}
-
-impl<F> Policy<HttpRequest, HttpResponse, ExchangeError> for RetryPolicy<F>
-where
-    F: Fn(&ExchangeError) -> bool,
-    F: Send + 'static + Clone,
-{
-    type Future = BoxFuture<'static, Self>;
-
-    fn retry(
-        &self,
-        _req: &HttpRequest,
-        result: Result<&HttpResponse, &ExchangeError>,
-    ) -> Option<Self::Future> {
-        match self {
-            Self::On { f, times } => match result {
-                Ok(_) => None,
-                Err(err) => {
-                    if f(err) {
-                        let times = *times;
-                        let secs = (1 << times).min(128);
-                        trace!("retry in {secs}s; err={err}");
-                        let retry = Self::On {
-                            f: f.clone(),
-                            times: times + 1,
-                        };
-                        let fut = async move {
-                            tokio::time::sleep(std::time::Duration::from_secs(secs)).await;
-                            retry
-                        }
-                        .boxed();
-                        Some(fut)
-                    } else {
-                        trace!("retry given up; err={err}");
-                        None
-                    }
-                }
-            },
-            Self::Never => None,
-        }
-    }
-
-    fn clone_request(&self, req: &HttpRequest) -> Option<HttpRequest> {
-        Some(req.clone())
-    }
-}
+use tower::{retry::Retry, Layer, Service, ServiceBuilder};
 
 /// Okx HTTP API layer.
 pub struct OkxHttpApiLayer<'a, F> {
     host: &'a str,
     key: Option<Key>,
-    retry_policy: RetryPolicy<F>,
+    retry_policy: RetryPolicy<HttpRequest, HttpResponse, F>,
 }
 
 impl<'a, F> OkxHttpApiLayer<'a, F> {
@@ -90,7 +28,10 @@ impl<'a, F> OkxHttpApiLayer<'a, F> {
     }
 
     /// Set retry policy.
-    pub fn retry<F2>(self, policy: RetryPolicy<F2>) -> OkxHttpApiLayer<'a, F2>
+    pub fn retry<F2>(
+        self,
+        policy: RetryPolicy<HttpRequest, HttpResponse, F2>,
+    ) -> OkxHttpApiLayer<'a, F2>
     where
         F2: Clone,
     {
@@ -130,7 +71,7 @@ impl<'a> OkxHttpApiLayer<'a, fn(&ExchangeError) -> bool> {
     pub fn new(host: &'a str) -> Self {
         Self {
             host,
-            retry_policy: RetryPolicy::Never,
+            retry_policy: RetryPolicy::never(),
             key: None,
         }
     }
@@ -145,7 +86,7 @@ where
     F: Fn(&ExchangeError) -> bool,
     F: Send + 'static + Clone,
 {
-    type Service = Retry<RetryPolicy<F>, OkxHttpApi<S>>;
+    type Service = Retry<RetryPolicy<HttpRequest, HttpResponse, F>, OkxHttpApi<S>>;
 
     fn layer(&self, inner: S) -> Self::Service {
         let svc = OkxHttpApi {

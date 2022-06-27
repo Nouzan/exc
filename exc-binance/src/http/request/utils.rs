@@ -19,4 +19,8 @@ impl Rest for Ping {
     fn to_body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
         Ok(hyper::Body::empty())
     }
+
+    fn to_payload(&self) -> super::Payload {
+        super::Payload::new(self.clone())
+    }
 }

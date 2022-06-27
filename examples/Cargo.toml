@@ -39,6 +39,10 @@ path = "binance_instrument.rs"
 name = "binance-candle"
 path = "binance_candle.rs"
 
+[[bin]]
+name = "binance-rate-limit"
+path = "binance_rate_limit.rs"
+
 [dependencies]
 anyhow = "1"
 exc = { path = "../exc", features = ["http"] }
