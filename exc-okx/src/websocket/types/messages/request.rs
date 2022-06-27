@@ -131,9 +131,13 @@ impl WsRequest {
                     map.insert("tgtCcy".to_string(), "base_ccy".to_string());
                 }
             }
-            OrderKind::Limit(price) => {
+            OrderKind::Limit(price, _tif) => {
                 map.insert("ordType".to_string(), "limit".to_string());
                 map.insert("px".to_string(), price.to_string());
+                // TODO: add support to time-in-force option.
+            }
+            _ => {
+                // TODO: add support to post-only order.
             }
         }
         Self::Order(format!("{:x}", uuid::Uuid::new_v4().as_u128()), Args(map))

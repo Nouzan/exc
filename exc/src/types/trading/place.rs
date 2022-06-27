@@ -1,4 +1,4 @@
-use super::OrderKind;
+use super::{order::TimeInForce, OrderKind};
 use rust_decimal::Decimal;
 
 /// A [`Place`] describes how exchange build an order, i.e. the order builder.
@@ -21,9 +21,20 @@ impl Place {
         }
     }
 
-    /// Convert to a limit order placement.
-    pub fn limit(mut self, price: Decimal) -> Self {
-        self.kind = OrderKind::Limit(price);
+    /// Convert to a limit order (with TIF set to GTC).
+    pub fn limit(self, price: Decimal) -> Self {
+        self.limit_with_tif(price, TimeInForce::default())
+    }
+
+    /// Convert tto a limit order with the given time-in-force option.
+    pub fn limit_with_tif(mut self, price: Decimal, tif: TimeInForce) -> Self {
+        self.kind = OrderKind::Limit(price, tif);
+        self
+    }
+
+    /// Convert to a post-only order.
+    pub fn post_only(mut self, price: Decimal) -> Self {
+        self.kind = OrderKind::PostOnly(price);
         self
     }
 }
