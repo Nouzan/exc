@@ -6,6 +6,9 @@ pub mod ticker;
 /// Trade.
 pub mod trade;
 
+/// Book.
+pub mod book;
+
 /// Candle.
 pub mod candle;
 
@@ -18,6 +21,7 @@ pub mod key;
 /// Trading.
 pub mod trading;
 
+pub use book::{BidAsk, BidAskStream, SubscribeBidAsk};
 pub use candle::{
     Candle, CandleStream, Period, PeriodKind, QueryCandles, QueryFirstCandles, QueryLastCandles,
 };
