@@ -30,3 +30,7 @@ either = "1.6.1"
 
 exc-okx = { version = "0.4.0-alpha.2", path = "../exc-okx", optional = true}
 exc-binance = { version = "0.4.0-alpha.2", path = "../exc-binance", optional = true }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
