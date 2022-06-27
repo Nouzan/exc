@@ -28,24 +28,21 @@ impl Payload {
 }
 
 impl Rest for Payload {
-    fn endpoint(&self) -> RestEndpoint {
-        self.inner.endpoint()
+    fn method(&self, endpoint: &RestEndpoint) -> Result<Method, RestError> {
+        self.inner.method(endpoint)
     }
 
-    fn method(&self) -> Method {
-        self.inner.method()
+    fn path(&self, endpoint: &RestEndpoint) -> Result<&str, RestError> {
+        self.inner.path(endpoint)
     }
 
-    fn path(&self) -> &str {
-        self.inner.path()
-    }
-
-    fn body(&self) -> Result<hyper::Body, RestError> {
-        self.inner.body()
+    fn body(&self, endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
+        self.inner.body(endpoint)
     }
 }
 
 /// Binance rest api endpoints.
+#[derive(Debug, Clone, Copy)]
 pub enum RestEndpoint {
     /// USD-M Futures.
     UsdMarginFutures,
@@ -65,17 +62,14 @@ impl RestEndpoint {
 
 /// Rest payload.
 pub trait Rest {
-    /// Get endpoint.
-    fn endpoint(&self) -> RestEndpoint;
-
     /// Get request method.
-    fn method(&self) -> Method;
+    fn method(&self, endpoint: &RestEndpoint) -> Result<Method, RestError>;
 
     /// Get request path.
-    fn path(&self) -> &str;
+    fn path(&self, endpoint: &RestEndpoint) -> Result<&str, RestError>;
 
     /// Get request body.
-    fn body(&self) -> Result<hyper::Body, RestError>;
+    fn body(&self, endpoint: &RestEndpoint) -> Result<hyper::Body, RestError>;
 }
 
 /// Binance rest requests.
@@ -85,12 +79,15 @@ pub struct RestRequest<T> {
 }
 
 impl<T: Rest> RestRequest<T> {
-    pub(crate) fn to_http(&self) -> Result<Request<hyper::Body>, RestError> {
-        let uri = format!("{}{}", self.payload.endpoint().host(), self.payload.path());
+    pub(crate) fn to_http(
+        &self,
+        endpoint: &RestEndpoint,
+    ) -> Result<Request<hyper::Body>, RestError> {
+        let uri = format!("{}{}", endpoint.host(), self.payload.path(endpoint)?);
         let request = Request::builder()
-            .method(self.payload.method())
+            .method(self.payload.method(endpoint)?)
             .uri(uri)
-            .body(self.payload.body()?)?;
+            .body(self.payload.body(endpoint)?)?;
         Ok(request)
     }
 }

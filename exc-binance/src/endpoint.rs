@@ -4,7 +4,7 @@ use exc::transport::http::endpoint::Endpoint as HttpEndpoint;
 use tower::{buffer::Buffer, ready_cache::ReadyCache, util::Either, ServiceBuilder};
 
 use crate::{
-    http::layer::BinanceRestApiLayer,
+    http::{layer::BinanceRestApiLayer, request::RestEndpoint},
     service::{Binance, BinanceInner, HTTP_KEY, WS_KEY},
     websocket::{endpoint::WsEndpoint, BinanceWebsocketApi},
 };
@@ -12,7 +12,7 @@ use crate::{
 /// Binance endpoint.
 #[derive(Debug)]
 pub struct Endpoint {
-    pub(crate) http: HttpEndpoint,
+    pub(crate) http: (RestEndpoint, HttpEndpoint),
     pub(crate) ws: WsEndpoint,
 }
 
@@ -20,7 +20,7 @@ impl Endpoint {
     /// Usd-margin futures endpoint.
     pub fn usd_margin_futures() -> Self {
         Self {
-            http: HttpEndpoint::default(),
+            http: (RestEndpoint::UsdMarginFutures, HttpEndpoint::default()),
             ws: BinanceWebsocketApi::usd_margin_futures(),
         }
     }
@@ -40,8 +40,8 @@ impl Endpoint {
     /// Connect to binance service.
     pub fn connect(&self) -> Binance {
         let http = ServiceBuilder::default()
-            .layer(BinanceRestApiLayer)
-            .service(self.http.connect_https());
+            .layer(BinanceRestApiLayer::new(self.http.0))
+            .service(self.http.1.connect_https());
         let ws = self.ws.connect();
         let mut svcs = ReadyCache::default();
         svcs.push(HTTP_KEY, Either::A(http));

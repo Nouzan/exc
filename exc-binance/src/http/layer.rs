@@ -2,25 +2,44 @@ use futures::future::BoxFuture;
 use futures::{FutureExt, TryFutureExt};
 
 use super::error::RestError;
-use super::request::{Rest, RestRequest};
+use super::request::{Rest, RestEndpoint, RestRequest};
 use super::response::{Data, RestResponse};
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
 
 /// Binance rest api layer.
-pub struct BinanceRestApiLayer;
+#[derive(Debug, Clone, Copy)]
+pub struct BinanceRestApiLayer {
+    endpoint: RestEndpoint,
+}
+
+impl BinanceRestApiLayer {
+    /// USD-Margin Futures http endpoint.
+    pub fn usd_margin_futures() -> Self {
+        Self::new(RestEndpoint::UsdMarginFutures)
+    }
+
+    /// Create a new binance rest api layer.
+    pub fn new(endpoint: RestEndpoint) -> Self {
+        Self { endpoint }
+    }
+}
 
 impl<S> Layer<S> for BinanceRestApiLayer {
     type Service = BinanceRestApi<S>;
 
     fn layer(&self, http: S) -> Self::Service {
-        BinanceRestApi { http }
+        BinanceRestApi {
+            http,
+            endpoint: self.endpoint,
+        }
     }
 }
 
 /// Binance rest api service.
 #[derive(Clone)]
 pub struct BinanceRestApi<S> {
+    endpoint: RestEndpoint,
     http: S,
 }
 
@@ -41,7 +60,7 @@ where
     }
 
     fn call(&mut self, req: RestRequest<R>) -> Self::Future {
-        match req.to_http() {
+        match req.to_http(&self.endpoint) {
             Ok(req) => self
                 .http
                 .call(req)

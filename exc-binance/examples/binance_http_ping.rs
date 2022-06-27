@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
 
     let http = Endpoint::default().connect_https();
     let svc = ServiceBuilder::default()
-        .layer(BinanceRestApiLayer)
+        .layer(BinanceRestApiLayer::usd_margin_futures())
         .service(http);
     let resp: Data = svc
         .oneshot(RestRequest::from(Ping::default()))

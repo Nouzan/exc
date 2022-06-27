@@ -1,3 +1,5 @@
+use crate::http::error::RestError;
+
 use super::{Rest, RestEndpoint};
 
 /// Exchange info.
@@ -5,19 +7,18 @@ use super::{Rest, RestEndpoint};
 pub struct ExchangeInfo;
 
 impl Rest for ExchangeInfo {
-    fn endpoint(&self) -> RestEndpoint {
-        RestEndpoint::UsdMarginFutures
+    fn method(&self, _endpoint: &RestEndpoint) -> Result<http::Method, RestError> {
+        Ok(http::Method::GET)
     }
 
-    fn method(&self) -> http::Method {
-        http::Method::GET
+    fn path(&self, endpoint: &RestEndpoint) -> Result<&str, RestError> {
+        match endpoint {
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/exchangeInfo"),
+            RestEndpoint::Spot => Ok("/api/v1/exchangeInfo"),
+        }
     }
 
-    fn path(&self) -> &str {
-        "/fapi/v1/exchangeInfo"
-    }
-
-    fn body(&self) -> Result<hyper::Body, crate::http::error::RestError> {
+    fn body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
         Ok(hyper::Body::empty())
     }
 }
