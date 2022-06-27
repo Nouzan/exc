@@ -28,8 +28,8 @@ name = "okx-candle"
 path = "okx_candle.rs"
 
 [[bin]]
-name = "okx-ws-trade"
-path = "okx_ws_trade.rs"
+name = "okx-ws-trading"
+path = "okx_ws_trading.rs"
 
 [[bin]]
 name = "binance-instrument"
