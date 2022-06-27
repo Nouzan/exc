@@ -1,8 +1,7 @@
-use exc::{service::fetch_candles::FetchCandlesForwardLayer, types::Period, FetchCandlesService};
+use exc::{service::fetch_candles::FetchFirstCandlesService, types::Period, FetchCandlesService};
 use exc_binance::Binance;
 use futures::StreamExt;
 use time::{macros::datetime, UtcOffset};
-use tower::Layer;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -14,8 +13,10 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut binance = FetchCandlesForwardLayer::with_default_bound(100)
-        .layer(Binance::usd_margin_futures().connect().into_exchange());
+    let mut binance = Binance::usd_margin_futures()
+        .connect()
+        .into_exchange()
+        .into_fetch_candles_forward(100);
     let mut stream = binance
         .fetch_candles(
             "btcbusd",

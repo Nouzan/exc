@@ -38,6 +38,68 @@ pub trait FetchCandlesService: ExchangeService<QueryCandles> {
 
 impl<S> FetchCandlesService for S where S: ExchangeService<QueryCandles> {}
 
+/// Fetch first candles service.
+pub trait FetchFirstCandlesService: ExchangeService<QueryFirstCandles> {
+    /// Convert into a [`FetchCandlesForward`] service.
+    /// # Panic
+    /// Panic if `limit` is zero.
+    fn into_fetch_candles_forward(self, limit: usize) -> FetchCandlesForward<Self>
+    where
+        Self: Sized + Send,
+        Self::Future: Send,
+    {
+        FetchCandlesForwardLayer::with_default_bound(limit).layer(self)
+    }
+
+    /// Convert into a [`FetchCandlesForward`] service, with bound set to the given.
+    /// # Panic
+    /// Panic if `limit` is zero.
+    fn into_fetch_candles_forward_with_bound(
+        self,
+        limit: usize,
+        bound: usize,
+    ) -> FetchCandlesForward<Self>
+    where
+        Self: Sized + Send,
+        Self::Future: Send,
+    {
+        FetchCandlesForwardLayer::new(limit, bound).layer(self)
+    }
+}
+
+impl<S> FetchFirstCandlesService for S where S: ExchangeService<QueryFirstCandles> {}
+
+/// Fetch first candles service.
+pub trait FetchLastCandlesService: ExchangeService<QueryLastCandles> {
+    /// Convert into a [`FetchCandlesBackward`] service.
+    /// # Panic
+    /// Panic if `limit` is zero.
+    fn into_fetch_candles_backward(self, limit: usize) -> FetchCandlesBackward<Self>
+    where
+        Self: Sized + Send,
+        Self::Future: Send,
+    {
+        FetchCandlesBackwardLayer::with_default_bound(limit).layer(self)
+    }
+
+    /// Convert into a [`FetchCandlesBackward`] service, with bound set to the given.
+    /// # Panic
+    /// Panic if `limit` is zero.
+    fn into_fetch_candles_backward_with_bound(
+        self,
+        limit: usize,
+        bound: usize,
+    ) -> FetchCandlesBackward<Self>
+    where
+        Self: Sized + Send,
+        Self::Future: Send,
+    {
+        FetchCandlesBackwardLayer::new(limit, bound).layer(self)
+    }
+}
+
+impl<S> FetchLastCandlesService for S where S: ExchangeService<QueryLastCandles> {}
+
 use std::num::NonZeroUsize;
 use tower::buffer::Buffer;
 
