@@ -60,3 +60,7 @@ optional = true
 [dependencies.hyper-tls]
 version = "0.5"
 optional = true
+
+# dev
+[dev-dependencies]
+exc = { path = "../exc"}
