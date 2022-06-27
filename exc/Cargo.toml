@@ -1,6 +1,6 @@
 [package]
 name = "exc"
-version = "0.4.0-alpha.2"
+version = "0.4.0-alpha.3"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
@@ -18,7 +18,7 @@ http = ["exc-core/http"]
 retry = ["exc-core/retry"]
 
 [dependencies]
-exc-core = { version = "0.4.0-alpha.2", path = "../exc-core" }
+exc-core = { version = "0.4.0-alpha.3", path = "../exc-core" }
 tracing = "0.1.34"
 tower = { version = "0.4.13" }
 futures = { version = "0.3.21"}
@@ -28,8 +28,8 @@ tokio-stream = "0.1.9"
 rust_decimal = "1.25.0"
 either = "1.6.1"
 
-exc-okx = { version = "0.4.0-alpha.2", path = "../exc-okx", optional = true}
-exc-binance = { version = "0.4.0-alpha.2", path = "../exc-binance", optional = true }
+exc-okx = { version = "0.4.0-alpha.3", path = "../exc-okx", optional = true}
+exc-binance = { version = "0.4.0-alpha.3", path = "../exc-binance", optional = true }
 
 [package.metadata.docs.rs]
 all-features = true
