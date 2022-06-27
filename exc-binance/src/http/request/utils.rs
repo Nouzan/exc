@@ -9,14 +9,14 @@ impl Rest for Ping {
         Ok(http::Method::GET)
     }
 
-    fn path(&self, endpoint: &RestEndpoint) -> Result<&str, RestError> {
+    fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::Spot => Ok("/api/v1/ping"),
-            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/ping"),
+            RestEndpoint::Spot => Ok("/api/v1/ping".to_string()),
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/ping".to_string()),
         }
     }
 
-    fn body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
+    fn to_body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
         Ok(hyper::Body::empty())
     }
 }

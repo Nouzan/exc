@@ -11,39 +11,14 @@ impl Rest for ExchangeInfo {
         Ok(http::Method::GET)
     }
 
-    fn path(&self, endpoint: &RestEndpoint) -> Result<&str, RestError> {
+    fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/exchangeInfo"),
-            RestEndpoint::Spot => Ok("/api/v1/exchangeInfo"),
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/exchangeInfo".to_string()),
+            RestEndpoint::Spot => Ok("/api/v1/exchangeInfo".to_string()),
         }
     }
 
-    fn body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
+    fn to_body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
         Ok(hyper::Body::empty())
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use tower::ServiceExt;
-
-    use crate::{
-        http::request::{Payload, RestRequest},
-        Binance, Request,
-    };
-
-    use super::*;
-
-    #[tokio::test]
-    async fn test_exchange_info() -> anyhow::Result<()> {
-        let api = Binance::usd_margin_futures().connect();
-        let resp = api
-            .oneshot(Request::Http(RestRequest::from(Payload::new(
-                ExchangeInfo::default(),
-            ))))
-            .await?
-            .into_response::<crate::http::response::instrument::ExchangeInfo>()?;
-        println!("{:?}", resp);
-        Ok(())
     }
 }

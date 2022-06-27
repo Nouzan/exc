@@ -7,12 +7,20 @@ use serde::{de::DeserializeOwned, Deserialize};
 /// Instrument.
 pub mod instrument;
 
-pub use self::instrument::ExchangeInfo;
+/// Candle.
+pub mod candle;
+
+pub use self::{candle::Candle, instrument::ExchangeInfo};
+
+/// Candles.
+pub type Candles = Vec<Candle>;
 
 /// Binance rest api response data.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Data {
+    /// Candles.
+    Candles(Vec<Candle>),
     /// Exchange info.
     ExchangeInfo(ExchangeInfo),
     /// Unknwon.
