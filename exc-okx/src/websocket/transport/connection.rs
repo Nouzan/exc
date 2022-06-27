@@ -7,7 +7,7 @@ use crate::key::Key;
 use crate::websocket::types::messages::event::ResponseKind;
 use crate::websocket::types::response::StatusKind;
 use crate::websocket::types::{request::Request, response::Response};
-use exc::transport::websocket::connector::WsConnector;
+use exc_core::transport::websocket::connector::WsConnector;
 use futures::future::BoxFuture;
 use futures::FutureExt;
 use http::Uri;

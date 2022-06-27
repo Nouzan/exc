@@ -4,7 +4,7 @@ use super::types::{
     request::HttpRequest,
     response::{FullHttpResponse, HttpResponse},
 };
-use exc::{retry::RetryPolicy, ExchangeError};
+use exc_core::{retry::RetryPolicy, ExchangeError};
 use futures::{
     future::{ready, BoxFuture},
     FutureExt, TryFutureExt,

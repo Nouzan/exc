@@ -3,7 +3,7 @@ use crate::websocket::types::{
     response::{Response, ServerStream, Status, StatusKind},
 };
 use atomic_waker::AtomicWaker;
-use exc::transport::websocket::WsStream;
+use exc_core::transport::websocket::WsStream;
 use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, StreamExt, TryStreamExt};
 use pin_project_lite::pin_project;
 use std::{pin::Pin, sync::Arc};

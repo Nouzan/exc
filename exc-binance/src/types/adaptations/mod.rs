@@ -1,6 +1,6 @@
 use std::ops::Bound;
 
-use exc::ExchangeError;
+use exc_core::ExchangeError;
 use time::OffsetDateTime;
 
 mod book;

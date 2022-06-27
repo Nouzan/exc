@@ -1,4 +1,4 @@
-use exc::ExchangeError;
+use exc_core::ExchangeError;
 use thiserror::Error;
 
 /// Rest API Errors.

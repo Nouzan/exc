@@ -1,8 +1,7 @@
 use std::time::Duration;
 
 use exc::{
-    service::{fetch_candles::FetchFirstCandlesService, ExchangeService},
-    types::Period,
+    service::fetch_candles::FetchFirstCandlesService, types::Period, ExchangeService,
     FetchCandlesService,
 };
 use exc_binance::Binance;

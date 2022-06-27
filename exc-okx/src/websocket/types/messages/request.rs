@@ -1,7 +1,7 @@
 use super::Args;
 use crate::error::OkxError;
 use crate::key::{Key, Signature};
-use exc::types::trading::{OrderKind, Place};
+use exc_core::types::trading::{OrderKind, Place};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;

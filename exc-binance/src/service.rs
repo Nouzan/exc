@@ -1,6 +1,6 @@
 use std::task::{Context, Poll};
 
-use exc::{transport::http::channel::HttpsChannel, ExchangeError};
+use exc_core::{transport::http::channel::HttpsChannel, ExchangeError};
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
 use tower::{
     buffer::Buffer,

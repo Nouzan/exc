@@ -1,6 +1,6 @@
 use crate::error::OkxError;
 use crate::websocket::types::{request::Request, response::Response};
-use exc::ExchangeError;
+use exc_core::ExchangeError;
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
 use tower::{buffer::Buffer, util::BoxService, Service, ServiceExt};
 

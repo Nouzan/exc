@@ -1,4 +1,4 @@
-use exc::types::instrument::InstrumentMeta;
+use exc_core::types::instrument::InstrumentMeta;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};

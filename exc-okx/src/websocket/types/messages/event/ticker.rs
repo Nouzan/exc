@@ -1,4 +1,4 @@
-use exc::types::ticker::Ticker;
+use exc_core::types::ticker::Ticker;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;

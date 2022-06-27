@@ -1,4 +1,4 @@
-use exc::retry::RetryPolicy;
+use exc_core::retry::RetryPolicy;
 use futures::future::BoxFuture;
 use futures::{FutureExt, TryFutureExt};
 use tower::retry::Retry;

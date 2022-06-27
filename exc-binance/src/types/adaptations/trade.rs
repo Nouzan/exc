@@ -1,4 +1,4 @@
-use exc::{types, Adaptor, ExchangeError};
+use exc_core::{types, Adaptor, ExchangeError};
 use futures::{StreamExt, TryStreamExt};
 
 use crate::{types::Name, websocket::protocol::frame::agg_trade::AggTrade, Request};

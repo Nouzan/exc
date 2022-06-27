@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use exc::ExchangeError;
+use exc_core::ExchangeError;
 use thiserror::Error;
 
 use crate::{http::error::RestError, websocket::error::WsError};

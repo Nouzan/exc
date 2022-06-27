@@ -1,7 +1,7 @@
 use crate::error::OkxError;
 
 use super::{callback::Callback, frames::server::ServerFrame};
-use exc::{types::ticker::Ticker, ExchangeError};
+use exc_core::{types::ticker::Ticker, ExchangeError};
 use futures::{future::BoxFuture, stream::BoxStream, FutureExt, Stream, StreamExt, TryStreamExt};
 use pin_project_lite::pin_project;
 use thiserror::Error;

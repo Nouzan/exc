@@ -1,4 +1,7 @@
-use exc::service::{book::SubscribeBidAskService, trade::SubscribeTradesService, ExchangeService};
+use exc::{
+    service::{book::SubscribeBidAskService, trade::SubscribeTradesService},
+    ExchangeService,
+};
 use exc_binance::Binance;
 use futures::StreamExt;
 

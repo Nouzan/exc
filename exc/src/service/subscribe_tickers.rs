@@ -11,10 +11,10 @@ use crate::{
         ticker::{SubscribeTickers, Ticker, TickerStream},
         SubscribeBidAsk, SubscribeTrades,
     },
-    ExchangeError,
+    ExcMut, ExchangeError, ExchangeService,
 };
 
-use super::{book::SubscribeBidAskService, ExcMut, ExchangeService};
+use super::book::SubscribeBidAskService;
 
 /// Subscribe tickers service.
 pub trait SubscribeTickersService: ExchangeService<SubscribeTickers> {

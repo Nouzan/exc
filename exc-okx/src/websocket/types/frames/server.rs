@@ -1,7 +1,7 @@
 use crate::{error::OkxError, websocket::types::messages::event::Change};
 
 use super::super::messages::event::{Event, ResponseKind};
-use exc::types::ticker::Ticker;
+use exc_core::types::ticker::Ticker;
 
 /// Server Frame.
 #[derive(Debug, Clone)]

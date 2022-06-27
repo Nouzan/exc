@@ -3,7 +3,7 @@ use crate::error::OkxError;
 use self::ticker::OkxTicker;
 
 use super::Args;
-use exc::types::ticker::Ticker;
+use exc_core::types::ticker::Ticker;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;

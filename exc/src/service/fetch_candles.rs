@@ -1,8 +1,8 @@
 use std::ops::{Bound, RangeBounds};
 
+use crate::types::Period;
 use async_stream::try_stream;
 use futures::{future::BoxFuture, FutureExt, StreamExt};
-use indicator::Period;
 use time::OffsetDateTime;
 use tower::{util::Oneshot, Layer, Service, ServiceExt};
 
@@ -14,7 +14,7 @@ use crate::{
     ExchangeError,
 };
 
-use super::{Exc, ExcMut, ExchangeService};
+use crate::{Exc, ExcMut, ExchangeService};
 
 /// Fetch candles service.
 pub trait FetchCandlesService: ExchangeService<QueryCandles> {

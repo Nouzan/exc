@@ -4,6 +4,7 @@ version = "0.4.0-alpha.0"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
+readme = "README.md"
 description = "OKX exchange services"
 repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower", "okx"]
@@ -31,9 +32,9 @@ base64 = "0.13"
 version = "1.0.136"
 features = ["derive"]
 
-[dependencies.exc]
+[dependencies.exc-core]
 version = "0.4.0-alpha.0"
-path = "../exc"
+path = "../exc-core"
 features = ["websocket", "driven", "http", "retry"]
 
 [dependencies.tower]

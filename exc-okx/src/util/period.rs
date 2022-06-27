@@ -1,4 +1,4 @@
-use exc::types::candle::{Period, PeriodKind};
+use exc_core::types::candle::{Period, PeriodKind};
 use std::time::Duration;
 use time::{macros::offset, UtcOffset};
 

@@ -1,4 +1,4 @@
-use exc::error::ExchangeError;
+use exc_core::error::ExchangeError;
 use thiserror::Error;
 
 use crate::{

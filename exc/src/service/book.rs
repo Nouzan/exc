@@ -2,7 +2,7 @@ use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::SubscribeBidAsk;
 
-use super::{ExcMut, ExchangeService};
+use crate::{ExcMut, ExchangeService};
 
 /// Subscribe current best bid and ask service.
 pub trait SubscribeBidAskService: ExchangeService<SubscribeBidAsk> {

@@ -20,10 +20,14 @@ pub type CandleStream = BoxStream<'static, Result<Candle, ExchangeError>>;
 /// Query candles.
 #[derive(Debug, Clone)]
 pub struct QueryCandles {
-    inst: Arc<String>,
-    period: Period,
-    pub(crate) start: Bound<OffsetDateTime>,
-    pub(crate) end: Bound<OffsetDateTime>,
+    /// Instrument.
+    pub inst: Arc<String>,
+    /// Period.
+    pub period: Period,
+    /// Start.
+    pub start: Bound<OffsetDateTime>,
+    /// End.
+    pub end: Bound<OffsetDateTime>,
 }
 
 fn fmt_ts_start_bound(bound: &Bound<OffsetDateTime>) -> String {
@@ -130,8 +134,10 @@ impl Request for QueryCandles {
 /// Return a candle stream that produce the last `last` candles backward.
 #[derive(Debug, Clone)]
 pub struct QueryLastCandles {
-    pub(crate) query: QueryCandles,
-    pub(crate) last: usize,
+    /// Query.
+    pub query: QueryCandles,
+    /// Last.
+    pub last: usize,
 }
 
 impl fmt::Display for QueryLastCandles {
@@ -169,8 +175,10 @@ impl Request for QueryLastCandles {
 /// Return a candle stream that produce the first `fisrt` candles forward.
 #[derive(Debug, Clone)]
 pub struct QueryFirstCandles {
-    pub(crate) query: QueryCandles,
-    pub(crate) first: usize,
+    /// Query.
+    pub query: QueryCandles,
+    /// First.
+    pub first: usize,
 }
 
 impl fmt::Display for QueryFirstCandles {

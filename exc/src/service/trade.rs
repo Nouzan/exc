@@ -2,7 +2,7 @@ use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::trade::SubscribeTrades;
 
-use super::{ExcMut, ExchangeService};
+use crate::{ExcMut, ExchangeService};
 
 /// Subscribe trades service.
 pub trait SubscribeTradesService: ExchangeService<SubscribeTrades> {

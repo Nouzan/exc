@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::transport::websocket::connector::WsConnector;
+use exc_core::transport::websocket::connector::WsConnector;
 use futures::FutureExt;
 use http::Uri;
 use tower::{reconnect::Reconnect, ServiceExt};

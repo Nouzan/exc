@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use exc::{error::InstrumentError, ExchangeError};
+use exc_core::{error::InstrumentError, ExchangeError};
 use serde::Deserialize;
 
 /// Candle.

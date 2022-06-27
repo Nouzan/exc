@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::transport::http::endpoint::Endpoint as HttpEndpoint;
+use exc_core::transport::http::endpoint::Endpoint as HttpEndpoint;
 use tower::{buffer::Buffer, ready_cache::ReadyCache, util::Either, ServiceBuilder};
 
 use crate::{

@@ -4,7 +4,7 @@ use crate::{
     websocket::types::messages::request::WsRequest,
 };
 use async_stream::stream;
-use exc::{
+use exc_core::{
     types::{ticker::SubscribeTickers, trading::Place},
     ExchangeError,
 };

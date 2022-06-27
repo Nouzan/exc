@@ -10,7 +10,7 @@ use self::stream::{MultiplexRequest, MultiplexResponse};
 use super::error::WsError;
 use super::request::WsRequest;
 use super::response::WsResponse;
-use exc::transport::websocket::WsStream;
+use exc_core::transport::websocket::WsStream;
 use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, TryFutureExt, TryStreamExt};
 use tokio_tower::multiplex::{Client as Multiplex, TagStore};
 use tower::Service;

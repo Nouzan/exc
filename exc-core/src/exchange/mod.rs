@@ -3,7 +3,6 @@ use std::{marker::PhantomData, time::Duration};
 use tower::{limit::RateLimit, Service, ServiceBuilder, ServiceExt};
 
 use crate::{
-    service::ExchangeService,
     types::{Adaptor, Request},
     ExchangeError,
 };
@@ -11,7 +10,11 @@ use crate::{
 /// Layer.
 pub mod layer;
 
+/// Service.
+pub mod service;
+
 pub use layer::ExchangeLayer;
+pub use service::ExchangeService;
 
 /// Exchange.
 #[derive(Debug)]

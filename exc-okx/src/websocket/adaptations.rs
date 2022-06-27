@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use exc::{
+use exc_core::{
     types::{
         instrument::{InstrumentMeta, SubscribeInstruments},
         trading::{CancelOrder, OrderId, PlaceOrder},
@@ -24,7 +24,7 @@ use super::{
 };
 
 impl Adaptor<SubscribeInstruments> for Request {
-    fn from_request(req: SubscribeInstruments) -> Result<Self, exc::ExchangeError>
+    fn from_request(req: SubscribeInstruments) -> Result<Self, exc_core::ExchangeError>
     where
         Self: Sized,
     {
@@ -37,7 +37,7 @@ impl Adaptor<SubscribeInstruments> for Request {
 
     fn into_response(
         resp: Self::Response,
-    ) -> Result<<SubscribeInstruments as exc::types::Request>::Response, ExchangeError> {
+    ) -> Result<<SubscribeInstruments as exc_core::types::Request>::Response, ExchangeError> {
         match resp {
             Response::Error(err) => Err(ExchangeError::Other(anyhow::anyhow!("status: {err}"))),
             Response::Streaming(stream) => {
@@ -83,7 +83,7 @@ impl Adaptor<PlaceOrder> for Request {
 
     fn into_response(
         resp: Self::Response,
-    ) -> Result<<PlaceOrder as exc::types::Request>::Response, ExchangeError> {
+    ) -> Result<<PlaceOrder as exc_core::types::Request>::Response, ExchangeError> {
         let resp = resp.into_unary().map_err(OkxError::Api)?;
 
         Ok(async move {
@@ -133,7 +133,7 @@ impl Adaptor<CancelOrder> for Request {
 
     fn into_response(
         resp: Self::Response,
-    ) -> Result<<CancelOrder as exc::types::Request>::Response, ExchangeError> {
+    ) -> Result<<CancelOrder as exc_core::types::Request>::Response, ExchangeError> {
         let resp = resp.into_unary().map_err(OkxError::Api)?;
 
         Ok(async move {

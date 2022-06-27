@@ -1,4 +1,4 @@
-use exc::ExchangeError;
+use exc_core::ExchangeError;
 use http::Request;
 use hyper::Body;
 use serde::Serialize;

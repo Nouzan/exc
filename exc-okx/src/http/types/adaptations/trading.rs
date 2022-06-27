@@ -1,4 +1,4 @@
-use exc::{
+use exc_core::{
     types::{
         trading::{GetOrder, Order as ExcOrder, OrderId, OrderState, OrderStatus, Place},
         Adaptor,
@@ -14,7 +14,7 @@ use crate::http::types::{
 };
 
 impl Adaptor<GetOrder> for HttpRequest {
-    fn from_request(req: GetOrder) -> Result<Self, exc::ExchangeError>
+    fn from_request(req: GetOrder) -> Result<Self, exc_core::ExchangeError>
     where
         Self: Sized,
     {
@@ -27,7 +27,7 @@ impl Adaptor<GetOrder> for HttpRequest {
 
     fn into_response(
         mut resp: Self::Response,
-    ) -> Result<<GetOrder as exc::types::Request>::Response, exc::ExchangeError> {
+    ) -> Result<<GetOrder as exc_core::types::Request>::Response, exc_core::ExchangeError> {
         Ok(async move {
             if let Some(data) = resp.data.pop() {
                 if let ResponseData::Order(order) = data {

@@ -2,7 +2,7 @@ use crate::{
     http::{request, response},
     Request,
 };
-use exc::{types, Adaptor, ExchangeError};
+use exc_core::{types, Adaptor, ExchangeError};
 use futures::StreamExt;
 use std::{ops::RangeBounds, time::Duration};
 use time::UtcOffset;

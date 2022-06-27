@@ -1,6 +1,6 @@
 use super::error::RestError;
 use anyhow::anyhow;
-use exc::ExchangeError;
+use exc_core::ExchangeError;
 use http::StatusCode;
 use serde::{de::DeserializeOwned, Deserialize};
 

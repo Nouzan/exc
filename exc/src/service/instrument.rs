@@ -2,7 +2,7 @@ use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::instrument::{FetchInstruments, SubscribeInstruments};
 
-use super::{ExcMut, ExchangeService};
+use crate::{ExcMut, ExchangeService};
 
 /// Subscribe instruments service.
 pub trait SubscribeInstrumentsService: ExchangeService<SubscribeInstruments> {

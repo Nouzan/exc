@@ -1,4 +1,4 @@
-use exc::types::Request as ExcRequest;
+use exc_core::types::Request as ExcRequest;
 
 /// Okx websocket transport.
 pub mod transport;

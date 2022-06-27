@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "exc-core",
     "exc",
     "exc-okx",
     "exc-binance",

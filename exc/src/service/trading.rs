@@ -6,7 +6,7 @@ use crate::{
     ExchangeError,
 };
 
-use super::ExchangeService;
+use crate::ExchangeService;
 
 /// Trading service.
 pub trait TradingService: ExchangeService<PlaceOrder> + ExchangeService<CancelOrder> {

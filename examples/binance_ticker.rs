@@ -1,5 +1,5 @@
-use exc::service::{
-    subscribe_tickers::{SubscribeTickersService, TradeBidAskService},
+use exc::{
+    service::subscribe_tickers::{SubscribeTickersService, TradeBidAskService},
     ExchangeService,
 };
 use exc_binance::Binance;
