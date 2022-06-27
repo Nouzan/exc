@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{hash_map::Entry, HashMap},
     pin::Pin,
     sync::{Arc, Mutex},
     task::{Context, Poll},
@@ -301,19 +301,16 @@ impl ContextShared {
         }
         {
             let mut streams = self.streams.lock().unwrap();
-            if streams.0.contains_key(&id) {
-                let _ = tx.send(Err(WsError::DuplicateStreamId));
+            if let Entry::Vacant(e) = streams.0.entry(id) {
+                e.insert(StreamState {
+                    id: request.id,
+                    tx: tx.clone(),
+                    state: State::Idle,
+                    topic: None,
+                    timeout: request.timeout.unwrap_or(self.timeout),
+                });
             } else {
-                streams.0.insert(
-                    id,
-                    StreamState {
-                        id: request.id,
-                        tx: tx.clone(),
-                        state: State::Idle,
-                        topic: None,
-                        timeout: request.timeout.unwrap_or(self.timeout),
-                    },
-                );
+                let _ = tx.send(Err(WsError::DuplicateStreamId));
             }
         }
         let ctx = self.clone();
@@ -324,7 +321,7 @@ impl ContextShared {
             while let Some(mut client_frame) = request.stream.next().await {
                 client_frame.id = request.id;
                 if ctx.handle_client_frame(&client_frame) {
-                    if let Err(_) = c_tx.send(client_frame) {
+                    if c_tx.send(client_frame).is_err() {
                         break;
                     }
                 } else {
@@ -369,7 +366,7 @@ impl ContextShared {
             ServerFrame::Stream(frame) => frame
                 .to_name()
                 .and_then(|name| topics.get(&name))
-                .and_then(|id| streams.get_mut(&id))
+                .and_then(|id| streams.get_mut(id))
                 .map(|stream| {
                     let good = stream.handle_stream_frame(frame);
                     let id = stream.id;
@@ -548,7 +545,7 @@ impl Sink<MultiplexRequest> for Streaming {
 
     fn start_send(self: Pin<&mut Self>, item: MultiplexRequest) -> Result<(), Self::Error> {
         let this = self.project();
-        if let Err(_) = this.c2w_tx.start_send(item) {
+        if this.c2w_tx.start_send(item).is_err() {
             this.state.waker.wake();
             return Err(WsError::TransportIsBoken);
         }

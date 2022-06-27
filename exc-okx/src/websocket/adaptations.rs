@@ -101,18 +101,16 @@ impl Adaptor<PlaceOrder> for Request {
                     } else {
                         Err(OkxError::Api(StatusKind::EmptyResponse))
                     }
+                } else if let Some(data) = data.pop() {
+                    Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
+                        "code={} msg={}",
+                        data.s_code,
+                        data.s_msg
+                    ))))
                 } else {
-                    if let Some(data) = data.pop() {
-                        Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
-                            "code={} msg={}",
-                            data.s_code,
-                            data.s_msg
-                        ))))
-                    } else {
-                        Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
-                            "code={code} msg={msg}"
-                        ))))
-                    }
+                    Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
+                        "code={code} msg={msg}"
+                    ))))
                 }
             } else {
                 Err(OkxError::UnexpectedDataType(anyhow::anyhow!("{event:?}")))
@@ -138,7 +136,7 @@ impl Adaptor<CancelOrder> for Request {
 
         Ok(async move {
             let event = resp.await?.inner;
-            let id = if let Event::TradeResponse(TradeResponse::CancelOrder {
+            if let Event::TradeResponse(TradeResponse::CancelOrder {
                 code,
                 msg,
                 mut data,
@@ -151,23 +149,21 @@ impl Adaptor<CancelOrder> for Request {
                     } else {
                         Err(OkxError::Api(StatusKind::EmptyResponse))
                     }
+                } else if let Some(data) = data.pop() {
+                    Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
+                        "code={} msg={}",
+                        data.s_code,
+                        data.s_msg
+                    ))))
                 } else {
-                    if let Some(data) = data.pop() {
-                        Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
-                            "code={} msg={}",
-                            data.s_code,
-                            data.s_msg
-                        ))))
-                    } else {
-                        Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
-                            "code={code} msg={msg}"
-                        ))))
-                    }
+                    Err(OkxError::Api(StatusKind::Other(anyhow::anyhow!(
+                        "code={code} msg={msg}"
+                    ))))
                 }
             } else {
                 Err(OkxError::UnexpectedDataType(anyhow::anyhow!("{event:?}")))
             }?;
-            Ok(id)
+            Ok(())
         }
         .boxed())
     }

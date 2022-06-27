@@ -54,5 +54,5 @@ pub enum ResponseData {
     /// Candle.
     Candle(Candle),
     /// Order.
-    Order(OrderDetail),
+    Order(Box<OrderDetail>),
 }

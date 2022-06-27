@@ -20,10 +20,10 @@ pub trait TradingService: ExchangeService<PlaceOrder> + ExchangeService<CancelOr
             ExchangeService::<PlaceOrder>::as_service_mut(self),
             PlaceOrder {
                 instrument: inst.to_string(),
-                place: place.clone(),
+                place: *place,
             },
         );
-        async move { Ok(resp.await?.await?) }.boxed()
+        async move { resp.await?.await }.boxed()
     }
 
     /// Cancel an order.
@@ -39,7 +39,7 @@ pub trait TradingService: ExchangeService<PlaceOrder> + ExchangeService<CancelOr
                 id: id.clone(),
             },
         );
-        async move { Ok(resp.await?.await?) }.boxed()
+        async move { resp.await?.await }.boxed()
     }
 }
 
@@ -60,7 +60,7 @@ pub trait CheckOrderService: ExchangeService<GetOrder> {
                 id: id.clone(),
             },
         );
-        async move { Ok(resp.await?.await?) }.boxed()
+        async move { resp.await?.await }.boxed()
     }
 }
 

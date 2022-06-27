@@ -138,7 +138,7 @@ where
                 }),
             HttpRequest::PrivateGet(get) => {
                 if let Some(key) = self.key.as_ref() {
-                    get.to_request(&self.host, &key)
+                    get.to_request(&self.host, key)
                 } else {
                     Err(ExchangeError::KeyError(anyhow::anyhow!(
                         "key has not been set"

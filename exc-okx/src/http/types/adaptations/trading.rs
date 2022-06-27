@@ -31,6 +31,7 @@ impl Adaptor<GetOrder> for HttpRequest {
         Ok(async move {
             if let Some(data) = resp.data.pop() {
                 if let ResponseData::Order(order) = data {
+                    let order = *order;
                     let (target, buy) = match order.side.as_str() {
                         "buy" => (Place::with_size(order.size), true),
                         "sell" => (Place::with_size(-order.size), false),

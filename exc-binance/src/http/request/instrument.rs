@@ -23,6 +23,6 @@ impl Rest for ExchangeInfo {
     }
 
     fn to_payload(&self) -> super::Payload {
-        super::Payload::new(self.clone())
+        super::Payload::new(*self)
     }
 }

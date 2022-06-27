@@ -68,7 +68,7 @@ impl Request {
     pub fn order(inst: &str, place: &Place) -> Self {
         let (cb, _rx) = Callback::new();
         let inst = inst.to_string();
-        let place = place.clone();
+        let place = *place;
         let stream = stream! {
             yield ClientFrame { stream_id: 0, inner: WsRequest::order(&inst, &place) };
             // let _ = rx.await;

@@ -40,13 +40,12 @@ impl<S> Layer<S> for BinanceRestApiLayer {
     type Service = BinanceRestApi<S>;
 
     fn layer(&self, http: S) -> Self::Service {
-        let inner =
-            ServiceBuilder::default()
-                .retry(self.retry.clone())
-                .service(BinanceRestApiInner {
-                    http,
-                    endpoint: self.endpoint,
-                });
+        let inner = ServiceBuilder::default()
+            .retry(self.retry)
+            .service(BinanceRestApiInner {
+                http,
+                endpoint: self.endpoint,
+            });
         BinanceRestApi { inner }
     }
 }
@@ -80,7 +79,7 @@ where
                 .http
                 .call(req)
                 .map_err(RestError::from)
-                .and_then(|resp| RestResponse::from_http(resp))
+                .and_then(RestResponse::from_http)
                 .boxed(),
             Err(err) => futures::future::ready(Err(err)).boxed(),
         }

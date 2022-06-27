@@ -21,6 +21,6 @@ impl Rest for Ping {
     }
 
     fn to_payload(&self) -> super::Payload {
-        super::Payload::new(self.clone())
+        super::Payload::new(*self)
     }
 }

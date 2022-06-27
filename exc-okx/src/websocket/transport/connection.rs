@@ -65,7 +65,7 @@ impl tower::Service<Uri> for Connect {
                     .map_err(OkxError::Api)?
                     .await?
                     .into_response()
-                    .ok_or_else(|| OkxError::Api(StatusKind::EmptyResponse))?;
+                    .ok_or(OkxError::Api(StatusKind::EmptyResponse))?;
                 match resp {
                     ResponseKind::Login(_) => {
                         tracing::trace!("login; login success");
