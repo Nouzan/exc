@@ -31,7 +31,9 @@ impl Request for SubscribeTickers {
 
 /// Ticker.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Display)]
-#[display(fmt = "ts={ts} ({last}, {size}) bid={bid:?} ask={ask:?}")]
+#[display(
+    fmt = "ts={ts}, last=({last}, {size}), bid=({bid:?}, {bid_size:?}), ask=({ask:?}, {ask_size:?})"
+)]
 pub struct Ticker {
     /// Timestamp.
     #[serde(with = "time::serde::rfc3339")]
@@ -47,7 +49,13 @@ pub struct Ticker {
     /// Current best bid.
     #[serde(default)]
     pub bid: Option<Decimal>,
+    /// The size of current best bid.
+    #[serde(default)]
+    pub bid_size: Option<Decimal>,
     /// Current best ask.
     #[serde(default)]
     pub ask: Option<Decimal>,
+    /// The size of current best ask.
+    #[serde(default)]
+    pub ask_size: Option<Decimal>,
 }

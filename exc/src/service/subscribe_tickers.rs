@@ -109,23 +109,33 @@ where
                     size: Decimal::ZERO,
                     buy: None,
                     bid: None,
+                    bid_size: None,
                     ask: None,
+                    ask_size: None,
                 };
+                let mut trade_init = false;
                 for await event in stream {
                     let event = event?;
                     match event {
                         Either::Left(trade) => {
+                            ticker.ts = trade.ts;
                             ticker.last = trade.price;
                             ticker.size = trade.size;
                             ticker.buy = Some(trade.buy);
+                            trade_init = true;
                         },
                         Either::Right(bid_ask) => {
+                            ticker.ts = bid_ask.ts;
                             ticker.size = Decimal::ZERO;
                             ticker.bid = bid_ask.bid.map(|b| b.0);
                             ticker.ask = bid_ask.ask.map(|a| a.0);
+                            ticker.bid_size = bid_ask.bid.map(|b| b.1);
+                            ticker.ask_size = bid_ask.ask.map(|a| a.1);
                         }
                     }
-                    yield ticker;
+                    if trade_init {
+                        yield ticker;
+                    }
                 }
             };
             Ok(stream.boxed())

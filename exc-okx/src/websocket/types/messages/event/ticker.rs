@@ -34,6 +34,8 @@ impl From<OkxTicker> for Ticker {
             buy: None,
             bid: Some(ti.bid_px),
             ask: Some(ti.ask_px),
+            bid_size: Some(ti.bid_sz),
+            ask_size: Some(ti.ask_sz),
         }
     }
 }
