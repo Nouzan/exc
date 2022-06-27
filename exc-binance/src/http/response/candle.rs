@@ -9,27 +9,27 @@ use super::Data;
 #[derive(Debug, Deserialize)]
 pub struct Candle(
     /// Open time.
-    i64,
+    pub(crate) i64,
     /// Open.
-    Decimal,
+    pub(crate) Decimal,
     /// High.
-    Decimal,
+    pub(crate) Decimal,
     /// Low.
-    Decimal,
+    pub(crate) Decimal,
     /// Close.
-    Decimal,
+    pub(crate) Decimal,
     /// Volume.
-    Decimal,
+    pub(crate) Decimal,
     /// Close time.
-    i64,
+    pub(crate) i64,
     /// Volume in quote.
-    Decimal,
+    pub(crate) Decimal,
     /// The number of trades.
-    usize,
+    pub(crate) usize,
     /// Taker volume.
-    Decimal,
+    pub(crate) Decimal,
     /// Taker volume in quote.
-    Decimal,
+    pub(crate) Decimal,
     /// Ignore.
     serde_json::Value,
 );

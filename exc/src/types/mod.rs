@@ -15,8 +15,12 @@ pub mod key;
 /// Trading.
 pub mod trading;
 
+pub use candle::{
+    Candle, CandleStream, Period, PeriodKind, QueryCandles, QueryFirstCandles, QueryLastCandles,
+};
+
 /// Request and Response binding.
-pub trait Request {
+pub trait Request: Sized {
     /// Response type.
     type Response;
 }
@@ -24,9 +28,7 @@ pub trait Request {
 /// An adaptor for request.
 pub trait Adaptor<R: Request>: Request {
     /// Convert from request.
-    fn from_request(req: R) -> Result<Self, ExchangeError>
-    where
-        Self: Sized;
+    fn from_request(req: R) -> Result<Self, ExchangeError>;
 
     /// Convert into response.
     fn into_response(resp: Self::Response) -> Result<R::Response, ExchangeError>;

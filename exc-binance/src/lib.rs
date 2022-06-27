@@ -23,3 +23,6 @@ pub mod service;
 pub use self::error::Error;
 pub use self::service::Binance;
 pub use self::types::{request::Request, response::Response};
+
+#[macro_use]
+extern crate anyhow;

@@ -35,6 +35,10 @@ path = "okx_ws_trade.rs"
 name = "binance-instrument"
 path = "binance_instrument.rs"
 
+[[bin]]
+name = "binance-candle"
+path = "binance_candle.rs"
+
 [dependencies]
 anyhow = "1"
 exc = { path = "../exc", features = ["http"] }

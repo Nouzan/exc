@@ -4,6 +4,7 @@ pub use indicator::{window::mode::tumbling::period::PeriodKind, Period};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::{
+    fmt,
     ops::{Bound, RangeBounds},
     sync::Arc,
 };
@@ -23,6 +24,35 @@ pub struct QueryCandles {
     period: Period,
     pub(crate) start: Bound<OffsetDateTime>,
     pub(crate) end: Bound<OffsetDateTime>,
+}
+
+fn fmt_ts_start_bound(bound: &Bound<OffsetDateTime>) -> String {
+    match bound {
+        Bound::Unbounded => "(".to_string(),
+        Bound::Excluded(ts) => format!("({ts}"),
+        Bound::Included(ts) => format!("[{ts}"),
+    }
+}
+
+fn fmt_ts_end_bound(bound: &Bound<OffsetDateTime>) -> String {
+    match bound {
+        Bound::Unbounded => ")".to_string(),
+        Bound::Excluded(ts) => format!("{ts})"),
+        Bound::Included(ts) => format!("{ts}]"),
+    }
+}
+
+impl fmt::Display for QueryCandles {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}-{}-{}, {}",
+            self.inst,
+            self.period,
+            fmt_ts_start_bound(&self.start),
+            fmt_ts_end_bound(&self.end)
+        )
+    }
 }
 
 impl QueryCandles {
@@ -60,6 +90,18 @@ impl QueryCandles {
     pub fn period(&self) -> Period {
         self.period
     }
+
+    /// Is empty.
+    pub fn is_empty(&self) -> bool {
+        match (self.start_bound(), self.end_bound()) {
+            (Bound::Unbounded, _) => false,
+            (_, Bound::Unbounded) => false,
+            (Bound::Included(start), Bound::Included(end)) => *start > *end,
+            (Bound::Included(start), Bound::Excluded(end)) => *start >= *end,
+            (Bound::Excluded(start), Bound::Included(end)) => *start >= *end,
+            (Bound::Excluded(start), Bound::Excluded(end)) => *start >= *end,
+        }
+    }
 }
 
 impl RangeBounds<OffsetDateTime> for QueryCandles {
@@ -92,6 +134,12 @@ pub struct QueryLastCandles {
     pub(crate) last: usize,
 }
 
+impl fmt::Display for QueryLastCandles {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}-(-{})", self.query, self.last)
+    }
+}
+
 impl QueryLastCandles {
     /// Create a new query.
     pub fn new<R>(inst: &str, period: Period, range: R, last: usize) -> Self
@@ -114,6 +162,45 @@ impl QueryLastCandles {
 }
 
 impl Request for QueryLastCandles {
+    type Response = CandleStream;
+}
+
+/// Query first `n` candles in range.
+/// Return a candle stream that produce the first `fisrt` candles forward.
+#[derive(Debug, Clone)]
+pub struct QueryFirstCandles {
+    pub(crate) query: QueryCandles,
+    pub(crate) first: usize,
+}
+
+impl fmt::Display for QueryFirstCandles {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}-({})", self.query, self.first)
+    }
+}
+
+impl QueryFirstCandles {
+    /// Create a new query.
+    pub fn new<R>(inst: &str, period: Period, range: R, first: usize) -> Self
+    where
+        R: RangeBounds<OffsetDateTime>,
+    {
+        let query = QueryCandles::new(inst, period, range);
+        Self { query, first }
+    }
+
+    /// Get first.
+    pub fn first(&self) -> usize {
+        self.first
+    }
+
+    /// Get query.
+    pub fn query(&self) -> &QueryCandles {
+        &self.query
+    }
+}
+
+impl Request for QueryFirstCandles {
     type Response = CandleStream;
 }
 

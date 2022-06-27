@@ -23,6 +23,10 @@ tokio-tower = "0.6.0"
 pin-project-lite = "0.2.8"
 rust_decimal = "1"
 
+[dependencies.time]
+version = "0.3.9"
+features = ["serde-human-readable", "macros"]
+
 [dependencies.serde]
 version = "1.0.136"
 features = ["derive"]
