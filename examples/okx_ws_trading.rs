@@ -1,5 +1,5 @@
 use exc::{
-    service::trading::{CheckOrderService, TradingService},
+    trading::{CheckOrderService, TradingService},
     transport::http::endpoint::Endpoint as HttpEndpoint,
     types::trading::Place,
     ExchangeLayer,

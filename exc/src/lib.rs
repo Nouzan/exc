@@ -2,15 +2,29 @@
 
 #![deny(missing_docs)]
 
-pub use exc_core::*;
+/// Subscribe tickers.
+pub mod subscribe_tickers;
 
-/// Service.
-pub mod service;
+/// Trade.
+pub mod trade;
 
-pub use service::{
+/// Book.
+pub mod book;
+
+/// Subscribe instruments.
+pub mod instrument;
+
+/// Fetch candles.
+pub mod fetch_candles;
+
+/// Trading service.
+pub mod trading;
+
+pub use self::{
     fetch_candles::{FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesService},
     subscribe_tickers::SubscribeTickersService,
 };
+pub use exc_core::*;
 
 #[cfg(feature = "okx")]
 /// Okx exchange service.

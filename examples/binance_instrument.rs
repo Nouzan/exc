@@ -1,4 +1,4 @@
-use exc::{service::instrument::FetchInstrumentsService, ExchangeService};
+use exc::{instrument::FetchInstrumentsService, ExchangeService};
 use exc_binance::Binance;
 use futures::StreamExt;
 
