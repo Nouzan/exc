@@ -44,12 +44,8 @@ name = "binance-rate-limit"
 path = "binance_rate_limit.rs"
 
 [[bin]]
-name = "binance-trade"
-path = "binance_trade.rs"
-
-[[bin]]
-name = "binance-bid-ask"
-path = "binance_bid_ask.rs"
+name = "binance-trade-bid-ask"
+path = "binance_trade_bid_ask.rs"
 
 [dependencies]
 anyhow = "1"
