@@ -50,7 +50,7 @@ pub struct AggTrade {
     /// Trade time.
     #[serde(rename = "T")]
     pub trade_timestamp: i64,
-    /// Is the buyer the market maker.
+    /// Is buyer the market maker.
     #[serde(rename = "m")]
     pub buy_maker: bool,
 }

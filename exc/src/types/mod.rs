@@ -3,6 +3,9 @@ use crate::ExchangeError;
 /// Ticker.
 pub mod ticker;
 
+/// Trade.
+pub mod trade;
+
 /// Candle.
 pub mod candle;
 

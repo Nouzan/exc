@@ -30,7 +30,7 @@ impl Request for SubscribeTickers {
 }
 
 /// Ticker.
-#[derive(Debug, Clone, Serialize, Deserialize, Display)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Display)]
 #[display(fmt = "ts={ts} ({last}, {size}) bid={bid:?} ask={ask:?}")]
 pub struct Ticker {
     /// Timestamp.
@@ -47,7 +47,7 @@ pub struct Ticker {
     /// Current best bid.
     #[serde(default)]
     pub bid: Option<Decimal>,
-    /// Current bestt ask.
+    /// Current best ask.
     #[serde(default)]
     pub ask: Option<Decimal>,
 }

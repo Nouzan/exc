@@ -12,6 +12,9 @@ use tower::Service;
 /// Subscribe tickers.
 pub mod subscribe_tickers;
 
+/// Trade.
+pub mod trade;
+
 /// Subscribe instruments.
 pub mod instrument;
 
