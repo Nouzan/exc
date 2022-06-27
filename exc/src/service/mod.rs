@@ -3,7 +3,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::ExchangeError;
+use crate::{Exchange, ExchangeError};
 
 use super::types::Request;
 use futures::{future::MapErr, TryFutureExt};
@@ -44,6 +44,14 @@ where
         Self: Sized,
     {
         Exc { inner: self }
+    }
+
+    /// Convert into a [`Exchange`].
+    fn into_exchange(self) -> Exchange<Self, R>
+    where
+        Self: Sized,
+    {
+        Exchange::new(self)
     }
 
     /// Convert into a [`Service`] by ref.

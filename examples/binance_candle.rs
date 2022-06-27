@@ -1,4 +1,8 @@
-use exc::{service::fetch_candles::FetchFirstCandlesService, types::Period, FetchCandlesService};
+use exc::{
+    service::{fetch_candles::FetchFirstCandlesService, ExchangeService},
+    types::Period,
+    FetchCandlesService,
+};
 use exc_binance::Binance;
 use futures::StreamExt;
 use time::{macros::datetime, UtcOffset};

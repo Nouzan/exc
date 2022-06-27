@@ -1,12 +1,12 @@
 use std::task::{Context, Poll};
 
-use exc::{transport::http::channel::HttpsChannel, Exchange, ExchangeError, ExchangeLayer};
+use exc::{transport::http::channel::HttpsChannel, ExchangeError};
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
 use tower::{
     buffer::Buffer,
     ready_cache::{error::Failed, ReadyCache},
     util::Either,
-    Service, ServiceBuilder,
+    Service,
 };
 
 use crate::{
@@ -117,12 +117,12 @@ impl Binance {
         Endpoint::usd_margin_futures()
     }
 
-    /// Convert into an exchange.
-    pub fn into_exchange(self) -> Exchange<Self, Request> {
-        ServiceBuilder::default()
-            .layer(ExchangeLayer::default())
-            .service(self)
-    }
+    // /// Convert into an exchange.
+    // pub fn into_exchange(self) -> Exchange<Self, Request> {
+    //     ServiceBuilder::default()
+    //         .layer(ExchangeLayer::default())
+    //         .service(self)
+    // }
 }
 
 impl Service<Request> for Binance {

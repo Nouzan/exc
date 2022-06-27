@@ -1,6 +1,6 @@
 use futures::{future::BoxFuture, FutureExt};
-use std::marker::PhantomData;
-use tower::{Service, ServiceExt};
+use std::{marker::PhantomData, time::Duration};
+use tower::{limit::RateLimit, Service, ServiceBuilder, ServiceExt};
 
 use crate::{
     service::ExchangeService,
@@ -45,15 +45,20 @@ impl<C, Req> Exchange<C, Req> {
     {
         ServiceExt::<Req>::oneshot(&mut self.channel, request).await
     }
+
+    /// Convert into a rate-limited service.
+    pub fn into_rate_limited(self, num: u64, per: Duration) -> RateLimit<Self> {
+        ServiceBuilder::default().rate_limit(num, per).service(self)
+    }
 }
 
 impl<C, Req, R> Service<R> for Exchange<C, Req>
 where
     R: Request,
+    R::Response: Send + 'static,
     Req: Adaptor<R>,
     C: ExchangeService<Req>,
     C::Error: Into<ExchangeError>,
-    R::Response: Send + 'static,
     C::Future: Send + 'static,
 {
     type Response = R::Response;
