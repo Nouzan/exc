@@ -1,6 +1,6 @@
-# Exc-binance
+# Exc-okx
 
-Binance api service built with `exc` .
+Okx api service built with `exc` .
 
 [![Crates.io][crates-badge]][crates-url]
 [![MIT licensed][mit-badge]][mit-url]
