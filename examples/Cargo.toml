@@ -47,6 +47,10 @@ path = "binance_rate_limit.rs"
 name = "binance-trade"
 path = "binance_trade.rs"
 
+[[bin]]
+name = "binance-bid-ask"
+path = "binance_bid_ask.rs"
+
 [dependencies]
 anyhow = "1"
 exc = { path = "../exc", features = ["http"] }

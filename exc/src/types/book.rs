@@ -49,5 +49,5 @@ pub struct SubscribeBidAsk {
 }
 
 impl Request for SubscribeBidAsk {
-    type Response = BidAsk;
+    type Response = BidAskStream;
 }

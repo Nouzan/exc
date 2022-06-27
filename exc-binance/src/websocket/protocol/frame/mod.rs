@@ -6,10 +6,13 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::websocket::error::WsError;
 
-use self::agg_trade::AggTrade;
+use self::{agg_trade::AggTrade, book_ticker::BookTicker};
 
 /// Aggregate trade.
 pub mod agg_trade;
+
+/// Book ticker.
+pub mod book_ticker;
 
 /// Operations.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -34,6 +37,14 @@ impl Name {
         Self {
             inst: inst.to_string(),
             channel: "aggTrade".to_string(),
+        }
+    }
+
+    /// book ticker
+    pub fn book_ticker(inst: &str) -> Self {
+        Self {
+            inst: inst.to_string(),
+            channel: "bookTicker".to_string(),
         }
     }
 }
@@ -113,8 +124,10 @@ pub trait Nameable {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum StreamFrame {
-    /// Aggregate Trade.
+    /// Aggregate trade.
     AggTrade(AggTrade),
+    /// Book ticker.
+    BookTicker(BookTicker),
     /// Unknwon.
     Unknwon(serde_json::Value),
 }
@@ -124,6 +137,7 @@ impl StreamFrame {
     pub fn to_name(&self) -> Option<Name> {
         match self {
             Self::AggTrade(f) => Some(f.to_name()),
+            Self::BookTicker(f) => Some(f.to_name()),
             Self::Unknwon(_) => None,
         }
     }
@@ -156,6 +170,7 @@ mod test {
     use crate::{types::Name, Binance, Request};
 
     use super::agg_trade::AggTrade;
+    use super::book_ticker::BookTicker;
 
     #[tokio::test]
     async fn test_aggregate_trade() -> anyhow::Result<()> {
@@ -164,6 +179,19 @@ mod test {
             .oneshot(Request::subscribe(Name::agg_trade("btcbusd")))
             .await?
             .into_stream::<AggTrade>()?;
+        pin_mut!(stream);
+        let trade = stream.try_next().await?.unwrap();
+        println!("{trade:?}");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_book_ticker() -> anyhow::Result<()> {
+        let mut api = Binance::usd_margin_futures().connect();
+        let stream = (&mut api)
+            .oneshot(Request::subscribe(Name::book_ticker("btcbusd")))
+            .await?
+            .into_stream::<BookTicker>()?;
         pin_mut!(stream);
         let trade = stream.try_next().await?.unwrap();
         println!("{trade:?}");

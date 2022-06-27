@@ -3,6 +3,7 @@ use std::ops::Bound;
 use exc::ExchangeError;
 use time::OffsetDateTime;
 
+mod book;
 mod candle;
 mod instrument;
 mod trade;
