@@ -33,6 +33,12 @@ impl<T, U, F: Clone> Clone for RetryPolicy<T, U, F> {
 
 impl<T, U, F: Copy> Copy for RetryPolicy<T, U, F> {}
 
+impl<T, U, F> Default for RetryPolicy<T, U, F> {
+    fn default() -> Self {
+        Self::never()
+    }
+}
+
 impl<T, U, F> RetryPolicy<T, U, F> {
     /// Never retry.
     pub fn never() -> Self {
