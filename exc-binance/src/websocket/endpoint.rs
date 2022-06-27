@@ -7,7 +7,7 @@ use tower::{reconnect::Reconnect, ServiceExt};
 
 use super::{error::WsError, protocol::WsClient, request::WsRequest, BinanceWebsocketApi};
 
-const DEFAULT_KEEP_ALIVE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+const DEFAULT_KEEP_ALIVE_TIMEOUT: Duration = Duration::from_secs(30);
 const DEFAULT_STREAM_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// A builder of binance websocket api service.

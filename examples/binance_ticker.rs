@@ -33,6 +33,7 @@ async fn main() -> anyhow::Result<()> {
                         }
                         Err(err) => {
                             tracing::error!("[{revision}]stream error: {err}");
+                            break;
                         }
                     }
                 }
