@@ -18,7 +18,7 @@ pub use layer::ExcLayer;
 pub use traits::{Adaptor, ExcService, IntoExc, Request};
 
 /// A wrapper that convert a general purpose exchange service
-/// into the specific exc services that is supported.
+/// into the specific exc services that are supported.
 #[derive(Debug)]
 pub struct Exc<C, Req> {
     channel: C,
