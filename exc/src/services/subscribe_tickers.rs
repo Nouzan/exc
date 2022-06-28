@@ -11,13 +11,13 @@ use crate::{
         ticker::{SubscribeTickers, Ticker, TickerStream},
         SubscribeBidAsk, SubscribeTrades,
     },
-    ExcMut, ExchangeError, ExchangeService,
+    ExcMut, ExcService, ExchangeError,
 };
 
 use super::book::SubscribeBidAskService;
 
 /// Subscribe tickers service.
-pub trait SubscribeTickersService: ExchangeService<SubscribeTickers> {
+pub trait SubscribeTickersService: ExcService<SubscribeTickers> {
     /// Subscribe tickers.
     fn subscribe_tickers(&mut self, inst: &str) -> Oneshot<ExcMut<'_, Self>, SubscribeTickers>
     where
@@ -27,14 +27,14 @@ pub trait SubscribeTickersService: ExchangeService<SubscribeTickers> {
     }
 }
 
-impl<S> SubscribeTickersService for S where S: ExchangeService<SubscribeTickers> {}
+impl<S> SubscribeTickersService for S where S: ExcService<SubscribeTickers> {}
 
 /// Trada-Bid-Ask service.
 pub trait TradeBidAskService:
-    ExchangeService<SubscribeTrades> + ExchangeService<SubscribeBidAsk> + Clone + Send + 'static
+    ExcService<SubscribeTrades> + ExcService<SubscribeBidAsk> + Clone + Send + 'static
 where
-    <Self as ExchangeService<SubscribeTrades>>::Future: Send,
-    <Self as ExchangeService<SubscribeBidAsk>>::Future: Send,
+    <Self as ExcService<SubscribeTrades>>::Future: Send,
+    <Self as ExcService<SubscribeBidAsk>>::Future: Send,
 {
     /// Convert into a [`SubscribeTickersService`].
     fn into_subscribe_tickers(self) -> TradeBidAsk<Self> {
@@ -44,10 +44,10 @@ where
 
 impl<S> TradeBidAskService for S
 where
-    S: ExchangeService<SubscribeTrades>,
-    S: ExchangeService<SubscribeBidAsk>,
-    <S as ExchangeService<SubscribeTrades>>::Future: Send,
-    <S as ExchangeService<SubscribeBidAsk>>::Future: Send,
+    S: ExcService<SubscribeTrades>,
+    S: ExcService<SubscribeBidAsk>,
+    <S as ExcService<SubscribeTrades>>::Future: Send,
+    <S as ExcService<SubscribeBidAsk>>::Future: Send,
     S: Clone + Send + 'static,
 {
 }
@@ -71,10 +71,10 @@ pub struct TradeBidAsk<S> {
 impl<S> Service<SubscribeTickers> for TradeBidAsk<S>
 where
     S: Clone + Send + 'static,
-    S: ExchangeService<SubscribeTrades>,
-    S: ExchangeService<SubscribeBidAsk>,
-    <S as ExchangeService<SubscribeTrades>>::Future: Send,
-    <S as ExchangeService<SubscribeBidAsk>>::Future: Send,
+    S: ExcService<SubscribeTrades>,
+    S: ExcService<SubscribeBidAsk>,
+    <S as ExcService<SubscribeTrades>>::Future: Send,
+    <S as ExcService<SubscribeBidAsk>>::Future: Send,
 {
     type Response = TickerStream;
     type Error = ExchangeError;
@@ -82,14 +82,14 @@ where
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         Service::<SubscribeTrades>::poll_ready(
-            &mut ExchangeService::<SubscribeTrades>::as_service_mut(&mut self.svc),
+            &mut ExcService::<SubscribeTrades>::as_service_mut(&mut self.svc),
             cx,
         )
     }
 
     fn call(&mut self, req: SubscribeTickers) -> Self::Future {
         let trade = Service::<SubscribeTrades>::call(
-            &mut ExchangeService::<SubscribeTrades>::as_service_mut(&mut self.svc),
+            &mut ExcService::<SubscribeTrades>::as_service_mut(&mut self.svc),
             SubscribeTrades {
                 instrument: req.instrument.clone(),
             },

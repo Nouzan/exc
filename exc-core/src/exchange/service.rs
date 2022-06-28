@@ -3,11 +3,11 @@ use std::task::{Context, Poll};
 use futures::{future::MapErr, Future, TryFutureExt};
 use tower::Service;
 
-use crate::{Exchange, ExchangeError, Request};
+use crate::{Adapt, ExchangeError, Request};
 
-/// Exchange Service,
-/// an alias of [`tower::Service`].
-pub trait ExchangeService<R>
+/// Exc Service,
+/// an alias of [`Service`].
+pub trait ExcService<R>
 where
     R: Request,
 {
@@ -30,12 +30,12 @@ where
         Exc { inner: self }
     }
 
-    /// Convert into a [`Exchange`].
-    fn into_exchange(self) -> Exchange<Self, R>
+    /// Convert into a [`Adapt`].
+    fn adapt(self) -> Adapt<Self, R>
     where
         Self: Sized,
     {
-        Exchange::new(self)
+        Adapt::new(self)
     }
 
     /// Convert into a [`Service`] by ref.
@@ -44,7 +44,7 @@ where
     }
 }
 
-impl<S, R> ExchangeService<R> for S
+impl<S, R> ExcService<R> for S
 where
     S: Service<R, Response = R::Response>,
     S::Error: Into<ExchangeError>,
@@ -71,7 +71,7 @@ pub struct Exc<S> {
 impl<S, R> Service<R> for Exc<S>
 where
     R: Request,
-    S: ExchangeService<R>,
+    S: ExcService<R>,
 {
     type Response = R::Response;
     type Error = ExchangeError;
@@ -84,7 +84,7 @@ where
     fn call(&mut self, req: R) -> Self::Future {
         self.inner
             .call(req)
-            .map_err(<S as ExchangeService<R>>::Error::into)
+            .map_err(<S as ExcService<R>>::Error::into)
     }
 }
 
@@ -97,7 +97,7 @@ pub struct ExcMut<'a, S: ?Sized> {
 impl<'a, S, R> Service<R> for ExcMut<'a, S>
 where
     R: Request,
-    S: ExchangeService<R>,
+    S: ExcService<R>,
 {
     type Response = R::Response;
     type Error = ExchangeError;
@@ -110,6 +110,6 @@ where
     fn call(&mut self, req: R) -> Self::Future {
         self.inner
             .call(req)
-            .map_err(<S as ExchangeService<R>>::Error::into)
+            .map_err(<S as ExcService<R>>::Error::into)
     }
 }

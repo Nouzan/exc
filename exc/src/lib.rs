@@ -2,29 +2,23 @@
 
 #![deny(missing_docs)]
 
-/// Subscribe tickers.
-pub mod subscribe_tickers;
+/// Exc services.
+pub mod services;
 
-/// Trade.
-pub mod trade;
-
-/// Book.
-pub mod book;
-
-/// Subscribe instruments.
-pub mod instrument;
-
-/// Fetch candles.
-pub mod fetch_candles;
-
-/// Trading service.
-pub mod trading;
-
-pub use self::{
-    fetch_candles::{FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesService},
-    subscribe_tickers::SubscribeTickersService,
-};
 pub use exc_core::*;
+pub use services::{
+    book::SubscribeBidAskService,
+    fetch_candles::{
+        FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward,
+        FetchCandlesForwardLayer, FetchCandlesService, FetchFirstCandlesService,
+    },
+    instrument::{FetchInstrumentsService, SubscribeInstrumentsService},
+    subscribe_tickers::{
+        SubscribeTickersService, TradeBidAsk, TradeBidAskService, TradeBidAskServiceLayer,
+    },
+    trade::SubscribeTradesService,
+    trading::{CheckOrderService, TradingService},
+};
 
 #[cfg(feature = "okx")]
 /// Okx exchange service.

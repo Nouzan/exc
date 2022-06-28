@@ -1,4 +1,4 @@
-use exc::{ExchangeLayer, SubscribeTickersService};
+use exc::{AdaptLayer, SubscribeTickersService};
 use exc_okx::websocket::Endpoint;
 use futures::StreamExt;
 use tower::ServiceBuilder;
@@ -23,7 +23,7 @@ async fn main() -> anyhow::Result<()> {
         .connection_timeout(std::time::Duration::from_secs(5));
     let exchange = ServiceBuilder::new()
         .timeout(std::time::Duration::from_secs(5))
-        .layer(ExchangeLayer::default())
+        .layer(AdaptLayer::default())
         .service(endpoint.connect());
 
     let handles = ["BTC-USDT", "ETH-USDT", "LTC-USDT", "DOGE-USDT"]

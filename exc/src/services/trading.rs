@@ -6,18 +6,18 @@ use crate::{
     ExchangeError,
 };
 
-use crate::ExchangeService;
+use crate::ExcService;
 
 /// Trading service.
-pub trait TradingService: ExchangeService<PlaceOrder> + ExchangeService<CancelOrder> {
+pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
     /// Place an order.
     fn place(&mut self, inst: &str, place: &Place) -> BoxFuture<'_, Result<OrderId, ExchangeError>>
     where
         Self: Sized + Send,
-        <Self as ExchangeService<PlaceOrder>>::Future: Send,
+        <Self as ExcService<PlaceOrder>>::Future: Send,
     {
         let resp = ServiceExt::<PlaceOrder>::oneshot(
-            ExchangeService::<PlaceOrder>::as_service_mut(self),
+            ExcService::<PlaceOrder>::as_service_mut(self),
             PlaceOrder {
                 instrument: inst.to_string(),
                 place: *place,
@@ -30,10 +30,10 @@ pub trait TradingService: ExchangeService<PlaceOrder> + ExchangeService<CancelOr
     fn cancel(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, Result<(), ExchangeError>>
     where
         Self: Sized + Send,
-        <Self as ExchangeService<CancelOrder>>::Future: Send,
+        <Self as ExcService<CancelOrder>>::Future: Send,
     {
         let resp = ServiceExt::<CancelOrder>::oneshot(
-            ExchangeService::<CancelOrder>::as_service_mut(self),
+            ExcService::<CancelOrder>::as_service_mut(self),
             CancelOrder {
                 instrument: inst.to_string(),
                 id: id.clone(),
@@ -43,10 +43,10 @@ pub trait TradingService: ExchangeService<PlaceOrder> + ExchangeService<CancelOr
     }
 }
 
-impl<S> TradingService for S where S: ExchangeService<PlaceOrder> + ExchangeService<CancelOrder> {}
+impl<S> TradingService for S where S: ExcService<PlaceOrder> + ExcService<CancelOrder> {}
 
 /// Check order service.
-pub trait CheckOrderService: ExchangeService<GetOrder> {
+pub trait CheckOrderService: ExcService<GetOrder> {
     /// Check the current status of an order.
     fn check(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, Result<Order, ExchangeError>>
     where
@@ -54,7 +54,7 @@ pub trait CheckOrderService: ExchangeService<GetOrder> {
         Self::Future: Send,
     {
         let resp = ServiceExt::oneshot(
-            ExchangeService::<GetOrder>::as_service_mut(self),
+            ExcService::<GetOrder>::as_service_mut(self),
             GetOrder {
                 instrument: inst.to_string(),
                 id: id.clone(),
@@ -64,4 +64,4 @@ pub trait CheckOrderService: ExchangeService<GetOrder> {
     }
 }
 
-impl<S> CheckOrderService for S where S: ExchangeService<GetOrder> {}
+impl<S> CheckOrderService for S where S: ExcService<GetOrder> {}

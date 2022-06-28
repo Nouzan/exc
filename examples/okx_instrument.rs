@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::{instrument::SubscribeInstrumentsService, ExchangeLayer};
+use exc::{AdaptLayer, SubscribeInstrumentsService};
 use exc_okx::websocket::{Endpoint, Request};
 use futures::StreamExt;
 use tower::ServiceBuilder;
@@ -14,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
     let svc = ServiceBuilder::default()
-        .layer(ExchangeLayer::<Request>::default())
+        .layer(AdaptLayer::<Request>::default())
         .service(
             Endpoint::default()
                 .request_timeout(Duration::from_secs(5))

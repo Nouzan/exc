@@ -13,17 +13,17 @@ pub mod layer;
 /// Service.
 pub mod service;
 
-pub use layer::ExchangeLayer;
-pub use service::ExchangeService;
+pub use layer::AdaptLayer;
+pub use service::ExcService;
 
-/// Exchange.
+/// Adapt.
 #[derive(Debug)]
-pub struct Exchange<C, Req> {
+pub struct Adapt<C, Req> {
     channel: C,
     _req: PhantomData<fn() -> Req>,
 }
 
-impl<C, Req> Clone for Exchange<C, Req>
+impl<C, Req> Clone for Adapt<C, Req>
 where
     C: Clone,
 {
@@ -32,7 +32,7 @@ where
     }
 }
 
-impl<C, Req> Exchange<C, Req> {
+impl<C, Req> Adapt<C, Req> {
     /// Create a new exchange client from the given channel.
     pub fn new(channel: C) -> Self {
         Self {
@@ -55,12 +55,12 @@ impl<C, Req> Exchange<C, Req> {
     }
 }
 
-impl<C, Req, R> Service<R> for Exchange<C, Req>
+impl<C, Req, R> Service<R> for Adapt<C, Req>
 where
     R: Request,
     R::Response: Send + 'static,
     Req: Adaptor<R>,
-    C: ExchangeService<Req>,
+    C: ExcService<Req>,
     C::Error: Into<ExchangeError>,
     C::Future: Send + 'static,
 {

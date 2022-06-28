@@ -14,10 +14,10 @@ use crate::{
     ExchangeError,
 };
 
-use crate::{Exc, ExcMut, ExchangeService};
+use crate::{Exc, ExcMut, ExcService};
 
 /// Fetch candles service.
-pub trait FetchCandlesService: ExchangeService<QueryCandles> {
+pub trait FetchCandlesService: ExcService<QueryCandles> {
     /// Query candles
     fn fetch_candles<R>(
         &mut self,
@@ -36,10 +36,10 @@ pub trait FetchCandlesService: ExchangeService<QueryCandles> {
     }
 }
 
-impl<S> FetchCandlesService for S where S: ExchangeService<QueryCandles> {}
+impl<S> FetchCandlesService for S where S: ExcService<QueryCandles> {}
 
 /// Fetch first candles service.
-pub trait FetchFirstCandlesService: ExchangeService<QueryFirstCandles> {
+pub trait FetchFirstCandlesService: ExcService<QueryFirstCandles> {
     /// Convert into a [`FetchCandlesForward`] service.
     /// # Panic
     /// Panic if `limit` is zero.
@@ -67,10 +67,10 @@ pub trait FetchFirstCandlesService: ExchangeService<QueryFirstCandles> {
     }
 }
 
-impl<S> FetchFirstCandlesService for S where S: ExchangeService<QueryFirstCandles> {}
+impl<S> FetchFirstCandlesService for S where S: ExcService<QueryFirstCandles> {}
 
 /// Fetch first candles service.
-pub trait FetchLastCandlesService: ExchangeService<QueryLastCandles> {
+pub trait FetchLastCandlesService: ExcService<QueryLastCandles> {
     /// Convert into a [`FetchCandlesBackward`] service.
     /// # Panic
     /// Panic if `limit` is zero.
@@ -98,7 +98,7 @@ pub trait FetchLastCandlesService: ExchangeService<QueryLastCandles> {
     }
 }
 
-impl<S> FetchLastCandlesService for S where S: ExchangeService<QueryLastCandles> {}
+impl<S> FetchLastCandlesService for S where S: ExcService<QueryLastCandles> {}
 
 use std::num::NonZeroUsize;
 use tower::buffer::Buffer;
@@ -132,7 +132,7 @@ impl FetchCandlesBackwardLayer {
 
 impl<S> Layer<S> for FetchCandlesBackwardLayer
 where
-    S: ExchangeService<QueryLastCandles> + Send + 'static,
+    S: ExcService<QueryLastCandles> + Send + 'static,
     S::Future: Send,
 {
     type Service = FetchCandlesBackward<S>;
@@ -148,7 +148,7 @@ where
 /// Fetch candles backward.
 pub struct FetchCandlesBackward<S>
 where
-    S: ExchangeService<QueryLastCandles> + 'static,
+    S: ExcService<QueryLastCandles> + 'static,
 {
     svc: Buffer<Exc<S>, QueryLastCandles>,
     limit: NonZeroUsize,
@@ -156,7 +156,7 @@ where
 
 impl<S> Service<QueryCandles> for FetchCandlesBackward<S>
 where
-    S: ExchangeService<QueryLastCandles> + 'static,
+    S: ExcService<QueryLastCandles> + 'static,
     S::Future: Send,
 {
     type Response = CandleStream;
@@ -227,7 +227,7 @@ impl FetchCandlesForwardLayer {
 
 impl<S> Layer<S> for FetchCandlesForwardLayer
 where
-    S: ExchangeService<QueryFirstCandles> + Send + 'static,
+    S: ExcService<QueryFirstCandles> + Send + 'static,
     S::Future: Send,
 {
     type Service = FetchCandlesForward<S>;
@@ -243,7 +243,7 @@ where
 /// Fetch candles forward.
 pub struct FetchCandlesForward<S>
 where
-    S: ExchangeService<QueryFirstCandles> + 'static,
+    S: ExcService<QueryFirstCandles> + 'static,
 {
     svc: Buffer<Exc<S>, QueryFirstCandles>,
     limit: NonZeroUsize,
@@ -251,7 +251,7 @@ where
 
 impl<S> Service<QueryCandles> for FetchCandlesForward<S>
 where
-    S: ExchangeService<QueryFirstCandles> + 'static,
+    S: ExcService<QueryFirstCandles> + 'static,
     S::Future: Send,
 {
     type Response = CandleStream;

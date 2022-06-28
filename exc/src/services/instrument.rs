@@ -2,10 +2,10 @@ use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::instrument::{FetchInstruments, SubscribeInstruments};
 
-use crate::{ExcMut, ExchangeService};
+use crate::{ExcMut, ExcService};
 
 /// Subscribe instruments service.
-pub trait SubscribeInstrumentsService: ExchangeService<SubscribeInstruments> {
+pub trait SubscribeInstrumentsService: ExcService<SubscribeInstruments> {
     /// Subscribe instruments filter by a given tag.
     fn subscribe_instruments(
         &mut self,
@@ -23,10 +23,10 @@ pub trait SubscribeInstrumentsService: ExchangeService<SubscribeInstruments> {
     }
 }
 
-impl<S> SubscribeInstrumentsService for S where S: ExchangeService<SubscribeInstruments> {}
+impl<S> SubscribeInstrumentsService for S where S: ExcService<SubscribeInstruments> {}
 
 /// Fetch instruments service.
-pub trait FetchInstrumentsService: ExchangeService<FetchInstruments> {
+pub trait FetchInstrumentsService: ExcService<FetchInstruments> {
     /// Fetch instruments filter by a given tag.
     fn fetch_instruments(&mut self, tag: &str) -> Oneshot<ExcMut<'_, Self>, FetchInstruments>
     where
@@ -41,4 +41,4 @@ pub trait FetchInstrumentsService: ExchangeService<FetchInstruments> {
     }
 }
 
-impl<S> FetchInstrumentsService for S where S: ExchangeService<FetchInstruments> {}
+impl<S> FetchInstrumentsService for S where S: ExcService<FetchInstruments> {}

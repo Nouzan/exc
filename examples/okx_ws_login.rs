@@ -1,4 +1,4 @@
-use exc::ExchangeService;
+use exc::ExcService;
 use exc_okx::{
     key::Key,
     websocket::{Endpoint, Request},

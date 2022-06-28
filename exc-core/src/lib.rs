@@ -25,5 +25,5 @@ pub use self::types::{Adaptor, Request};
 pub use error::ExchangeError;
 pub use exchange::{
     service::{Exc, ExcMut},
-    Exchange, ExchangeLayer, ExchangeService,
+    Adapt, AdaptLayer, ExcService,
 };

@@ -2,10 +2,10 @@ use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::SubscribeBidAsk;
 
-use crate::{ExcMut, ExchangeService};
+use crate::{ExcMut, ExcService};
 
 /// Subscribe current best bid and ask service.
-pub trait SubscribeBidAskService: ExchangeService<SubscribeBidAsk> {
+pub trait SubscribeBidAskService: ExcService<SubscribeBidAsk> {
     /// Subscribe current best bid and ask.
     fn subscribe_bid_ask(&mut self, inst: &str) -> Oneshot<ExcMut<'_, Self>, SubscribeBidAsk>
     where
@@ -20,4 +20,4 @@ pub trait SubscribeBidAskService: ExchangeService<SubscribeBidAsk> {
     }
 }
 
-impl<S> SubscribeBidAskService for S where S: ExchangeService<SubscribeBidAsk> {}
+impl<S> SubscribeBidAskService for S where S: ExcService<SubscribeBidAsk> {}

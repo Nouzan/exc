@@ -2,10 +2,10 @@ use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::trade::SubscribeTrades;
 
-use crate::{ExcMut, ExchangeService};
+use crate::{ExcMut, ExcService};
 
 /// Subscribe trades service.
-pub trait SubscribeTradesService: ExchangeService<SubscribeTrades> {
+pub trait SubscribeTradesService: ExcService<SubscribeTrades> {
     /// Subscribe trades.
     fn subscribe_trades(&mut self, inst: &str) -> Oneshot<ExcMut<'_, Self>, SubscribeTrades>
     where
@@ -20,4 +20,4 @@ pub trait SubscribeTradesService: ExchangeService<SubscribeTrades> {
     }
 }
 
-impl<S> SubscribeTradesService for S where S: ExchangeService<SubscribeTrades> {}
+impl<S> SubscribeTradesService for S where S: ExcService<SubscribeTrades> {}

@@ -1,4 +1,4 @@
-use exc::{book::SubscribeBidAskService, trade::SubscribeTradesService, ExchangeService};
+use exc::{ExcService, SubscribeBidAskService, SubscribeTradesService};
 use exc_binance::Binance;
 use futures::StreamExt;
 
@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut binance = Binance::usd_margin_futures().connect().into_exchange();
+    let mut binance = Binance::usd_margin_futures().connect().adapt();
     let mut trades = binance.subscribe_trades("btcbusd").await?;
     let mut bid_ask = binance.subscribe_bid_ask("btcbusd").await?;
     tokio::spawn(async move {
