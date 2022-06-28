@@ -11,6 +11,6 @@ use self::{request::Request, response::Response};
 
 pub use crate::websocket::protocol::frame::Name;
 
-impl exc_core::types::Request for Request {
+impl exc_core::Request for Request {
     type Response = Response;
 }

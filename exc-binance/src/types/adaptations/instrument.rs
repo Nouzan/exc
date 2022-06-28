@@ -1,9 +1,6 @@
 use exc_core::{
-    types::{
-        instrument::{FetchInstruments, InstrumentMeta},
-        Adaptor,
-    },
-    ExchangeError,
+    types::instrument::{FetchInstruments, InstrumentMeta},
+    Adaptor, ExchangeError,
 };
 use futures::{stream, StreamExt};
 use rust_decimal::Decimal;
@@ -31,7 +28,7 @@ impl Adaptor<FetchInstruments> for Request {
 
     fn into_response(
         resp: Self::Response,
-    ) -> Result<<FetchInstruments as exc_core::types::Request>::Response, ExchangeError> {
+    ) -> Result<<FetchInstruments as exc_core::Request>::Response, ExchangeError> {
         let info = resp.into_response::<response::ExchangeInfo>()?;
         Ok(stream::iter(info.symbols.into_iter().filter_map(|symbol| {
             let name = symbol.symbol.to_lowercase();

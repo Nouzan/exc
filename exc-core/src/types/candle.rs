@@ -10,9 +10,7 @@ use std::{
 };
 use time::OffsetDateTime;
 
-use crate::ExchangeError;
-
-use super::Request;
+use crate::{ExchangeError, Request};
 
 /// Candle Stream.
 pub type CandleStream = BoxStream<'static, Result<Candle, ExchangeError>>;

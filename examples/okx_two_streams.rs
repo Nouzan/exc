@@ -22,8 +22,8 @@ async fn main() -> anyhow::Result<()> {
         .ping_timeout(std::time::Duration::from_secs(5))
         .connection_timeout(std::time::Duration::from_secs(5));
     let exchange = ServiceBuilder::new()
-        .timeout(std::time::Duration::from_secs(5))
         .layer(AdaptLayer::default())
+        .timeout(std::time::Duration::from_secs(5))
         .service(endpoint.connect());
 
     let handles = ["BTC-USDT", "ETH-USDT", "LTC-USDT", "DOGE-USDT"]

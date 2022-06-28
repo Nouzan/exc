@@ -1,4 +1,4 @@
-use exc::{ExcService, FetchInstrumentsService};
+use exc::{AdaptService, FetchInstrumentsService};
 use exc_binance::Binance;
 use futures::StreamExt;
 

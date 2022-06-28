@@ -1,4 +1,4 @@
-use exc_core::types::Request;
+use exc_core::Request;
 
 use super::request::HttpRequest;
 use super::response::HttpResponse;

@@ -1,5 +1,6 @@
 use async_stream::try_stream;
 use either::Either;
+use exc_core::ExcMut;
 use futures::{future::BoxFuture, FutureExt, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
 use std::task::{Context, Poll};
@@ -11,7 +12,7 @@ use crate::{
         ticker::{SubscribeTickers, Ticker, TickerStream},
         SubscribeBidAsk, SubscribeTrades,
     },
-    ExcMut, ExcService, ExchangeError,
+    ExcService, ExchangeError,
 };
 
 use super::book::SubscribeBidAskService;
@@ -33,8 +34,8 @@ impl<S> SubscribeTickersService for S where S: ExcService<SubscribeTickers> {}
 pub trait TradeBidAskService:
     ExcService<SubscribeTrades> + ExcService<SubscribeBidAsk> + Clone + Send + 'static
 where
-    <Self as ExcService<SubscribeTrades>>::Future: Send,
-    <Self as ExcService<SubscribeBidAsk>>::Future: Send,
+    <Self as Service<SubscribeTrades>>::Future: Send,
+    <Self as Service<SubscribeBidAsk>>::Future: Send,
 {
     /// Convert into a [`SubscribeTickersService`].
     fn into_subscribe_tickers(self) -> TradeBidAsk<Self> {
@@ -46,8 +47,8 @@ impl<S> TradeBidAskService for S
 where
     S: ExcService<SubscribeTrades>,
     S: ExcService<SubscribeBidAsk>,
-    <S as ExcService<SubscribeTrades>>::Future: Send,
-    <S as ExcService<SubscribeBidAsk>>::Future: Send,
+    <S as Service<SubscribeTrades>>::Future: Send,
+    <S as Service<SubscribeBidAsk>>::Future: Send,
     S: Clone + Send + 'static,
 {
 }
@@ -73,8 +74,8 @@ where
     S: Clone + Send + 'static,
     S: ExcService<SubscribeTrades>,
     S: ExcService<SubscribeBidAsk>,
-    <S as ExcService<SubscribeTrades>>::Future: Send,
-    <S as ExcService<SubscribeBidAsk>>::Future: Send,
+    <S as Service<SubscribeTrades>>::Future: Send,
+    <S as Service<SubscribeBidAsk>>::Future: Send,
 {
     type Response = TickerStream;
     type Error = ExchangeError;

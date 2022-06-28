@@ -1,4 +1,4 @@
-use exc::{ExcService, SubscribeBidAskService, SubscribeTradesService};
+use exc::{AdaptService, SubscribeBidAskService, SubscribeTradesService};
 use exc_binance::Binance;
 use futures::StreamExt;
 

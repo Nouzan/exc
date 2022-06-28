@@ -1,20 +1,21 @@
 use futures::{future::BoxFuture, FutureExt};
-use std::{marker::PhantomData, time::Duration};
+use std::{
+    marker::PhantomData,
+    task::{Context, Poll},
+    time::Duration,
+};
 use tower::{limit::RateLimit, Service, ServiceBuilder, ServiceExt};
 
-use crate::{
-    types::{Adaptor, Request},
-    ExchangeError,
-};
+use crate::ExchangeError;
 
 /// Layer.
 pub mod layer;
 
-/// Service.
-pub mod service;
+/// Traits.
+pub mod traits;
 
 pub use layer::AdaptLayer;
-pub use service::ExcService;
+pub use traits::{AdaptService, Adaptor, ExcService, Request};
 
 /// Adapt.
 #[derive(Debug)]
@@ -60,7 +61,7 @@ where
     R: Request,
     R::Response: Send + 'static,
     Req: Adaptor<R>,
-    C: ExcService<Req>,
+    C: Service<Req, Response = Req::Response>,
     C::Error: Into<ExchangeError>,
     C::Future: Send + 'static,
 {
@@ -90,5 +91,29 @@ where
             Err(err) => futures::future::ready(Err(err)).right_future(),
         }
         .boxed()
+    }
+}
+
+/// A wrapper of exchange service.
+#[derive(Debug)]
+pub struct ExcMut<'a, S: ?Sized> {
+    pub(crate) inner: &'a mut S,
+}
+
+impl<'a, S, R> Service<R> for ExcMut<'a, S>
+where
+    R: Request,
+    S: ExcService<R>,
+{
+    type Response = R::Response;
+    type Error = ExchangeError;
+    type Future = S::Future;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx).map_err(|err| err.into())
+    }
+
+    fn call(&mut self, req: R) -> Self::Future {
+        self.inner.call(req)
     }
 }

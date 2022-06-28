@@ -1,5 +1,5 @@
 use futures::{future::BoxFuture, FutureExt};
-use tower::ServiceExt;
+use tower::{Service, ServiceExt};
 
 use crate::{
     types::trading::{CancelOrder, GetOrder, Order, OrderId, Place, PlaceOrder},
@@ -14,7 +14,7 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
     fn place(&mut self, inst: &str, place: &Place) -> BoxFuture<'_, Result<OrderId, ExchangeError>>
     where
         Self: Sized + Send,
-        <Self as ExcService<PlaceOrder>>::Future: Send,
+        <Self as Service<PlaceOrder>>::Future: Send,
     {
         let resp = ServiceExt::<PlaceOrder>::oneshot(
             ExcService::<PlaceOrder>::as_service_mut(self),
@@ -30,7 +30,7 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
     fn cancel(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, Result<(), ExchangeError>>
     where
         Self: Sized + Send,
-        <Self as ExcService<CancelOrder>>::Future: Send,
+        <Self as Service<CancelOrder>>::Future: Send,
     {
         let resp = ServiceExt::<CancelOrder>::oneshot(
             ExcService::<CancelOrder>::as_service_mut(self),

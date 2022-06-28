@@ -4,9 +4,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::ExchangeError;
-
-use super::Request;
+use crate::{ExchangeError, Request};
 
 /// Parse Instrument Meta Error.
 #[derive(Debug, Error)]

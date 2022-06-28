@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::{types::Period, ExcService, FetchCandlesService, FetchFirstCandlesService};
+use exc::{types::Period, AdaptService, FetchCandlesService, FetchFirstCandlesService};
 use exc_binance::Binance;
 use futures::StreamExt;
 use time::{macros::datetime, UtcOffset};

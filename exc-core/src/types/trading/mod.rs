@@ -8,9 +8,7 @@ use futures::future::BoxFuture;
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus};
 pub use place::Place;
 
-use crate::ExchangeError;
-
-use super::Request;
+use crate::{ExchangeError, Request};
 
 /// Place order.
 #[derive(Debug, Clone)]

@@ -2,17 +2,17 @@ use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::trade::SubscribeTrades;
 
-use crate::{ExcMut, ExcService};
+use crate::ExcService;
 
 /// Subscribe trades service.
 pub trait SubscribeTradesService: ExcService<SubscribeTrades> {
     /// Subscribe trades.
-    fn subscribe_trades(&mut self, inst: &str) -> Oneshot<ExcMut<'_, Self>, SubscribeTrades>
+    fn subscribe_trades(&mut self, inst: &str) -> Oneshot<&mut Self, SubscribeTrades>
     where
         Self: Sized,
     {
         ServiceExt::oneshot(
-            self.as_service_mut(),
+            self,
             SubscribeTrades {
                 instrument: inst.to_string(),
             },

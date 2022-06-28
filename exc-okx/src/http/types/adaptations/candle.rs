@@ -1,5 +1,5 @@
 use exc_core::types::candle::{Candle, QueryLastCandles};
-use exc_core::types::Adaptor;
+use exc_core::Adaptor;
 use exc_core::ExchangeError;
 use std::ops::RangeBounds;
 
@@ -38,8 +38,7 @@ impl Adaptor<QueryLastCandles> for HttpRequest {
 
     fn into_response(
         resp: Self::Response,
-    ) -> Result<<QueryLastCandles as exc_core::types::Request>::Response, exc_core::ExchangeError>
-    {
+    ) -> Result<<QueryLastCandles as exc_core::Request>::Response, exc_core::ExchangeError> {
         let stream = stream! {
                 for data in resp.data {
         trace!("received a data: {data:?}");

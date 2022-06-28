@@ -4,9 +4,8 @@ use exc_core::{
     types::{
         instrument::{InstrumentMeta, SubscribeInstruments},
         trading::{CancelOrder, OrderId, PlaceOrder},
-        Adaptor,
     },
-    ExchangeError,
+    Adaptor, ExchangeError,
 };
 use futures::{future::ready, stream::iter, FutureExt, StreamExt};
 
@@ -37,7 +36,7 @@ impl Adaptor<SubscribeInstruments> for Request {
 
     fn into_response(
         resp: Self::Response,
-    ) -> Result<<SubscribeInstruments as exc_core::types::Request>::Response, ExchangeError> {
+    ) -> Result<<SubscribeInstruments as exc_core::Request>::Response, ExchangeError> {
         match resp {
             Response::Error(err) => Err(ExchangeError::Other(anyhow::anyhow!("status: {err}"))),
             Response::Streaming(stream) => {
@@ -83,7 +82,7 @@ impl Adaptor<PlaceOrder> for Request {
 
     fn into_response(
         resp: Self::Response,
-    ) -> Result<<PlaceOrder as exc_core::types::Request>::Response, ExchangeError> {
+    ) -> Result<<PlaceOrder as exc_core::Request>::Response, ExchangeError> {
         let resp = resp.into_unary().map_err(OkxError::Api)?;
 
         Ok(async move {
@@ -131,7 +130,7 @@ impl Adaptor<CancelOrder> for Request {
 
     fn into_response(
         resp: Self::Response,
-    ) -> Result<<CancelOrder as exc_core::types::Request>::Response, ExchangeError> {
+    ) -> Result<<CancelOrder as exc_core::Request>::Response, ExchangeError> {
         let resp = resp.into_unary().map_err(OkxError::Api)?;
 
         Ok(async move {

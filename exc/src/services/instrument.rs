@@ -2,20 +2,17 @@ use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::instrument::{FetchInstruments, SubscribeInstruments};
 
-use crate::{ExcMut, ExcService};
+use crate::ExcService;
 
 /// Subscribe instruments service.
 pub trait SubscribeInstrumentsService: ExcService<SubscribeInstruments> {
     /// Subscribe instruments filter by a given tag.
-    fn subscribe_instruments(
-        &mut self,
-        tag: &str,
-    ) -> Oneshot<ExcMut<'_, Self>, SubscribeInstruments>
+    fn subscribe_instruments(&mut self, tag: &str) -> Oneshot<&mut Self, SubscribeInstruments>
     where
         Self: Sized,
     {
         ServiceExt::<SubscribeInstruments>::oneshot(
-            self.as_service_mut(),
+            self,
             SubscribeInstruments {
                 tag: tag.to_string(),
             },
@@ -28,12 +25,12 @@ impl<S> SubscribeInstrumentsService for S where S: ExcService<SubscribeInstrumen
 /// Fetch instruments service.
 pub trait FetchInstrumentsService: ExcService<FetchInstruments> {
     /// Fetch instruments filter by a given tag.
-    fn fetch_instruments(&mut self, tag: &str) -> Oneshot<ExcMut<'_, Self>, FetchInstruments>
+    fn fetch_instruments(&mut self, tag: &str) -> Oneshot<&mut Self, FetchInstruments>
     where
         Self: Sized,
     {
         ServiceExt::<FetchInstruments>::oneshot(
-            self.as_service_mut(),
+            self,
             FetchInstruments {
                 tag: tag.to_string(),
             },

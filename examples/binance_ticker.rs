@@ -1,5 +1,5 @@
 use exc::{
-    ExcService, {SubscribeTickersService, TradeBidAskService},
+    AdaptService, {SubscribeTickersService, TradeBidAskService},
 };
 use exc_binance::Binance;
 use futures::StreamExt;

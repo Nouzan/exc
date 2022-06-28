@@ -1,9 +1,6 @@
 use exc_core::{
-    types::{
-        trading::{GetOrder, Order as ExcOrder, OrderId, OrderState, OrderStatus, Place},
-        Adaptor,
-    },
-    ExchangeError,
+    types::trading::{GetOrder, Order as ExcOrder, OrderId, OrderState, OrderStatus, Place},
+    Adaptor, ExchangeError,
 };
 use futures::FutureExt;
 use rust_decimal::Decimal;
@@ -27,7 +24,7 @@ impl Adaptor<GetOrder> for HttpRequest {
 
     fn into_response(
         mut resp: Self::Response,
-    ) -> Result<<GetOrder as exc_core::types::Request>::Response, exc_core::ExchangeError> {
+    ) -> Result<<GetOrder as exc_core::Request>::Response, exc_core::ExchangeError> {
         Ok(async move {
             if let Some(data) = resp.data.pop() {
                 if let ResponseData::Order(order) = data {

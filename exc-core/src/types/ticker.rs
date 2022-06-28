@@ -1,5 +1,4 @@
-use super::Request;
-use crate::ExchangeError;
+use crate::{ExchangeError, Request};
 use derive_more::Display;
 use futures::stream::BoxStream;
 use rust_decimal::Decimal;

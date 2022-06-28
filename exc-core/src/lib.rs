@@ -21,9 +21,5 @@ pub mod retry;
 /// Utils.
 pub mod util;
 
-pub use self::types::{Adaptor, Request};
 pub use error::ExchangeError;
-pub use exchange::{
-    service::{Exc, ExcMut},
-    Adapt, AdaptLayer, ExcService,
-};
+pub use exchange::{Adapt, AdaptLayer, AdaptService, Adaptor, ExcMut, ExcService, Request};

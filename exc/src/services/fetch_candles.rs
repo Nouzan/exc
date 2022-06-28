@@ -14,7 +14,7 @@ use crate::{
     ExchangeError,
 };
 
-use crate::{Exc, ExcMut, ExcService};
+use crate::{ExcMut, ExcService};
 
 /// Fetch candles service.
 pub trait FetchCandlesService: ExcService<QueryCandles> {
@@ -139,7 +139,7 @@ where
 
     fn layer(&self, inner: S) -> Self::Service {
         FetchCandlesBackward {
-            svc: Buffer::new(inner.into_service(), self.bound),
+            svc: Buffer::new(inner, self.bound),
             limit: self.limit,
         }
     }
@@ -150,7 +150,7 @@ pub struct FetchCandlesBackward<S>
 where
     S: ExcService<QueryLastCandles> + 'static,
 {
-    svc: Buffer<Exc<S>, QueryLastCandles>,
+    svc: Buffer<S, QueryLastCandles>,
     limit: NonZeroUsize,
 }
 
@@ -234,7 +234,7 @@ where
 
     fn layer(&self, inner: S) -> Self::Service {
         FetchCandlesForward {
-            svc: Buffer::new(inner.into_service(), self.bound),
+            svc: Buffer::new(inner, self.bound),
             limit: self.limit,
         }
     }
@@ -245,7 +245,7 @@ pub struct FetchCandlesForward<S>
 where
     S: ExcService<QueryFirstCandles> + 'static,
 {
-    svc: Buffer<Exc<S>, QueryFirstCandles>,
+    svc: Buffer<S, QueryFirstCandles>,
     limit: NonZeroUsize,
 }
 

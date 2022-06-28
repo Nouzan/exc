@@ -1,10 +1,9 @@
-use exc::ExcService;
 use exc_okx::{
     key::Key,
     websocket::{Endpoint, Request},
 };
 use std::env::var;
-use tower::ServiceExt;
+use tower::{Service, ServiceExt};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
