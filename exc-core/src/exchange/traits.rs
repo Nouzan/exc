@@ -1,5 +1,5 @@
 use super::ExcMut;
-use crate::{Adapt, ExchangeError};
+use crate::{Exc, ExchangeError};
 use tower::Service;
 
 /// Request and Response binding.
@@ -54,22 +54,22 @@ where
 {
 }
 
-/// Adapt service,
-pub trait AdaptService<R>: Service<R, Response = R::Response>
+/// Service that can be converted into a [`Exc`].
+pub trait IntoExc<R>: Service<R, Response = R::Response>
 where
     Self::Error: Into<ExchangeError>,
     R: Request,
 {
-    /// Convert into a [`Adapt`].
-    fn adapt(self) -> Adapt<Self, R>
+    /// Convert into a [`Exc`].
+    fn into_exc(self) -> Exc<Self, R>
     where
         Self: Sized,
     {
-        Adapt::new(self)
+        Exc::new(self)
     }
 }
 
-impl<S, R> AdaptService<R> for S
+impl<S, R> IntoExc<R> for S
 where
     S: Service<R, Response = R::Response>,
     S::Error: Into<ExchangeError>,

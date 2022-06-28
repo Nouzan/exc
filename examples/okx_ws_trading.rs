@@ -1,7 +1,7 @@
 use exc::{
     transport::http::endpoint::Endpoint as HttpEndpoint,
     types::trading::Place,
-    AdaptLayer, {CheckOrderService, TradingService},
+    ExcLayer, {CheckOrderService, TradingService},
 };
 use exc_okx::{
     http::{layer::OkxHttpApiLayer, types::request::HttpRequest},
@@ -32,12 +32,12 @@ async fn main() -> anyhow::Result<()> {
         .private(key.clone())
         .connect();
     let mut ws = ServiceBuilder::default()
-        .layer(AdaptLayer::default())
+        .layer(ExcLayer::default())
         .service(channel);
 
     let mut http = ServiceBuilder::default()
         .rate_limit(59, std::time::Duration::from_secs(2))
-        .layer(AdaptLayer::<HttpRequest>::default())
+        .layer(ExcLayer::<HttpRequest>::default())
         .layer(OkxHttpApiLayer::default().private(key))
         .service(HttpEndpoint::default().connect_https());
 

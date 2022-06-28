@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::{types::Period, AdaptService, FetchCandlesService, FetchFirstCandlesService};
+use exc::{types::Period, FetchCandlesService, FetchFirstCandlesService, IntoExc};
 use exc_binance::Binance;
 use futures::StreamExt;
 use time::{macros::datetime, UtcOffset};
@@ -8,7 +8,7 @@ use time::{macros::datetime, UtcOffset};
 async fn task(inst: &str) -> anyhow::Result<()> {
     let mut binance = Binance::usd_margin_futures()
         .connect()
-        .adapt()
+        .into_exc()
         .into_rate_limited(70, Duration::from_secs(60))
         .into_fetch_candles_forward(1500);
     let mut stream = binance

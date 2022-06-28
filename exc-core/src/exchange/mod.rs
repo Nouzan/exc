@@ -14,17 +14,17 @@ pub mod layer;
 /// Traits.
 pub mod traits;
 
-pub use layer::AdaptLayer;
-pub use traits::{AdaptService, Adaptor, ExcService, Request};
+pub use layer::ExcLayer;
+pub use traits::{Adaptor, ExcService, IntoExc, Request};
 
-/// Adapt.
+/// The wrapper of a exchange service.
 #[derive(Debug)]
-pub struct Adapt<C, Req> {
+pub struct Exc<C, Req> {
     channel: C,
     _req: PhantomData<fn() -> Req>,
 }
 
-impl<C, Req> Clone for Adapt<C, Req>
+impl<C, Req> Clone for Exc<C, Req>
 where
     C: Clone,
 {
@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<C, Req> Adapt<C, Req> {
+impl<C, Req> Exc<C, Req> {
     /// Create a new exchange client from the given channel.
     pub fn new(channel: C) -> Self {
         Self {
@@ -56,7 +56,7 @@ impl<C, Req> Adapt<C, Req> {
     }
 }
 
-impl<C, Req, R> Service<R> for Adapt<C, Req>
+impl<C, Req, R> Service<R> for Exc<C, Req>
 where
     R: Request,
     R::Response: Send + 'static,

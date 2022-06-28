@@ -1,4 +1,4 @@
-use exc::{AdaptService, FetchInstrumentsService};
+use exc::{FetchInstrumentsService, IntoExc};
 use exc_binance::Binance;
 use futures::StreamExt;
 
@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut binance = Binance::usd_margin_futures().connect().adapt();
+    let mut binance = Binance::usd_margin_futures().connect().into_exc();
     let mut stream = binance.fetch_instruments("").await?;
     while let Some(meta) = stream.next().await {
         let meta = meta?;

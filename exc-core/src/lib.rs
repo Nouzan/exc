@@ -22,4 +22,4 @@ pub mod retry;
 pub mod util;
 
 pub use error::ExchangeError;
-pub use exchange::{Adapt, AdaptLayer, AdaptService, Adaptor, ExcMut, ExcService, Request};
+pub use exchange::{Adaptor, Exc, ExcLayer, ExcMut, ExcService, IntoExc, Request};

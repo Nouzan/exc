@@ -1,5 +1,5 @@
 use exc::{
-    AdaptService, {SubscribeTickersService, TradeBidAskService},
+    IntoExc, {SubscribeTickersService, TradeBidAskService},
 };
 use exc_binance::Binance;
 use futures::StreamExt;
@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut binance = Binance::usd_margin_futures()
         .connect()
-        .adapt()
+        .into_exc()
         .into_subscribe_tickers();
 
     let mut revision = 0;

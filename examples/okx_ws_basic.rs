@@ -1,4 +1,4 @@
-use exc::Adapt;
+use exc::Exc;
 use exc_okx::websocket::{types::request::Request, Endpoint};
 use futures::StreamExt;
 
@@ -14,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
     let channel = Endpoint::default()
         .request_timeout(std::time::Duration::from_secs(5))
         .connect();
-    let mut client = Adapt::new(channel);
+    let mut client = Exc::new(channel);
     loop {
         let req = Request::subscribe_tickers("ETH-USDT");
         match client.request(req).await {

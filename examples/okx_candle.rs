@@ -3,7 +3,7 @@ use std::ops::Bound;
 use exc::{
     transport::http::endpoint::Endpoint,
     types::candle::{Period, QueryCandles},
-    AdaptLayer, ExchangeError, FetchCandlesBackwardLayer,
+    ExcLayer, ExchangeError, FetchCandlesBackwardLayer,
 };
 use exc_okx::http::layer::OkxHttpApiLayer;
 use futures::StreamExt;
@@ -21,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
     let mut svc = ServiceBuilder::default()
         .layer(FetchCandlesBackwardLayer::new(100, 1))
         .rate_limit(19, std::time::Duration::from_secs(2))
-        .layer(AdaptLayer::default())
+        .layer(ExcLayer::default())
         .layer(OkxHttpApiLayer::default().retry_on(ExchangeError::is_temporary))
         .service(Endpoint::default().connect_https())
         .map_err(ExchangeError::flatten);

@@ -1,4 +1,4 @@
-use exc::{AdaptLayer, SubscribeTickersService};
+use exc::{ExcLayer, SubscribeTickersService};
 use exc_okx::websocket::Endpoint;
 use futures::StreamExt;
 use tower::ServiceBuilder;
@@ -22,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
         .ping_timeout(std::time::Duration::from_secs(5))
         .connection_timeout(std::time::Duration::from_secs(5));
     let exchange = ServiceBuilder::new()
-        .layer(AdaptLayer::default())
+        .layer(ExcLayer::default())
         .timeout(std::time::Duration::from_secs(5))
         .service(endpoint.connect());
 
