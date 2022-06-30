@@ -1,12 +1,11 @@
 use std::{collections::HashSet, time::Duration};
 
-use exc_core::transport::websocket::connector::WsConnector;
 use futures::FutureExt;
-use http::Uri;
 use tower::{reconnect::Reconnect, ServiceExt};
 
-use crate::types::Name;
+use crate::{http::response::ListenKey, types::Name};
 
+use super::connect::{BinanceWsConnect, BinanceWsTarget};
 use super::{error::WsError, protocol::WsClient, request::WsRequest, BinanceWebsocketApi};
 
 const DEFAULT_KEEP_ALIVE_TIMEOUT: Duration = Duration::from_secs(30);
@@ -15,7 +14,7 @@ const DEFAULT_STREAM_TIMEOUT: Duration = Duration::from_secs(30);
 /// A builder of binance websocket api service.
 #[derive(Debug, Clone)]
 pub struct WsEndpoint {
-    uri: Uri,
+    target: BinanceWsTarget,
     main_stream: HashSet<Name>,
     keep_alive_timeout: Option<Duration>,
     default_stream_timeout: Option<Duration>,
@@ -23,18 +22,13 @@ pub struct WsEndpoint {
 
 impl WsEndpoint {
     /// Create a new binance websocket api endpoint.
-    pub fn new(uri: Uri) -> Self {
+    pub fn new(host: String, name: Name) -> Self {
         Self {
-            uri,
+            target: BinanceWsTarget { host, name },
             main_stream: HashSet::default(),
             keep_alive_timeout: None,
             default_stream_timeout: None,
         }
-    }
-
-    /// Create from static uri.
-    pub fn from_static(src: &'static str) -> Self {
-        Self::new(Uri::from_static(src))
     }
 
     /// Set the keep-alive timeout.
@@ -49,6 +43,19 @@ impl WsEndpoint {
         self
     }
 
+    // /// Private endpoint of USD-M Futures API.
+    // pub fn private(&mut self, listen_key: ListenKey) -> Result<&mut Self, WsError> {
+    //     let uri = Uri::from_str(format!("wss://fstream.binance.com/ws/{listen_key}").as_str())?;
+    //     self.uri = uri;
+    //     Ok(self)
+    // }
+
+    /// Add main stream.
+    pub(crate) fn add_main_stream(&mut self, name: Name) -> &mut Self {
+        self.main_stream.insert(name);
+        self
+    }
+
     /// Connect to binance websocket api.
     pub fn connect(&self) -> BinanceWebsocketApi {
         let main_stream = self.main_stream.clone();
@@ -58,7 +65,7 @@ impl WsEndpoint {
         let default_stream_timeout = self
             .default_stream_timeout
             .unwrap_or(DEFAULT_STREAM_TIMEOUT);
-        let connect = WsConnector::default().and_then(move |ws| {
+        let connect = BinanceWsConnect::default().and_then(move |ws| {
             async move {
                 WsClient::with_websocket(
                     ws,
@@ -69,12 +76,11 @@ impl WsEndpoint {
             }
             .boxed()
         });
-        let connection = Reconnect::new::<WsClient, WsRequest>(connect, self.uri.clone()).map_err(
-            |err| match err.downcast::<WsError>() {
+        let connection = Reconnect::new::<WsClient, WsRequest>(connect, self.target.clone())
+            .map_err(|err| match err.downcast::<WsError>() {
                 Ok(err) => *err,
                 Err(err) => WsError::UnknownConnection(err),
-            },
-        );
+            });
         BinanceWebsocketApi {
             svc: connection.boxed(),
         }

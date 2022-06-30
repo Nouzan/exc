@@ -224,7 +224,7 @@ mod test {
     async fn test_listen_key() -> anyhow::Result<()> {
         if let Ok(key) = var("BINANCE_KEY") {
             let key = serde_json::from_str(&key)?;
-            let api = Binance::usd_margin_futures().key(key).connect();
+            let api = Binance::usd_margin_futures().private(key).connect();
             let listen_key = api
                 .oneshot(Request::with_rest_payload(request::CurrentListenKey))
                 .await?
@@ -238,7 +238,7 @@ mod test {
     async fn test_delete_listen_key() -> anyhow::Result<()> {
         if let Ok(key) = var("BINANCE_KEY") {
             let key = serde_json::from_str(&key)?;
-            let api = Binance::usd_margin_futures().key(key).connect();
+            let api = Binance::usd_margin_futures().private(key).connect();
             let listen_key = api
                 .oneshot(Request::with_rest_payload(request::DeleteListenKey))
                 .await?

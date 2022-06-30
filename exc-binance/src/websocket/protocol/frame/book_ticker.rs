@@ -40,7 +40,7 @@ pub struct BookTicker {
 impl Nameable for BookTicker {
     fn to_name(&self) -> Name {
         Name {
-            inst: self.symbol.to_lowercase(),
+            inst: Some(self.symbol.to_lowercase()),
             channel: self.event.clone(),
         }
     }

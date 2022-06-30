@@ -42,4 +42,7 @@ pub enum WsError {
     /// Main stream not found.
     #[error("main stream not found")]
     MainStreamNotFound,
+    /// Invalid Uri.
+    #[error("invalid uri")]
+    InvalidUri(#[from] http::uri::InvalidUri),
 }

@@ -27,15 +27,27 @@ pub enum Op {
 /// Stream name.
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Name {
-    inst: String,
+    inst: Option<String>,
     channel: String,
 }
 
 impl Name {
+    pub(crate) fn new(channel: &str) -> Self {
+        Self {
+            inst: None,
+            channel: channel.to_string(),
+        }
+    }
+
+    pub(crate) fn inst(mut self, inst: &str) -> Self {
+        self.inst = Some(inst.to_string());
+        self
+    }
+
     /// aggrated trade
     pub fn agg_trade(inst: &str) -> Self {
         Self {
-            inst: inst.to_string(),
+            inst: Some(inst.to_string()),
             channel: "aggTrade".to_string(),
         }
     }
@@ -43,7 +55,7 @@ impl Name {
     /// book ticker
     pub fn book_ticker(inst: &str) -> Self {
         Self {
-            inst: inst.to_string(),
+            inst: Some(inst.to_string()),
             channel: "bookTicker".to_string(),
         }
     }
@@ -51,7 +63,11 @@ impl Name {
 
 impl fmt::Display for Name {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}@{}", self.inst, self.channel)
+        if let Some(inst) = self.inst.as_ref() {
+            write!(f, "{}@{}", inst, self.channel)
+        } else {
+            write!(f, "{}", self.channel)
+        }
     }
 }
 

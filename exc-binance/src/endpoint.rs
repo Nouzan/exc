@@ -40,8 +40,8 @@ impl Endpoint {
         self
     }
 
-    /// Set key.
-    pub fn key(&mut self, key: BinanceKey) -> &mut Self {
+    /// Private mode.
+    pub fn private(&mut self, key: BinanceKey) -> &mut Self {
         self.key = Some(key);
         self
     }

@@ -58,7 +58,7 @@ pub struct AggTrade {
 impl Nameable for AggTrade {
     fn to_name(&self) -> Name {
         Name {
-            inst: self.symbol.to_lowercase(),
+            inst: Some(self.symbol.to_lowercase()),
             channel: self.event.clone(),
         }
     }

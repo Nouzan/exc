@@ -13,12 +13,17 @@ pub mod response;
 /// Binance websocket endpoint.
 pub mod endpoint;
 
+pub(crate) mod connect;
+
 use std::task::{Context, Poll};
 
 use futures::future::BoxFuture;
 use tower::{util::BoxService, Service};
 
-use self::{endpoint::WsEndpoint, error::WsError, request::WsRequest, response::WsResponse};
+use self::{
+    endpoint::WsEndpoint, error::WsError, protocol::frame::Name, request::WsRequest,
+    response::WsResponse,
+};
 
 /// Binance websocket api service.
 pub struct BinanceWebsocketApi {
@@ -28,7 +33,10 @@ pub struct BinanceWebsocketApi {
 impl BinanceWebsocketApi {
     /// Endpoint of USD-M Futures API.
     pub fn usd_margin_futures() -> WsEndpoint {
-        WsEndpoint::from_static("wss://fstream.binance.com/ws/bnbusdt@markPrice")
+        WsEndpoint::new(
+            "wss://fstream.binance.com".to_string(),
+            Name::new("markPrice").inst("bnbusdt"),
+        )
     }
 }
 
