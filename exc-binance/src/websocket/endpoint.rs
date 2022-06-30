@@ -51,7 +51,7 @@ impl WsEndpoint {
     pub(crate) fn private(&mut self, http: Http) -> &mut Self {
         self.target.host.private();
         self.target.key_provider = Some(http);
-        self.add_main_stream(Name::listen_key_expired());
+        self.add_main_stream(Name::order_trade_update());
         self
     }
 

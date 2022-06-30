@@ -47,7 +47,7 @@ impl Name {
         self
     }
 
-    /// aggrated trade
+    /// Aggrated trade
     pub fn agg_trade(inst: &str) -> Self {
         Self {
             inst: Some(inst.to_string()),
@@ -55,7 +55,7 @@ impl Name {
         }
     }
 
-    /// book ticker
+    /// Book ticker
     pub fn book_ticker(inst: &str) -> Self {
         Self {
             inst: Some(inst.to_string()),
@@ -66,6 +66,11 @@ impl Name {
     /// Listen key expired.
     pub fn listen_key_expired() -> Self {
         Self::new("listenKeyExpired")
+    }
+
+    /// Order trade update.
+    pub fn order_trade_update() -> Self {
+        Self::new("orderTradeUpdate")
     }
 }
 
@@ -140,6 +145,21 @@ pub enum ServerFrame {
     Empty,
 }
 
+impl ServerFrame {
+    fn health(self) -> Result<Self, WsError> {
+        match &self {
+            Self::Stream(f) => match &f.data {
+                StreamFrameKind::AccountEvent(e) => match e {
+                    AccountEvent::ListenKeyExpired { ts } => Err(WsError::ListenKeyExpired(*ts)),
+                    _ => Ok(self),
+                },
+                _ => Ok(self),
+            },
+            _ => Ok(self),
+        }
+    }
+}
+
 /// Payload that with stream name.
 pub trait Nameable {
     /// Get name.
@@ -195,7 +215,9 @@ where
             stream::once(future::ready(msg))
         })
         .and_then(|msg| {
-            let f = serde_json::from_str::<ServerFrame>(&msg).map_err(WsError::from);
+            let f = serde_json::from_str::<ServerFrame>(&msg)
+                .map_err(WsError::from)
+                .and_then(ServerFrame::health);
             future::ready(f)
         })
 }

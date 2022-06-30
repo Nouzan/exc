@@ -24,40 +24,9 @@ async fn main() -> anyhow::Result<()> {
         .ws_keep_alive_timeout(Duration::from_secs(30))
         .private(key)
         .connect();
-    // let mut count = 1;
-    // loop {
-    //     count += 1;
-    //     api.ready().await?;
-    //     match api
-    //         .call(Request::Ws(WsRequest::subscribe(Name::agg_trade(
-    //             "btcbusd",
-    //         ))))
-    //         .await
-    //     {
-    //         Ok(resp) => {
-    //             let mut stream = resp.into_stream::<AggTrade>().unwrap().boxed();
-    //             while let Some(trade) = stream.next().await {
-    //                 match trade {
-    //                     Ok(trade) => {
-    //                         count += 1;
-    //                         tracing::info!("[{count}]trade={trade:?}");
-    //                     }
-    //                     Err(err) => {
-    //                         tracing::error!("[{count}]error={err}");
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         Err(err) => {
-    //             tracing::error!("[{count}] request error: {err}");
-    //         }
-    //     }
-    //     tokio::time::sleep(Duration::from_secs(1)).await;
-    // }
     api.ready().await?;
     let stream = api
-        .call(Request::subcribe_main(Name::listen_key_expired()))
+        .call(Request::subcribe_main(Name::order_trade_update()))
         .await?
         .into_stream::<AccountEvent>()?;
     pin_mut!(stream);

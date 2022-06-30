@@ -50,4 +50,7 @@ pub enum WsError {
     /// Login error.
     #[error("login: {0}")]
     Login(#[from] RestError),
+    /// Listen key is expired.
+    #[error("listen key is expired: at={0}")]
+    ListenKeyExpired(i64),
 }

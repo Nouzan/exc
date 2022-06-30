@@ -14,12 +14,26 @@ pub enum AccountEvent {
         #[serde(rename = "E")]
         ts: i64,
     },
+    /// Order trade update.
+    #[serde(rename = "ORDER_TRADE_UPDATE")]
+    OrderTradeUpdate {
+        /// Event timestamp.
+        #[serde(rename = "E")]
+        event_ts: i64,
+        /// Trade timestamp.
+        #[serde(rename = "T")]
+        trade_ts: i64,
+        /// Order.
+        #[serde(rename = "o")]
+        order: serde_json::Value,
+    },
 }
 
 impl Nameable for AccountEvent {
     fn to_name(&self) -> Name {
         match self {
             Self::ListenKeyExpired { .. } => Name::listen_key_expired(),
+            Self::OrderTradeUpdate { .. } => Name::order_trade_update(),
         }
     }
 }
