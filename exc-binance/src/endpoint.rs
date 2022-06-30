@@ -6,12 +6,14 @@ use tower::{buffer::Buffer, ready_cache::ReadyCache, util::Either, ServiceBuilde
 use crate::{
     http::{layer::BinanceRestApiLayer, request::RestEndpoint},
     service::{Binance, BinanceInner, HTTP_KEY, WS_KEY},
+    types::key::BinanceKey,
     websocket::{endpoint::WsEndpoint, BinanceWebsocketApi},
 };
 
 /// Binance endpoint.
 #[derive(Debug)]
 pub struct Endpoint {
+    pub(crate) key: Option<BinanceKey>,
     pub(crate) http: (RestEndpoint, HttpEndpoint),
     pub(crate) ws: WsEndpoint,
 }
@@ -20,6 +22,7 @@ impl Endpoint {
     /// Usd-margin futures endpoint.
     pub fn usd_margin_futures() -> Self {
         Self {
+            key: None,
             http: (RestEndpoint::UsdMarginFutures, HttpEndpoint::default()),
             ws: BinanceWebsocketApi::usd_margin_futures(),
         }
@@ -37,10 +40,20 @@ impl Endpoint {
         self
     }
 
+    /// Set key.
+    pub fn key(&mut self, key: BinanceKey) -> &mut Self {
+        self.key = Some(key);
+        self
+    }
+
     /// Connect to binance service.
     pub fn connect(&self) -> Binance {
+        let mut layer = BinanceRestApiLayer::new(self.http.0);
+        if let Some(key) = self.key.as_ref() {
+            layer = layer.key(key.clone());
+        }
         let http = ServiceBuilder::default()
-            .layer(BinanceRestApiLayer::new(self.http.0))
+            .layer(layer)
             .service(self.http.1.connect_https());
         let ws = self.ws.connect();
         let mut svcs = ReadyCache::default();

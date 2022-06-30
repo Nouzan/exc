@@ -3,6 +3,8 @@ use futures::future::BoxFuture;
 use futures::{FutureExt, TryFutureExt};
 use tower::retry::Retry;
 
+use crate::types::key::BinanceKey;
+
 use super::error::RestError;
 use super::request::{Payload, Rest, RestEndpoint, RestRequest};
 use super::response::{Data, RestResponse};
@@ -12,10 +14,11 @@ use tower::{Layer, Service, ServiceBuilder};
 type Policy = RetryPolicy<RestRequest<Payload>, RestResponse<Data>, fn(&RestError) -> bool>;
 
 /// Binance rest api layer.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct BinanceRestApiLayer {
     retry: Policy,
     endpoint: RestEndpoint,
+    key: Option<BinanceKey>,
 }
 
 impl BinanceRestApiLayer {
@@ -32,7 +35,14 @@ impl BinanceRestApiLayer {
                 f: RestError::is_temporary,
                 times: 0,
             },
+            key: None,
         }
+    }
+
+    /// Set key.
+    pub fn key(mut self, key: BinanceKey) -> Self {
+        self.key = Some(key);
+        self
     }
 }
 
@@ -45,6 +55,7 @@ impl<S> Layer<S> for BinanceRestApiLayer {
             .service(BinanceRestApiInner {
                 http,
                 endpoint: self.endpoint,
+                key: self.key.clone(),
             });
         BinanceRestApi { inner }
     }
@@ -55,6 +66,7 @@ impl<S> Layer<S> for BinanceRestApiLayer {
 pub struct BinanceRestApiInner<S> {
     endpoint: RestEndpoint,
     http: S,
+    key: Option<BinanceKey>,
 }
 
 impl<S, R> Service<RestRequest<R>> for BinanceRestApiInner<S>
@@ -74,7 +86,7 @@ where
     }
 
     fn call(&mut self, req: RestRequest<R>) -> Self::Future {
-        match req.to_http(&self.endpoint) {
+        match req.to_http(&self.endpoint, self.key.as_ref()) {
             Ok(req) => self
                 .http
                 .call(req)

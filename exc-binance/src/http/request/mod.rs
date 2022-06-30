@@ -1,6 +1,8 @@
 use std::fmt;
 
-use http::{Method, Request};
+use http::{HeaderValue, Method, Request};
+
+use crate::types::key::BinanceKey;
 
 use super::error::RestError;
 
@@ -13,9 +15,13 @@ pub mod instrument;
 /// Candle.
 pub mod candle;
 
+/// Listen key.
+pub mod listen_key;
+
 pub use self::{
     candle::{Interval, QueryCandles},
     instrument::ExchangeInfo,
+    listen_key::{CurrentListenKey, DeleteListenKey},
 };
 
 /// Rest payload.
@@ -26,8 +32,24 @@ pub trait Rest: Send + Sync + 'static {
     /// Get request path.
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError>;
 
+    /// add request header.
+    fn add_headers(
+        &self,
+        _endpoint: &RestEndpoint,
+        _headers: &mut hyper::HeaderMap,
+    ) -> Result<(), RestError> {
+        Ok(())
+    }
+
+    /// Whether need apikey.
+    fn need_apikey(&self) -> bool {
+        false
+    }
+
     /// Get request body.
-    fn to_body(&self, endpoint: &RestEndpoint) -> Result<hyper::Body, RestError>;
+    fn to_body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
+        Ok(hyper::Body::empty())
+    }
 
     /// Clone.
     fn to_payload(&self) -> Payload;
@@ -61,8 +83,20 @@ impl Rest for Payload {
         self.inner.method(endpoint)
     }
 
+    fn add_headers(
+        &self,
+        endpoint: &RestEndpoint,
+        headers: &mut hyper::HeaderMap,
+    ) -> Result<(), RestError> {
+        self.inner.add_headers(endpoint, headers)
+    }
+
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         self.inner.to_path(endpoint)
+    }
+
+    fn need_apikey(&self) -> bool {
+        self.inner.need_apikey()
     }
 
     fn to_body(&self, endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
@@ -122,12 +156,20 @@ impl<T: Rest> RestRequest<T> {
     pub(crate) fn to_http(
         &self,
         endpoint: &RestEndpoint,
+        key: Option<&BinanceKey>,
     ) -> Result<Request<hyper::Body>, RestError> {
         let uri = format!("{}{}", endpoint.host(), self.payload.to_path(endpoint)?);
-        let request = Request::builder()
+        let mut request = Request::builder()
             .method(self.payload.method(endpoint)?)
             .uri(uri)
             .body(self.payload.to_body(endpoint)?)?;
+        let headers = request.headers_mut();
+        if let Some(key) = key {
+            if self.payload.need_apikey() {
+                headers.insert("X-MBX-APIKEY", HeaderValue::from_str(&key.apikey)?);
+            }
+        }
+        self.payload.add_headers(endpoint, headers)?;
         Ok(request)
     }
 }
@@ -140,6 +182,7 @@ impl<T: Rest> From<T> for RestRequest<T> {
 
 #[cfg(test)]
 mod test {
+    use std::env::var;
     use tower::ServiceExt;
 
     use crate::{
@@ -173,6 +216,34 @@ mod test {
             .into_response::<response::Candles>()?;
         for c in resp {
             println!("{c:?}");
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_listen_key() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_KEY") {
+            let key = serde_json::from_str(&key)?;
+            let api = Binance::usd_margin_futures().key(key).connect();
+            let listen_key = api
+                .oneshot(Request::with_rest_payload(request::CurrentListenKey))
+                .await?
+                .into_response::<response::ListenKey>()?;
+            println!("{listen_key}");
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_listen_key() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_KEY") {
+            let key = serde_json::from_str(&key)?;
+            let api = Binance::usd_margin_futures().key(key).connect();
+            let listen_key = api
+                .oneshot(Request::with_rest_payload(request::DeleteListenKey))
+                .await?
+                .into_response::<response::Unknown>()?;
+            println!("{listen_key:?}");
         }
         Ok(())
     }

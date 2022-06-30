@@ -4,6 +4,9 @@ use thiserror::Error;
 /// Rest API Errors.
 #[derive(Debug, Error)]
 pub enum RestError {
+    /// API error message.
+    #[error("api: code={0} msg={0}")]
+    Api(i64, String),
     /// Http errors.
     #[error("http: {0}")]
     Http(#[from] http::Error),
@@ -19,6 +22,9 @@ pub enum RestError {
     /// Standard exchange errors.
     #[error("exchange: {0}")]
     Exchange(#[from] ExchangeError),
+    /// Invalid header value.
+    #[error("invalid header value: {0}")]
+    InvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
     /// Unexpected response type.
     #[error("unexpected response type: {0}")]
     UnexpectedResponseType(anyhow::Error),

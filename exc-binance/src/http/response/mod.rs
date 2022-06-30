@@ -10,10 +10,21 @@ pub mod instrument;
 /// Candle.
 pub mod candle;
 
-pub use self::{candle::Candle, instrument::ExchangeInfo};
+/// Listen key.
+pub mod listen_key;
+
+/// error message.
+pub mod error_message;
+
+pub use self::{
+    candle::Candle, error_message::ErrorMessage, instrument::ExchangeInfo, listen_key::ListenKey,
+};
 
 /// Candles.
 pub type Candles = Vec<Candle>;
+
+/// Unknown response.
+pub type Unknown = serde_json::Value;
 
 /// Binance rest api response data.
 #[derive(Debug, Deserialize)]
@@ -23,8 +34,25 @@ pub enum Data {
     Candles(Vec<Candle>),
     /// Exchange info.
     ExchangeInfo(ExchangeInfo),
+    /// Listen key.
+    ListenKey(ListenKey),
+    /// Error Message.
+    Error(ErrorMessage),
     /// Unknwon.
-    Unknwon(serde_json::Value),
+    Unknwon(Unknown),
+}
+
+impl TryFrom<Data> for Unknown {
+    type Error = RestError;
+
+    fn try_from(value: Data) -> Result<Self, Self::Error> {
+        match value {
+            Data::Unknwon(u) => Ok(u),
+            _ => Err(RestError::UnexpectedResponseType(anyhow::anyhow!(
+                "{value:?}"
+            ))),
+        }
+    }
 }
 
 /// Binance rest api response.
