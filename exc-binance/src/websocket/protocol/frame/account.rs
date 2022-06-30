@@ -48,6 +48,8 @@ pub enum PositionSide {
     Long,
     /// Short.
     Short,
+    /// Both.
+    Both,
 }
 
 /// Order type.
