@@ -39,4 +39,7 @@ pub enum WsError {
     /// Unknown connection error.
     #[error("unknown connection error: {0}")]
     UnknownConnection(BoxError),
+    /// Main stream not found.
+    #[error("main stream not found")]
+    MainStreamNotFound,
 }

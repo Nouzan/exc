@@ -32,6 +32,14 @@ impl WsRequest {
         self.inner = self.inner.timeout(duration);
         self
     }
+
+    /// Subscribe to a main stream topic.
+    pub fn main_stream(stream: Name) -> Self {
+        Self {
+            stream: true,
+            inner: MultiplexRequest::main_stream(stream),
+        }
+    }
 }
 
 impl From<WsRequest> for MultiplexRequest {

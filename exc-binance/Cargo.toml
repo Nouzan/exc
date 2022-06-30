@@ -56,7 +56,7 @@ features = ["sync", "rt-multi-thread", "time", "macros"]
 
 [dependencies.tokio-stream]
 version = "0.1.8"
-features = ["time"]
+features = ["time", "sync"]
 
 [dependencies.tokio-tungstenite]
 version = "0.17.1"

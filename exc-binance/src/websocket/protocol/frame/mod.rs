@@ -112,6 +112,8 @@ pub enum ServerFrame {
     Response(ResponseFrame),
     /// Stream.
     Stream(StreamFrame),
+    /// Empty.
+    Empty,
 }
 
 /// Payload that with stream name.

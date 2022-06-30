@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{hash_map::Entry, HashMap, HashSet},
     pin::Pin,
     sync::{Arc, Mutex},
     task::{Context, Poll},
@@ -11,7 +11,6 @@ use futures::{
         mpsc::{self, UnboundedReceiver, UnboundedSender},
         oneshot,
     },
-    stream::BoxStream,
     task::AtomicWaker,
     Future, Sink, SinkExt, Stream, StreamExt,
 };
@@ -21,57 +20,17 @@ use crate::websocket::{error::WsError, protocol::frame::Op};
 
 use super::frame::{Name, RequestFrame, ResponseFrame, ServerFrame, StreamFrame};
 
-pub(crate) type ResponseToken = tokio::sync::oneshot::Receiver<()>;
-type RequestToken = tokio::sync::oneshot::Sender<()>;
+use self::main_stream::MainStream;
+use self::req_res::MultiplexRequestKind;
+pub use self::req_res::{MultiplexRequest, MultiplexResponse};
 
-/// Multiplex request.
-pub struct MultiplexRequest {
-    pub(crate) id: usize,
-    token: RequestToken,
-    timeout: Option<Duration>,
-    pub(crate) stream: BoxStream<'static, RequestFrame>,
-}
-
-impl MultiplexRequest {
-    pub(crate) fn new<S, F>(stream: F) -> Self
-    where
-        F: FnOnce(ResponseToken) -> S,
-        S: Stream<Item = RequestFrame> + Send + 'static,
-    {
-        let (tx, rx) = tokio::sync::oneshot::channel();
-        let stream = stream(rx).boxed();
-        Self {
-            id: 0,
-            token: tx,
-            timeout: None,
-            stream,
-        }
-    }
-
-    pub(crate) fn timeout(mut self, duration: Duration) -> Self {
-        self.timeout = Some(duration);
-        self
-    }
-}
-
-/// Multiplex response.
-#[derive(Debug)]
-pub struct MultiplexResponse {
-    pub(crate) id: usize,
-    token: RequestToken,
-    rx: tokio::sync::mpsc::UnboundedReceiver<Result<ServerFrame, WsError>>,
-}
-
-impl MultiplexResponse {
-    pub(crate) fn into_stream(self) -> impl Stream<Item = Result<ServerFrame, WsError>> {
-        tokio_stream::wrappers::UnboundedReceiverStream::new(self.rx)
-            .scan(self.token, |_, item| futures::future::ready(Some(item)))
-    }
-}
+mod main_stream;
+mod req_res;
 
 /// Stream protocol layer.
 pub(super) fn layer<T>(
     transport: T,
+    main_stream: HashSet<Name>,
     default_stream_timeout: Duration,
 ) -> (
     impl Sink<MultiplexRequest, Error = WsError> + Stream<Item = Result<MultiplexResponse, WsError>>,
@@ -81,7 +40,8 @@ where
     T: Sink<RequestFrame, Error = WsError> + Send + 'static,
     T: Stream<Item = Result<ServerFrame, WsError>>,
 {
-    let (streaming, worker, cancel) = Streaming::new(transport, default_stream_timeout);
+    let (streaming, worker, cancel) =
+        Streaming::new(transport, main_stream, default_stream_timeout);
     tokio::spawn(async move {
         tokio::select! {
             _ = worker => {
@@ -233,6 +193,7 @@ impl StreamState {
 }
 
 struct ContextShared {
+    main: MainStream,
     c_tx: tokio::sync::mpsc::UnboundedSender<RequestFrame>,
     streams: Mutex<(HashMap<usize, StreamState>, HashMap<Name, usize>)>,
     timeout: Duration,
@@ -240,13 +201,18 @@ struct ContextShared {
 }
 
 impl ContextShared {
-    fn new(
+    fn new<T>(
+        main_stream: T,
         c_tx: tokio::sync::mpsc::UnboundedSender<RequestFrame>,
         timeout: Duration,
-    ) -> (Self, tokio::sync::mpsc::UnboundedReceiver<()>) {
+    ) -> (Self, tokio::sync::mpsc::UnboundedReceiver<()>)
+    where
+        T: IntoIterator<Item = Name>,
+    {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         (
             Self {
+                main: MainStream::new(main_stream),
                 c_tx,
                 streams: Mutex::new((HashMap::default(), HashMap::default())),
                 timeout,
@@ -284,78 +250,93 @@ impl ContextShared {
     async fn handle_request(
         self: &Arc<Self>,
         responser: &mut UnboundedSender<Result<MultiplexResponse, WsError>>,
-        mut request: MultiplexRequest,
+        request: MultiplexRequest,
     ) -> bool {
         let id = request.id;
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        if let Err(err) = responser
-            .send(Ok(MultiplexResponse {
-                rx,
-                id,
-                token: request.token,
-            }))
-            .await
-        {
-            tracing::trace!("stream worker; failed to send response: err={err}");
-            return false;
-        }
-        {
-            let mut streams = self.streams.lock().unwrap();
-            if let Entry::Vacant(e) = streams.0.entry(id) {
-                e.insert(StreamState {
-                    id: request.id,
-                    tx: tx.clone(),
-                    state: State::Idle,
-                    topic: None,
-                    timeout: request.timeout.unwrap_or(self.timeout),
-                });
-            } else {
-                let _ = tx.send(Err(WsError::DuplicateStreamId));
+        match request.kind {
+            MultiplexRequestKind::MainStream(name) => {
+                let rx = self.main.subscribe(&name);
+                if let Err(err) = responser
+                    .send(Ok(MultiplexResponse::MainStream(id, rx)))
+                    .await
+                {
+                    tracing::trace!("stream worker; failed to send response: err={err}");
+                    return false;
+                }
             }
-        }
-        let ctx = self.clone();
-        let response_stream_worker = async move {
-            let id = request.id;
-            tracing::trace!("response stream worker; start: id={id}");
-            let c_tx = ctx.c_tx.clone();
-            while let Some(mut client_frame) = request.stream.next().await {
-                client_frame.id = request.id;
-                if ctx.handle_client_frame(&client_frame) {
-                    if c_tx.send(client_frame).is_err() {
-                        break;
+            MultiplexRequestKind::SubStream {
+                token,
+                timeout,
+                mut stream,
+            } => {
+                let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+                if let Err(err) = responser
+                    .send(Ok(MultiplexResponse::SubStream { rx, id, token }))
+                    .await
+                {
+                    tracing::trace!("stream worker; failed to send response: err={err}");
+                    return false;
+                }
+                {
+                    let mut streams = self.streams.lock().unwrap();
+                    if let Entry::Vacant(e) = streams.0.entry(id) {
+                        e.insert(StreamState {
+                            id: request.id,
+                            tx: tx.clone(),
+                            state: State::Idle,
+                            topic: None,
+                            timeout: timeout.unwrap_or(self.timeout),
+                        });
+                    } else {
+                        let _ = tx.send(Err(WsError::DuplicateStreamId));
                     }
-                } else {
-                    break;
                 }
-            }
-            tracing::trace!("response stream worker of {id}; finished");
-        };
-        let ctx = self.clone();
-        tokio::spawn(async move {
-            tokio::select! {
-                _ = ctx.cancel.closed() => {
-                    tracing::trace!("response stream worker of {id}; cancelled");
-                }
-                _ = response_stream_worker => {}
-            }
-            {
-                let (streams, topics) = &mut (*ctx.streams.lock().unwrap());
-                if let Some(stream) = streams.get_mut(&id) {
-                    if !stream.close() {
-                        if let Some(topic) = streams.remove(&id).and_then(|s| s.topic) {
-                            topics.remove(&topic);
+                let ctx = self.clone();
+                let response_stream_worker = async move {
+                    tracing::trace!("response stream worker; start: id={id}");
+                    let c_tx = ctx.c_tx.clone();
+                    while let Some(mut client_frame) = stream.next().await {
+                        client_frame.id = request.id;
+                        if ctx.handle_client_frame(&client_frame) {
+                            if c_tx.send(client_frame).is_err() {
+                                break;
+                            }
+                        } else {
+                            break;
                         }
                     }
-                }
+                    tracing::trace!("response stream worker of {id}; finished");
+                };
+                let ctx = self.clone();
+                tokio::spawn(async move {
+                    tokio::select! {
+                        _ = ctx.cancel.closed() => {
+                            tracing::trace!("response stream worker of {id}; cancelled");
+                        }
+                        _ = response_stream_worker => {}
+                    }
+                    {
+                        let (streams, topics) = &mut (*ctx.streams.lock().unwrap());
+                        if let Some(stream) = streams.get_mut(&id) {
+                            if !stream.close() {
+                                if let Some(topic) = streams.remove(&id).and_then(|s| s.topic) {
+                                    topics.remove(&topic);
+                                }
+                            }
+                        }
+                    }
+                });
             }
-        });
+        }
         true
     }
 
     async fn handle_server_frame(self: &Arc<Self>, frame: ServerFrame) -> bool {
         let ctx = self.clone();
+        let main = &ctx.main;
         let (streams, topics) = &mut (*ctx.streams.lock().unwrap());
         let res = match frame {
+            ServerFrame::Empty => None,
             ServerFrame::Response(frame) => {
                 let id = frame.id;
                 streams.get_mut(&id).map(|stream| {
@@ -365,12 +346,19 @@ impl ContextShared {
             }
             ServerFrame::Stream(frame) => frame
                 .to_name()
-                .and_then(|name| topics.get(&name))
-                .and_then(|id| streams.get_mut(id))
-                .map(|stream| {
-                    let good = stream.handle_stream_frame(frame);
-                    let id = stream.id;
-                    (id, good)
+                .and_then(move |name| match main.try_publish(&name, frame) {
+                    Ok(_) => None,
+                    Err(frame) => Some((name, frame)),
+                })
+                .and_then(|(name, frame)| {
+                    topics
+                        .get(&name)
+                        .and_then(|id| streams.get_mut(id))
+                        .map(|stream| {
+                            let good = stream.handle_stream_frame(frame);
+                            let id = stream.id;
+                            (id, good)
+                        })
                 }),
         };
         if let Some((id, res)) = res {
@@ -398,6 +386,7 @@ struct StreamingContext<T> {
     w2c_tx: UnboundedSender<Result<MultiplexResponse, WsError>>,
     state: Arc<Shared>,
     timeout: Duration,
+    main_stream: HashSet<Name>,
 }
 
 impl<T> StreamingContext<T>
@@ -412,10 +401,11 @@ where
             mut w2c_tx,
             state,
             timeout,
+            main_stream,
         } = self;
         let (tx, mut rx) = transport.split();
         let (c_tx, c_rx) = tokio::sync::mpsc::unbounded_channel();
-        let (ctx, mut cancel) = ContextShared::new(c_tx, timeout);
+        let (ctx, mut cancel) = ContextShared::new(main_stream, c_tx, timeout);
         let shared = Arc::new(ctx);
         let c_rx = tokio_stream::wrappers::UnboundedReceiverStream::new(c_rx).map(Ok);
         let sink_worker = async move {
@@ -505,6 +495,7 @@ pin_project_lite::pin_project! {
 impl Streaming {
     fn new<T>(
         transport: T,
+        main_stream: HashSet<Name>,
         default_stream_timeout: Duration,
     ) -> (Self, impl Future<Output = ()>, oneshot::Receiver<()>)
     where
@@ -527,6 +518,7 @@ impl Streaming {
             c2w_rx,
             state,
             timeout: default_stream_timeout,
+            main_stream,
         };
         (streaming, ctx.into_worker(), cancel)
     }

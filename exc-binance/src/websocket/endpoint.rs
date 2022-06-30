@@ -1,9 +1,11 @@
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 use exc_core::transport::websocket::connector::WsConnector;
 use futures::FutureExt;
 use http::Uri;
 use tower::{reconnect::Reconnect, ServiceExt};
+
+use crate::types::Name;
 
 use super::{error::WsError, protocol::WsClient, request::WsRequest, BinanceWebsocketApi};
 
@@ -14,6 +16,7 @@ const DEFAULT_STREAM_TIMEOUT: Duration = Duration::from_secs(30);
 #[derive(Debug, Clone)]
 pub struct WsEndpoint {
     uri: Uri,
+    main_stream: HashSet<Name>,
     keep_alive_timeout: Option<Duration>,
     default_stream_timeout: Option<Duration>,
 }
@@ -23,6 +26,7 @@ impl WsEndpoint {
     pub fn new(uri: Uri) -> Self {
         Self {
             uri,
+            main_stream: HashSet::default(),
             keep_alive_timeout: None,
             default_stream_timeout: None,
         }
@@ -47,6 +51,7 @@ impl WsEndpoint {
 
     /// Connect to binance websocket api.
     pub fn connect(&self) -> BinanceWebsocketApi {
+        let main_stream = self.main_stream.clone();
         let keep_alive_timeout = self
             .keep_alive_timeout
             .unwrap_or(DEFAULT_KEEP_ALIVE_TIMEOUT);
@@ -54,7 +59,15 @@ impl WsEndpoint {
             .default_stream_timeout
             .unwrap_or(DEFAULT_STREAM_TIMEOUT);
         let connect = WsConnector::default().and_then(move |ws| {
-            async move {WsClient::with_websocket(ws, keep_alive_timeout, default_stream_timeout) }.boxed()
+            async move {
+                WsClient::with_websocket(
+                    ws,
+                    main_stream,
+                    keep_alive_timeout,
+                    default_stream_timeout,
+                )
+            }
+            .boxed()
         });
         let connection = Reconnect::new::<WsClient, WsRequest>(connect, self.uri.clone()).map_err(
             |err| match err.downcast::<WsError>() {
