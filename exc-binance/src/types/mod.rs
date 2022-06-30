@@ -4,6 +4,9 @@ pub mod request;
 /// Response.
 pub mod response;
 
+/// Key.
+pub mod key;
+
 /// Adaptations.
 pub mod adaptations;
 
