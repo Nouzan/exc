@@ -32,6 +32,7 @@ pub(super) fn layer<T>(
     transport: T,
     main_stream: HashSet<Name>,
     default_stream_timeout: Duration,
+    refresh: Option<super::Refresh>,
 ) -> (
     impl Sink<MultiplexRequest, Error = WsError> + Stream<Item = Result<MultiplexResponse, WsError>>,
     Arc<Shared>,
@@ -42,16 +43,35 @@ where
 {
     let (streaming, worker, cancel) =
         Streaming::new(transport, main_stream, default_stream_timeout);
-    tokio::spawn(async move {
-        tokio::select! {
-            _ = worker => {
-                tracing::trace!("stream protocol worker finished");
-            },
-            _ = cancel => {
-                tracing::trace!("stream protocol cancelled");
-            }
+    match refresh {
+        Some(refresh) => {
+            tokio::spawn(async move {
+                tokio::select! {
+                    _ = worker => {
+                        tracing::trace!("stream protocol worker finished");
+                    },
+                    _ = cancel => {
+                        tracing::trace!("stream protocol cancelled");
+                    }
+                    _ = refresh => {
+                        tracing::trace!("listen key refreshing finished");
+                    }
+                }
+            });
         }
-    });
+        None => {
+            tokio::spawn(async move {
+                tokio::select! {
+                    _ = worker => {
+                        tracing::trace!("stream protocol worker finished");
+                    },
+                    _ = cancel => {
+                        tracing::trace!("stream protocol cancelled");
+                    }
+                }
+            });
+        }
+    }
     let state = streaming.state.clone();
     (streaming, state)
 }

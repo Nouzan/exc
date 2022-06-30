@@ -41,6 +41,7 @@ where
 }
 
 type BoxTransport = Pin<Box<dyn Transport + Send>>;
+type Refresh = BoxFuture<'static, ()>;
 
 pin_project_lite::pin_project! {
     /// Binance websocket protocol.
@@ -57,13 +58,15 @@ impl Protocol {
         main_stream: HashSet<Name>,
         keep_alive_timeout: Duration,
         default_stream_timeout: Duration,
+        refresh: Option<Refresh>,
     ) -> (Self, Arc<stream::Shared>) {
         let transport = keep_alive::layer(
             websocket.sink_map_err(WsError::from).map_err(WsError::from),
             keep_alive_timeout,
         );
         let transport = frame::layer(transport);
-        let (transport, state) = stream::layer(transport, main_stream, default_stream_timeout);
+        let (transport, state) =
+            stream::layer(transport, main_stream, default_stream_timeout, refresh);
         (
             Self {
                 transport: Box::pin(transport),
@@ -148,12 +151,14 @@ impl WsClient {
         main_stream: HashSet<Name>,
         keep_alive_timeout: Duration,
         default_stream_timeout: Duration,
+        refresh: Option<Refresh>,
     ) -> Result<Self, WsError> {
         let (protocol, state) = Protocol::new(
             websocket,
             main_stream,
             keep_alive_timeout,
             default_stream_timeout,
+            refresh,
         );
         let svc = Multiplex::with_error_handler(protocol, |err| {
             tracing::error!("protocol error: {err}");

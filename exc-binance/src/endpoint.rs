@@ -39,6 +39,18 @@ impl Endpoint {
         self
     }
 
+    /// Set listen key refresh retrys.
+    pub fn ws_listen_key_retry(&mut self, retry: usize) -> &mut Self {
+        self.ws.listen_key_retry(retry);
+        self
+    }
+
+    /// Set listen key refresh interval.
+    pub fn ws_listen_key_refresh_interval(&mut self, interval: Duration) -> &mut Self {
+        self.ws.listen_key_refresh_interval(interval);
+        self
+    }
+
     /// Private mode.
     pub fn private(&mut self, key: BinanceKey) -> &mut Self {
         self.key = Some(key);

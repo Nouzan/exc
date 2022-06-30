@@ -1,6 +1,5 @@
 use std::{collections::HashSet, time::Duration};
 
-use futures::FutureExt;
 use tower::{reconnect::Reconnect, ServiceExt};
 
 use crate::types::Name;
@@ -18,6 +17,8 @@ pub struct WsEndpoint {
     main_stream: HashSet<Name>,
     keep_alive_timeout: Option<Duration>,
     default_stream_timeout: Option<Duration>,
+    listen_key_retry: Option<usize>,
+    listen_key_refresh_interval: Option<Duration>,
 }
 
 impl WsEndpoint {
@@ -32,6 +33,8 @@ impl WsEndpoint {
             main_stream: HashSet::from([name]),
             keep_alive_timeout: None,
             default_stream_timeout: None,
+            listen_key_retry: None,
+            listen_key_refresh_interval: None,
         }
     }
 
@@ -44,6 +47,18 @@ impl WsEndpoint {
     /// Set the default stream timeout for each request stream.
     pub fn default_stream_timeout(&mut self, duration: Duration) -> &mut Self {
         self.default_stream_timeout = Some(duration);
+        self
+    }
+
+    /// Set listen key retrys.
+    pub fn listen_key_retry(&mut self, retry: usize) -> &mut Self {
+        self.listen_key_retry = Some(retry);
+        self
+    }
+
+    /// Set listen key refresh interval.
+    pub fn listen_key_refresh_interval(&mut self, interval: Duration) -> &mut Self {
+        self.listen_key_refresh_interval = Some(interval);
         self
     }
 
@@ -70,17 +85,13 @@ impl WsEndpoint {
         let default_stream_timeout = self
             .default_stream_timeout
             .unwrap_or(DEFAULT_STREAM_TIMEOUT);
-        let connect = BinanceWsConnect::default().and_then(move |ws| {
-            async move {
-                WsClient::with_websocket(
-                    ws,
-                    main_stream,
-                    keep_alive_timeout,
-                    default_stream_timeout,
-                )
-            }
-            .boxed()
-        });
+        let connect = BinanceWsConnect {
+            main_stream,
+            keep_alive_timeout,
+            default_stream_timeout,
+            retry: self.listen_key_retry,
+            interval: self.listen_key_refresh_interval,
+        };
         let connection = Reconnect::new::<WsClient, WsRequest>(connect, self.target.clone())
             .map_err(|err| match err.downcast::<WsError>() {
                 Ok(err) => *err,

@@ -23,6 +23,8 @@ async fn main() -> anyhow::Result<()> {
     let mut api = Binance::usd_margin_futures()
         .ws_keep_alive_timeout(Duration::from_secs(30))
         .private(key)
+        .ws_listen_key_retry(5)
+        .ws_listen_key_refresh_interval(Duration::from_secs(60))
         .connect();
     api.ready().await?;
     let stream = api
