@@ -21,8 +21,8 @@ use futures::future::BoxFuture;
 use tower::{util::BoxService, Service};
 
 use self::{
-    endpoint::WsEndpoint, error::WsError, protocol::frame::Name, request::WsRequest,
-    response::WsResponse,
+    connect::BinanceWsHost, endpoint::WsEndpoint, error::WsError, protocol::frame::Name,
+    request::WsRequest, response::WsResponse,
 };
 
 /// Binance websocket api service.
@@ -34,7 +34,7 @@ impl BinanceWebsocketApi {
     /// Endpoint of USD-M Futures API.
     pub fn usd_margin_futures() -> WsEndpoint {
         WsEndpoint::new(
-            "wss://fstream.binance.com".to_string(),
+            BinanceWsHost::UsdMarginFutures,
             Name::new("markPrice").inst("bnbusdt"),
         )
     }

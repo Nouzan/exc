@@ -146,10 +146,10 @@ pub trait Nameable {
     fn to_name(&self) -> Name;
 }
 
-/// Stream frame.
+/// Stream frame kind.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
-pub enum StreamFrame {
+pub enum StreamFrameKind {
     /// Aggregate trade.
     AggTrade(AggTrade),
     /// Book ticker.
@@ -160,14 +160,23 @@ pub enum StreamFrame {
     Unknwon(serde_json::Value),
 }
 
+/// Stream frame.
+#[derive(Debug, Clone, Deserialize)]
+pub struct StreamFrame {
+    /// Stream name.
+    pub stream: String,
+    /// Kind.
+    pub data: StreamFrameKind,
+}
+
 impl StreamFrame {
     /// Get stream name.
     pub fn to_name(&self) -> Option<Name> {
-        match self {
-            Self::AggTrade(f) => Some(f.to_name()),
-            Self::BookTicker(f) => Some(f.to_name()),
-            Self::AccountEvent(e) => Some(e.to_name()),
-            Self::Unknwon(_) => None,
+        match &self.data {
+            StreamFrameKind::AggTrade(f) => Some(f.to_name()),
+            StreamFrameKind::BookTicker(f) => Some(f.to_name()),
+            StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
+            StreamFrameKind::Unknwon(_) => None,
         }
     }
 }
