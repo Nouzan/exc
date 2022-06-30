@@ -1,7 +1,10 @@
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
-use crate::websocket::error::WsError;
+use crate::{
+    types::trading::{OrderSide, PositionSide, TimeInForce},
+    websocket::error::WsError,
+};
 
 use super::{Name, Nameable, StreamFrame, StreamFrameKind};
 
@@ -30,28 +33,6 @@ pub enum AccountEvent {
     },
 }
 
-/// Order side.
-#[derive(Debug, Clone, Copy, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum OrderSide {
-    /// Buy.
-    Buy,
-    /// Sell.
-    Sell,
-}
-
-/// Position side.
-#[derive(Debug, Clone, Copy, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum PositionSide {
-    /// Long.
-    Long,
-    /// Short.
-    Short,
-    /// Both.
-    Both,
-}
-
 /// Order type.
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -66,20 +47,6 @@ pub enum OrderType {
     TakeProfit,
     /// Liquidation.
     Liquidation,
-}
-
-/// Time-in-force.
-#[derive(Debug, Clone, Copy, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum TimeInForce {
-    /// Good-Till-Cancel.
-    Gtc,
-    /// Immdiate-Or-Cancel.
-    Ioc,
-    /// Fill-Or-Kill.
-    Fok,
-    /// Good-Till-Cancel (Post-Only)
-    Gtx,
 }
 
 /// Update kind.

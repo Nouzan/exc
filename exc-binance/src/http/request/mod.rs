@@ -18,6 +18,9 @@ pub mod candle;
 /// Listen key.
 pub mod listen_key;
 
+/// Trading.
+pub mod trading;
+
 pub use self::{
     candle::{Interval, QueryCandles},
     instrument::ExchangeInfo,
