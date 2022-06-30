@@ -49,9 +49,14 @@ pub trait Rest: Send + Sync + 'static {
         false
     }
 
-    /// Get request body.
-    fn to_body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
-        Ok(hyper::Body::empty())
+    /// Whether need sign.
+    fn need_sign(&self) -> bool {
+        false
+    }
+
+    /// Serialize.
+    fn serialize(&self) -> Result<serde_json::Value, RestError> {
+        Ok(serde_json::json!({}))
     }
 
     /// Clone.
@@ -102,8 +107,12 @@ impl Rest for Payload {
         self.inner.need_apikey()
     }
 
-    fn to_body(&self, endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
-        self.inner.to_body(endpoint)
+    fn need_sign(&self) -> bool {
+        self.inner.need_sign()
+    }
+
+    fn serialize(&self) -> Result<serde_json::Value, RestError> {
+        self.inner.serialize()
     }
 
     fn to_payload(&self) -> Payload {
@@ -162,10 +171,24 @@ impl<T: Rest> RestRequest<T> {
         key: Option<&BinanceKey>,
     ) -> Result<Request<hyper::Body>, RestError> {
         let uri = format!("{}{}", endpoint.host(), self.payload.to_path(endpoint)?);
+        let value = self.payload.serialize()?;
+        let body = if self.payload.need_sign() {
+            if let Some(key) = key.as_ref() {
+                let value = key.sign(value)?;
+                let s = serde_urlencoded::to_string(&value)?;
+                tracing::trace!("params: {s}");
+                hyper::Body::from(s)
+            } else {
+                return Err(RestError::NeedApikey);
+            }
+        } else {
+            hyper::Body::from(serde_urlencoded::to_string(&value)?)
+        };
         let mut request = Request::builder()
             .method(self.payload.method(endpoint)?)
             .uri(uri)
-            .body(self.payload.to_body(endpoint)?)?;
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(body)?;
         let headers = request.headers_mut();
         if let Some(key) = key {
             if self.payload.need_apikey() {

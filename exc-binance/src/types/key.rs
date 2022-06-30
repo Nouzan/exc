@@ -10,6 +10,9 @@ pub enum SignError {
     /// Invalid length.
     #[error("invalid length of secretkey")]
     InvalidLength,
+    /// Urlencoded.
+    #[error("urlencoded: {0}")]
+    Urlencoded(#[from] serde_urlencoded::ser::Error),
 }
 
 type HmacSha256 = Hmac<Sha256>;
@@ -67,7 +70,7 @@ pub struct SignedParams<T> {
 impl<T: Serialize> SigningParams<T> {
     /// Get signed params.
     pub fn signed(self, key: &BinanceKey) -> Result<SignedParams<T>, SignError> {
-        let raw = serde_qs::to_string(&self).unwrap();
+        let raw = serde_urlencoded::to_string(&self)?;
         tracing::debug!("raw string to sign: {}", raw);
         let mut mac = HmacSha256::new_from_slice(key.secretkey.as_bytes())
             .map_err(|_| SignError::InvalidLength)?;

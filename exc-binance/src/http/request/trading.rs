@@ -3,6 +3,8 @@ use serde::Serialize;
 
 use crate::types::trading::{OrderSide, PositionSide, TimeInForce};
 
+use super::{Rest, RestEndpoint, RestError};
+
 /// Order type.
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -71,8 +73,7 @@ pub struct PlaceOrder {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub callback_rate: Option<Decimal>,
     /// Time-In-Force.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_in_force: Option<TimeInForce>,
+    pub time_in_force: TimeInForce,
     /// Working type.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub working_type: Option<String>,
@@ -82,4 +83,35 @@ pub struct PlaceOrder {
     /// New order response type.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_order_resp_type: Option<RespType>,
+}
+
+impl Rest for PlaceOrder {
+    fn method(&self, _endpoint: &RestEndpoint) -> Result<http::Method, RestError> {
+        Ok(http::Method::POST)
+    }
+
+    fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
+        match endpoint {
+            RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
+            _ => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
+                "{endpoint}"
+            ))),
+        }
+    }
+
+    fn need_apikey(&self) -> bool {
+        true
+    }
+
+    fn need_sign(&self) -> bool {
+        true
+    }
+
+    fn serialize(&self) -> Result<serde_json::Value, RestError> {
+        Ok(serde_json::to_value(self)?)
+    }
+
+    fn to_payload(&self) -> super::Payload {
+        super::Payload::new(self.clone())
+    }
 }

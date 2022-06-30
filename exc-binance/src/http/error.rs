@@ -19,6 +19,9 @@ pub enum RestError {
     /// Query string errors.
     #[error("qs: {0}")]
     Qs(#[from] serde_qs::Error),
+    /// Urlencoded.
+    #[error("urlencoded: {0}")]
+    Urlencoded(#[from] serde_urlencoded::ser::Error),
     /// Standard exchange errors.
     #[error("exchange: {0}")]
     Exchange(#[from] ExchangeError),
@@ -31,6 +34,12 @@ pub enum RestError {
     /// Unsupported endpoint.
     #[error("unsuppored endpoint: {0}")]
     UnsupportedEndpoint(anyhow::Error),
+    /// Need key.
+    #[error("need apikey to sign the params")]
+    NeedApikey,
+    /// Sign error.
+    #[error("sign error: {0}")]
+    SignError(#[from] crate::types::key::SignError),
 }
 
 impl RestError {
