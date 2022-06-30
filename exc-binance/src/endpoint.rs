@@ -11,7 +11,6 @@ use crate::{
 };
 
 /// Binance endpoint.
-#[derive(Debug)]
 pub struct Endpoint {
     pub(crate) key: Option<BinanceKey>,
     pub(crate) http: (RestEndpoint, HttpEndpoint),
@@ -55,7 +54,12 @@ impl Endpoint {
         let http = ServiceBuilder::default()
             .layer(layer)
             .service(self.http.1.connect_https());
-        let ws = self.ws.connect();
+        let ws = if self.key.is_some() {
+            let private = http.clone();
+            self.ws.clone().private(private).connect()
+        } else {
+            self.ws.connect()
+        };
         let mut svcs = ReadyCache::default();
         svcs.push(HTTP_KEY, Either::A(http));
         svcs.push(WS_KEY, Either::B(ws));

@@ -3,16 +3,16 @@ use std::{collections::HashSet, time::Duration};
 use futures::FutureExt;
 use tower::{reconnect::Reconnect, ServiceExt};
 
-use crate::{http::response::ListenKey, types::Name};
+use crate::types::Name;
 
-use super::connect::{BinanceWsConnect, BinanceWsTarget};
+use super::connect::{BinanceWsConnect, BinanceWsTarget, Http, TargetKind};
 use super::{error::WsError, protocol::WsClient, request::WsRequest, BinanceWebsocketApi};
 
 const DEFAULT_KEEP_ALIVE_TIMEOUT: Duration = Duration::from_secs(30);
 const DEFAULT_STREAM_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// A builder of binance websocket api service.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct WsEndpoint {
     target: BinanceWsTarget,
     main_stream: HashSet<Name>,
@@ -24,7 +24,10 @@ impl WsEndpoint {
     /// Create a new binance websocket api endpoint.
     pub fn new(host: String, name: Name) -> Self {
         Self {
-            target: BinanceWsTarget { host, name },
+            target: BinanceWsTarget {
+                host,
+                kind: TargetKind::Name(name),
+            },
             main_stream: HashSet::default(),
             keep_alive_timeout: None,
             default_stream_timeout: None,
@@ -43,12 +46,12 @@ impl WsEndpoint {
         self
     }
 
-    // /// Private endpoint of USD-M Futures API.
-    // pub fn private(&mut self, listen_key: ListenKey) -> Result<&mut Self, WsError> {
-    //     let uri = Uri::from_str(format!("wss://fstream.binance.com/ws/{listen_key}").as_str())?;
-    //     self.uri = uri;
-    //     Ok(self)
-    // }
+    /// Private endpoint of USD-M Futures API.
+    pub(crate) fn private(&mut self, http: Http) -> &mut Self {
+        self.target.kind = TargetKind::ListenKey(http);
+        self.add_main_stream(Name::listen_key_expired());
+        self
+    }
 
     /// Add main stream.
     pub(crate) fn add_main_stream(&mut self, name: Name) -> &mut Self {

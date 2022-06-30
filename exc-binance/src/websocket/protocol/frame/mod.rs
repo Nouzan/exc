@@ -6,13 +6,16 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::websocket::error::WsError;
 
-use self::{agg_trade::AggTrade, book_ticker::BookTicker};
+use self::{account::AccountEvent, agg_trade::AggTrade, book_ticker::BookTicker};
 
 /// Aggregate trade.
 pub mod agg_trade;
 
 /// Book ticker.
 pub mod book_ticker;
+
+/// Account.
+pub mod account;
 
 /// Operations.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -58,6 +61,11 @@ impl Name {
             inst: Some(inst.to_string()),
             channel: "bookTicker".to_string(),
         }
+    }
+
+    /// Listen key expired.
+    pub fn listen_key_expired() -> Self {
+        Self::new("listenKeyExpired")
     }
 }
 
@@ -146,6 +154,8 @@ pub enum StreamFrame {
     AggTrade(AggTrade),
     /// Book ticker.
     BookTicker(BookTicker),
+    /// Account event.
+    AccountEvent(AccountEvent),
     /// Unknwon.
     Unknwon(serde_json::Value),
 }
@@ -156,6 +166,7 @@ impl StreamFrame {
         match self {
             Self::AggTrade(f) => Some(f.to_name()),
             Self::BookTicker(f) => Some(f.to_name()),
+            Self::AccountEvent(e) => Some(e.to_name()),
             Self::Unknwon(_) => None,
         }
     }

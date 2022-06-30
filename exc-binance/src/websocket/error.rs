@@ -1,6 +1,8 @@
 use thiserror::Error;
 use tower::BoxError;
 
+use crate::http::error::RestError;
+
 use super::protocol::frame::Name;
 
 /// Websocket API errors.
@@ -45,4 +47,7 @@ pub enum WsError {
     /// Invalid Uri.
     #[error("invalid uri")]
     InvalidUri(#[from] http::uri::InvalidUri),
+    /// Login error.
+    #[error("login: {0}")]
+    Login(#[from] RestError),
 }

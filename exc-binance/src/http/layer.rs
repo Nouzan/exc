@@ -62,7 +62,7 @@ impl<S> Layer<S> for BinanceRestApiLayer {
 }
 
 /// Binance rest api service inner part.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct BinanceRestApiInner<S> {
     endpoint: RestEndpoint,
     http: S,

@@ -26,4 +26,9 @@ impl Request {
     pub fn subscribe(stream: Name) -> Self {
         Self::Ws(WsRequest::subscribe(stream))
     }
+
+    /// Main stream subcribe.
+    pub fn subcribe_main(stream: Name) -> Self {
+        Self::Ws(WsRequest::main_stream(stream))
+    }
 }

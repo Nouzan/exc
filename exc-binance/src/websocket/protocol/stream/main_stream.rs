@@ -30,6 +30,7 @@ impl MainStream {
         frame: StreamFrame,
     ) -> Result<usize, StreamFrame> {
         if let Some(sender) = self.pub_sub.get(name) {
+            tracing::trace!("received a main stream frame: {frame:?}");
             Ok(sender.send(frame).unwrap_or(0))
         } else {
             Err(frame)
