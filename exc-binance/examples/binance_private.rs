@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
     pin_mut!(stream);
     while let Some(e) = stream.next().await {
         let e = e?;
-        tracing::info!("{e:?}");
+        tracing::info!("{e:#?}");
     }
     Ok(())
 }
