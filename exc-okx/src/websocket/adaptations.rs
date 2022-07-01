@@ -4,10 +4,12 @@ use exc_core::{
     types::{
         instrument::{InstrumentMeta, SubscribeInstruments},
         trading::{CancelOrder, OrderId, PlaceOrder},
+        Cancelled, Placed,
     },
     Adaptor, ExchangeError,
 };
 use futures::{future::ready, stream::iter, FutureExt, StreamExt};
+use time::OffsetDateTime;
 
 use crate::error::OkxError;
 
@@ -87,7 +89,7 @@ impl Adaptor<PlaceOrder> for Request {
 
         Ok(async move {
             let event = resp.await?.inner;
-            let id = if let Event::TradeResponse(TradeResponse::Order {
+            let (ts, id) = if let Event::TradeResponse(TradeResponse::Order {
                 code,
                 msg,
                 mut data,
@@ -96,7 +98,7 @@ impl Adaptor<PlaceOrder> for Request {
             {
                 if code == "0" {
                     if let Some(data) = data.pop() {
-                        Ok(OrderId::from(data.ord_id))
+                        Ok((OffsetDateTime::now_utc(), OrderId::from(data.ord_id)))
                     } else {
                         Err(OkxError::Api(StatusKind::EmptyResponse))
                     }
@@ -114,7 +116,11 @@ impl Adaptor<PlaceOrder> for Request {
             } else {
                 Err(OkxError::UnexpectedDataType(anyhow::anyhow!("{event:?}")))
             }?;
-            Ok(id)
+            Ok(Placed {
+                id,
+                order: None,
+                ts,
+            })
         }
         .boxed())
     }
@@ -144,7 +150,10 @@ impl Adaptor<CancelOrder> for Request {
             {
                 if code == "0" {
                     if let Some(_data) = data.pop() {
-                        Ok(())
+                        Ok(Cancelled {
+                            ts: OffsetDateTime::now_utc(),
+                            order: None,
+                        })
                     } else {
                         Err(OkxError::Api(StatusKind::EmptyResponse))
                     }
@@ -162,7 +171,10 @@ impl Adaptor<CancelOrder> for Request {
             } else {
                 Err(OkxError::UnexpectedDataType(anyhow::anyhow!("{event:?}")))
             }?;
-            Ok(())
+            Ok(Cancelled {
+                ts: OffsetDateTime::now_utc(),
+                order: None,
+            })
         }
         .boxed())
     }

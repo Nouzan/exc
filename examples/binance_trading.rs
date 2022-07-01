@@ -29,12 +29,14 @@ async fn main() -> anyhow::Result<()> {
         .into_exc();
 
     let place = Place::with_size(dec!(-0.001)).post_only(dec!(30_000));
-    let id = binance.place(&args.inst, &place, Some("test")).await?;
-    tracing::info!("placed={}", id.as_str());
+    let placed = binance.place(&args.inst, &place, Some("test")).await?;
+    tracing::info!("placed={placed:?}");
+    let id = placed.id;
     let order = binance.check(&args.inst, &id).await?;
     tracing::info!("checked={order:?}");
-    binance.cancel(&args.inst, &id).await?;
+    let cancelled = binance.cancel(&args.inst, &id).await?;
+    tracing::info!("cancelled={cancelled:?}");
     let order = binance.check(&args.inst, &id).await?;
-    tracing::info!("cancelled={order:?}");
+    tracing::info!("checked={order:?}");
     Ok(())
 }

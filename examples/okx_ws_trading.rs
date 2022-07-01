@@ -44,7 +44,8 @@ async fn main() -> anyhow::Result<()> {
     let inst = "DOGE-USDT";
     let id = ws
         .place(inst, &Place::with_size(dec!(-10)).limit(dec!(0.06)), None)
-        .await?;
+        .await?
+        .id;
     tracing::info!("id={id:?}");
     let order = http.check(inst, &id).await?;
     tracing::info!("order={order:?}");

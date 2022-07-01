@@ -25,6 +25,6 @@ pub use candle::{
 };
 pub use trade::{SubscribeTrades, Trade, TradeStream};
 pub use trading::{
-    CancelOrder, GetOrder, Order, OrderId, OrderKind, OrderState, OrderStatus, OrderStream, Place,
-    PlaceOrder, SubscribeOrders, TimeInForce,
+    CancelOrder, Cancelled, GetOrder, Order, OrderId, OrderKind, OrderState, OrderStatus,
+    OrderStream, OrderUpdate, Place, PlaceOrder, Placed, SubscribeOrders, TimeInForce,
 };

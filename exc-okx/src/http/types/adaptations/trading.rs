@@ -1,14 +1,25 @@
 use exc_core::{
-    types::trading::{GetOrder, Order as ExcOrder, OrderId, OrderState, OrderStatus, Place},
+    types::{
+        trading::{GetOrder, Order as ExcOrder, OrderId, OrderState, OrderStatus, Place},
+        OrderUpdate,
+    },
     Adaptor, ExchangeError,
 };
 use futures::FutureExt;
-use rust_decimal::Decimal;
+use rust_decimal::{prelude::ToPrimitive, Decimal};
+use time::OffsetDateTime;
 
-use crate::http::types::{
-    request::{trading::Order, HttpRequest, PrivateGet},
-    response::ResponseData,
+use crate::{
+    http::types::{
+        request::{trading::Order, HttpRequest, PrivateGet},
+        response::ResponseData,
+    },
+    util::timestamp::millis_to_ts,
 };
+
+fn decimal_to_ts(ts: Decimal) -> Option<OffsetDateTime> {
+    millis_to_ts(ts.to_u64()?)
+}
 
 impl Adaptor<GetOrder> for HttpRequest {
     fn from_request(req: GetOrder) -> Result<Self, exc_core::ExchangeError>
@@ -85,10 +96,18 @@ impl Adaptor<GetOrder> for HttpRequest {
                     state.status = status;
                     state.filled = filled;
                     state.cost = cost;
-                    Ok(ExcOrder {
-                        id: OrderId::from(order.order_id),
-                        target,
-                        state,
+                    Ok(OrderUpdate {
+                        ts: decimal_to_ts(order.updated_at).ok_or_else(|| {
+                            ExchangeError::Other(anyhow::anyhow!(
+                                "parse ts error, ts={}",
+                                order.updated_at
+                            ))
+                        })?,
+                        order: ExcOrder {
+                            id: OrderId::from(order.order_id),
+                            target,
+                            state,
+                        },
                     })
                 } else {
                     Err(ExchangeError::Api(anyhow::anyhow!(

@@ -1,9 +1,12 @@
-use exc_core::{types::SubscribeOrders, ExcMut};
+use exc_core::{
+    types::{Cancelled, OrderUpdate, Placed, SubscribeOrders},
+    ExcMut,
+};
 use futures::{future::BoxFuture, FutureExt};
 use tower::{util::Oneshot, Service, ServiceExt};
 
 use crate::{
-    types::trading::{CancelOrder, GetOrder, Order, OrderId, Place, PlaceOrder},
+    types::trading::{CancelOrder, GetOrder, OrderId, Place, PlaceOrder},
     ExchangeError,
 };
 
@@ -17,7 +20,7 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
         inst: &str,
         place: &Place,
         client_id: Option<&str>,
-    ) -> BoxFuture<'_, Result<OrderId, ExchangeError>>
+    ) -> BoxFuture<'_, Result<Placed, ExchangeError>>
     where
         Self: Sized + Send,
         <Self as Service<PlaceOrder>>::Future: Send,
@@ -34,7 +37,11 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
     }
 
     /// Cancel an order.
-    fn cancel(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, Result<(), ExchangeError>>
+    fn cancel(
+        &mut self,
+        inst: &str,
+        id: &OrderId,
+    ) -> BoxFuture<'_, Result<Cancelled, ExchangeError>>
     where
         Self: Sized + Send,
         <Self as Service<CancelOrder>>::Future: Send,
@@ -55,7 +62,11 @@ impl<S> TradingService for S where S: ExcService<PlaceOrder> + ExcService<Cancel
 /// Check order service.
 pub trait CheckOrderService: ExcService<GetOrder> {
     /// Check the current status of an order.
-    fn check(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, Result<Order, ExchangeError>>
+    fn check(
+        &mut self,
+        inst: &str,
+        id: &OrderId,
+    ) -> BoxFuture<'_, Result<OrderUpdate, ExchangeError>>
     where
         Self: Sized + Send,
         Self::Future: Send,
