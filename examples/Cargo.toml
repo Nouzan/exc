@@ -55,6 +55,10 @@ path = "binance_ticker.rs"
 name = "binance-orders"
 path = "binance_orders.rs"
 
+[[bin]]
+name = "binance-trading"
+path = "binance_trading.rs"
+
 [dependencies]
 anyhow = "1"
 exc = { path = "../exc", features = ["http"] }

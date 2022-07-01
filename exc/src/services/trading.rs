@@ -12,7 +12,12 @@ use crate::ExcService;
 /// Trading service.
 pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
     /// Place an order.
-    fn place(&mut self, inst: &str, place: &Place) -> BoxFuture<'_, Result<OrderId, ExchangeError>>
+    fn place(
+        &mut self,
+        inst: &str,
+        place: &Place,
+        client_id: Option<&str>,
+    ) -> BoxFuture<'_, Result<OrderId, ExchangeError>>
     where
         Self: Sized + Send,
         <Self as Service<PlaceOrder>>::Future: Send,
@@ -20,6 +25,7 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
         let resp = ServiceExt::<PlaceOrder>::oneshot(
             ExcService::<PlaceOrder>::as_service_mut(self),
             PlaceOrder {
+                client_id: client_id.map(|s| s.to_string()),
                 instrument: inst.to_string(),
                 place: *place,
             },

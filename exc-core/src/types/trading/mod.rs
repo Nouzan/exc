@@ -17,6 +17,8 @@ pub struct PlaceOrder {
     pub instrument: String,
     /// Place.
     pub place: Place,
+    /// Client id.
+    pub client_id: Option<String>,
 }
 
 impl Request for PlaceOrder {
