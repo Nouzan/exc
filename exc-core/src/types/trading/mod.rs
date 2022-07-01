@@ -4,7 +4,7 @@ pub mod place;
 /// Order.
 pub mod order;
 
-use futures::future::BoxFuture;
+use futures::{future::BoxFuture, stream::BoxStream};
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus};
 pub use place::Place;
 
@@ -47,4 +47,18 @@ pub struct GetOrder {
 
 impl Request for GetOrder {
     type Response = BoxFuture<'static, Result<Order, ExchangeError>>;
+}
+
+/// Orders Stream.
+pub type OrderStream = BoxStream<'static, Result<Order, ExchangeError>>;
+
+/// Subscribe to order updates.
+#[derive(Debug, Clone)]
+pub struct SubscribeOrderUpdates {
+    /// Instrument.
+    pub instrument: String,
+}
+
+impl Request for SubscribeOrderUpdates {
+    type Response = OrderStream;
 }
