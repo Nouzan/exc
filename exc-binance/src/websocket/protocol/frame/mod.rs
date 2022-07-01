@@ -6,13 +6,16 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::websocket::error::WsError;
 
-use self::{agg_trade::AggTrade, book_ticker::BookTicker};
+use self::{account::AccountEvent, agg_trade::AggTrade, book_ticker::BookTicker};
 
 /// Aggregate trade.
 pub mod agg_trade;
 
 /// Book ticker.
 pub mod book_ticker;
+
+/// Account.
+pub mod account;
 
 /// Operations.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -27,31 +30,57 @@ pub enum Op {
 /// Stream name.
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Name {
-    inst: String,
+    inst: Option<String>,
     channel: String,
 }
 
 impl Name {
-    /// aggrated trade
+    pub(crate) fn new(channel: &str) -> Self {
+        Self {
+            inst: None,
+            channel: channel.to_string(),
+        }
+    }
+
+    pub(crate) fn inst(mut self, inst: &str) -> Self {
+        self.inst = Some(inst.to_string());
+        self
+    }
+
+    /// Aggrated trade
     pub fn agg_trade(inst: &str) -> Self {
         Self {
-            inst: inst.to_string(),
+            inst: Some(inst.to_string()),
             channel: "aggTrade".to_string(),
         }
     }
 
-    /// book ticker
+    /// Book ticker
     pub fn book_ticker(inst: &str) -> Self {
         Self {
-            inst: inst.to_string(),
+            inst: Some(inst.to_string()),
             channel: "bookTicker".to_string(),
         }
+    }
+
+    /// Listen key expired.
+    pub fn listen_key_expired() -> Self {
+        Self::new("listenKeyExpired")
+    }
+
+    /// Order trade update.
+    pub fn order_trade_update() -> Self {
+        Self::new("orderTradeUpdate")
     }
 }
 
 impl fmt::Display for Name {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}@{}", self.inst, self.channel)
+        if let Some(inst) = self.inst.as_ref() {
+            write!(f, "{}@{}", inst, self.channel)
+        } else {
+            write!(f, "{}", self.channel)
+        }
     }
 }
 
@@ -112,6 +141,23 @@ pub enum ServerFrame {
     Response(ResponseFrame),
     /// Stream.
     Stream(StreamFrame),
+    /// Empty.
+    Empty,
+}
+
+impl ServerFrame {
+    fn health(self) -> Result<Self, WsError> {
+        match &self {
+            Self::Stream(f) => match &f.data {
+                StreamFrameKind::AccountEvent(e) => match e {
+                    AccountEvent::ListenKeyExpired { ts } => Err(WsError::ListenKeyExpired(*ts)),
+                    _ => Ok(self),
+                },
+                _ => Ok(self),
+            },
+            _ => Ok(self),
+        }
+    }
 }
 
 /// Payload that with stream name.
@@ -120,25 +166,37 @@ pub trait Nameable {
     fn to_name(&self) -> Name;
 }
 
-/// Stream frame.
+/// Stream frame kind.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
-pub enum StreamFrame {
+pub enum StreamFrameKind {
     /// Aggregate trade.
     AggTrade(AggTrade),
     /// Book ticker.
     BookTicker(BookTicker),
+    /// Account event.
+    AccountEvent(AccountEvent),
     /// Unknwon.
     Unknwon(serde_json::Value),
+}
+
+/// Stream frame.
+#[derive(Debug, Clone, Deserialize)]
+pub struct StreamFrame {
+    /// Stream name.
+    pub stream: String,
+    /// Kind.
+    pub data: StreamFrameKind,
 }
 
 impl StreamFrame {
     /// Get stream name.
     pub fn to_name(&self) -> Option<Name> {
-        match self {
-            Self::AggTrade(f) => Some(f.to_name()),
-            Self::BookTicker(f) => Some(f.to_name()),
-            Self::Unknwon(_) => None,
+        match &self.data {
+            StreamFrameKind::AggTrade(f) => Some(f.to_name()),
+            StreamFrameKind::BookTicker(f) => Some(f.to_name()),
+            StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
+            StreamFrameKind::Unknwon(_) => None,
         }
     }
 }
@@ -157,7 +215,9 @@ where
             stream::once(future::ready(msg))
         })
         .and_then(|msg| {
-            let f = serde_json::from_str::<ServerFrame>(&msg).map_err(WsError::from);
+            let f = serde_json::from_str::<ServerFrame>(&msg)
+                .map_err(WsError::from)
+                .and_then(ServerFrame::health);
             future::ready(f)
         })
 }

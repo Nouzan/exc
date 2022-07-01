@@ -77,17 +77,13 @@ impl Rest for QueryCandles {
     }
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
-        let qs = serde_qs::to_string(self)?;
+        let qs = serde_urlencoded::to_string(self)?;
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/klines?{qs}")),
             RestEndpoint::Spot => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
                 "{endpoint}"
             ))),
         }
-    }
-
-    fn to_body(&self, _endpoint: &RestEndpoint) -> Result<hyper::Body, RestError> {
-        Ok(hyper::Body::empty())
     }
 
     fn to_payload(&self) -> super::Payload {

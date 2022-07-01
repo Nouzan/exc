@@ -1,6 +1,8 @@
 use thiserror::Error;
 use tower::BoxError;
 
+use crate::http::error::RestError;
+
 use super::protocol::frame::Name;
 
 /// Websocket API errors.
@@ -39,4 +41,16 @@ pub enum WsError {
     /// Unknown connection error.
     #[error("unknown connection error: {0}")]
     UnknownConnection(BoxError),
+    /// Main stream not found.
+    #[error("main stream not found")]
+    MainStreamNotFound,
+    /// Invalid Uri.
+    #[error("invalid uri")]
+    InvalidUri(#[from] http::uri::InvalidUri),
+    /// Login error.
+    #[error("login: {0}")]
+    Login(#[from] RestError),
+    /// Listen key is expired.
+    #[error("listen key is expired: at={0}")]
+    ListenKeyExpired(i64),
 }

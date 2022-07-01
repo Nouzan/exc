@@ -55,6 +55,10 @@ impl WsResponse {
                                         tracing::trace!("received a response frame: {resp:?}");
                                         None
                                     }
+                                    Ok(ServerFrame::Empty) => {
+                                        tracing::trace!("received a empty frame");
+                                        None
+                                    }
                                     Err(err) => Some(Err(err)),
                                 };
                                 futures::future::ready(res)

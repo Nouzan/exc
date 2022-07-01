@@ -39,6 +39,9 @@ pub enum ExchangeError {
     /// Order not found.
     #[error("order not found")]
     OrderNotFound,
+    /// Forbidden.
+    #[error("forbidden: {0}")]
+    Forbidden(anyhow::Error),
 }
 
 impl ExchangeError {

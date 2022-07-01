@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::websocket::error::WsError;
 
-use super::{Name, Nameable, StreamFrame};
+use super::{Name, Nameable, StreamFrame, StreamFrameKind};
 
 /// Book ticker.
 #[derive(Debug, Clone, Deserialize)]
@@ -40,7 +40,7 @@ pub struct BookTicker {
 impl Nameable for BookTicker {
     fn to_name(&self) -> Name {
         Name {
-            inst: self.symbol.to_lowercase(),
+            inst: Some(self.symbol.to_lowercase()),
             channel: self.event.clone(),
         }
     }
@@ -50,7 +50,7 @@ impl TryFrom<StreamFrame> for BookTicker {
     type Error = WsError;
 
     fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
-        if let StreamFrame::BookTicker(t) = frame {
+        if let StreamFrameKind::BookTicker(t) = frame.data {
             Ok(t)
         } else {
             Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}")))

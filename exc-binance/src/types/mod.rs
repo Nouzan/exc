@@ -4,6 +4,12 @@ pub mod request;
 /// Response.
 pub mod response;
 
+/// Key.
+pub mod key;
+
+/// Trading.
+pub mod trading;
+
 /// Adaptations.
 pub mod adaptations;
 

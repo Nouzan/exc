@@ -1,11 +1,15 @@
 use std::{
+    collections::HashSet,
     pin::Pin,
     sync::Arc,
     task::{Context, Poll},
     time::Duration,
 };
 
-use self::stream::{MultiplexRequest, MultiplexResponse};
+use self::{
+    frame::Name,
+    stream::{MultiplexRequest, MultiplexResponse},
+};
 
 use super::error::WsError;
 use super::request::WsRequest;
@@ -37,6 +41,7 @@ where
 }
 
 type BoxTransport = Pin<Box<dyn Transport + Send>>;
+type Refresh = BoxFuture<'static, ()>;
 
 pin_project_lite::pin_project! {
     /// Binance websocket protocol.
@@ -50,15 +55,18 @@ pin_project_lite::pin_project! {
 impl Protocol {
     fn new(
         websocket: WsStream,
+        main_stream: HashSet<Name>,
         keep_alive_timeout: Duration,
         default_stream_timeout: Duration,
+        refresh: Option<Refresh>,
     ) -> (Self, Arc<stream::Shared>) {
         let transport = keep_alive::layer(
             websocket.sink_map_err(WsError::from).map_err(WsError::from),
             keep_alive_timeout,
         );
         let transport = frame::layer(transport);
-        let (transport, state) = stream::layer(transport, default_stream_timeout);
+        let (transport, state) =
+            stream::layer(transport, main_stream, default_stream_timeout, refresh);
         (
             Self {
                 transport: Box::pin(transport),
@@ -113,7 +121,10 @@ impl TagStore<Req, Resp> for Protocol {
     }
 
     fn finish_tag(self: Pin<&mut Self>, r: &Resp) -> Self::Tag {
-        r.id
+        match r {
+            Resp::MainStream(id, _) => *id,
+            Resp::SubStream { id, .. } => *id,
+        }
     }
 }
 
@@ -137,11 +148,18 @@ impl WsClient {
     /// Create a [`WsClient`] using the given websocket stream.
     pub fn with_websocket(
         websocket: WsStream,
+        main_stream: HashSet<Name>,
         keep_alive_timeout: Duration,
         default_stream_timeout: Duration,
+        refresh: Option<Refresh>,
     ) -> Result<Self, WsError> {
-        let (protocol, state) =
-            Protocol::new(websocket, keep_alive_timeout, default_stream_timeout);
+        let (protocol, state) = Protocol::new(
+            websocket,
+            main_stream,
+            keep_alive_timeout,
+            default_stream_timeout,
+            refresh,
+        );
         let svc = Multiplex::with_error_handler(protocol, |err| {
             tracing::error!("protocol error: {err}");
         });

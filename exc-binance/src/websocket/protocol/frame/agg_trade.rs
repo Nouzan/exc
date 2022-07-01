@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::websocket::error::WsError;
 
-use super::{Name, Nameable, StreamFrame};
+use super::{Name, Nameable, StreamFrame, StreamFrameKind};
 
 /// # Example
 /// A [`AggTrade`] in JSON format:
@@ -58,7 +58,7 @@ pub struct AggTrade {
 impl Nameable for AggTrade {
     fn to_name(&self) -> Name {
         Name {
-            inst: self.symbol.to_lowercase(),
+            inst: Some(self.symbol.to_lowercase()),
             channel: self.event.clone(),
         }
     }
@@ -68,7 +68,7 @@ impl TryFrom<StreamFrame> for AggTrade {
     type Error = WsError;
 
     fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
-        if let StreamFrame::AggTrade(trade) = frame {
+        if let StreamFrameKind::AggTrade(trade) = frame.data {
             Ok(trade)
         } else {
             Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}")))
