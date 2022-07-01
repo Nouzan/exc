@@ -34,12 +34,12 @@ async fn main() -> anyhow::Result<()> {
     let res = api
         .call(Request::with_rest_payload(PlaceOrder {
             symbol: "btcusdt".to_string(),
-            side: OrderSide::Buy,
+            side: OrderSide::Sell,
             position_side: PositionSide::Both,
             order_type: OrderType::Limit,
             reduce_only: None,
             quantity: Some(dec!(0.001)),
-            price: Some(dec!(10_000)),
+            price: Some(dec!(30_000)),
             new_client_order_id: None,
             stop_price: None,
             close_position: None,

@@ -1,11 +1,19 @@
 use std::time::Duration;
 
+use clap::Parser;
 use exc_binance::{
     websocket::protocol::frame::{account::AccountEvent, Name},
     Binance, Request,
 };
 use futures::{pin_mut, StreamExt};
 use tower::{Service, ServiceExt};
+
+#[derive(Parser)]
+struct Args {
+    #[clap(long, env)]
+    binance_key: String,
+    inst: String,
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -17,8 +25,8 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let key = std::env::var("BINANCE_KEY")?;
-    let key = serde_json::from_str(&key)?;
+    let args = Args::from_args();
+    let key = serde_json::from_str(&args.binance_key)?;
 
     let mut api = Binance::usd_margin_futures()
         .ws_keep_alive_timeout(Duration::from_secs(30))
@@ -28,7 +36,7 @@ async fn main() -> anyhow::Result<()> {
         .connect();
     api.ready().await?;
     let stream = api
-        .call(Request::subcribe_main(Name::order_trade_update()))
+        .call(Request::subcribe_main(Name::order_trade_update(&args.inst)))
         .await?
         .into_stream::<AccountEvent>()?;
     pin_mut!(stream);

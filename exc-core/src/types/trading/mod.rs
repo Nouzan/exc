@@ -4,8 +4,8 @@ pub mod place;
 /// Order.
 pub mod order;
 
-use futures::future::BoxFuture;
-pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus};
+use futures::{future::BoxFuture, stream::BoxStream};
+pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, TimeInForce};
 pub use place::Place;
 
 use crate::{ExchangeError, Request};
@@ -17,6 +17,8 @@ pub struct PlaceOrder {
     pub instrument: String,
     /// Place.
     pub place: Place,
+    /// Client id.
+    pub client_id: Option<String>,
 }
 
 impl Request for PlaceOrder {
@@ -47,4 +49,18 @@ pub struct GetOrder {
 
 impl Request for GetOrder {
     type Response = BoxFuture<'static, Result<Order, ExchangeError>>;
+}
+
+/// Orders Stream.
+pub type OrderStream = BoxStream<'static, Result<Order, ExchangeError>>;
+
+/// Subscribe to order updates.
+#[derive(Debug, Clone)]
+pub struct SubscribeOrders {
+    /// Instrument.
+    pub instrument: String,
+}
+
+impl Request for SubscribeOrders {
+    type Response = OrderStream;
 }

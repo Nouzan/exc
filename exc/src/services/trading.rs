@@ -1,5 +1,6 @@
+use exc_core::{types::SubscribeOrders, ExcMut};
 use futures::{future::BoxFuture, FutureExt};
-use tower::{Service, ServiceExt};
+use tower::{util::Oneshot, Service, ServiceExt};
 
 use crate::{
     types::trading::{CancelOrder, GetOrder, Order, OrderId, Place, PlaceOrder},
@@ -11,7 +12,12 @@ use crate::ExcService;
 /// Trading service.
 pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
     /// Place an order.
-    fn place(&mut self, inst: &str, place: &Place) -> BoxFuture<'_, Result<OrderId, ExchangeError>>
+    fn place(
+        &mut self,
+        inst: &str,
+        place: &Place,
+        client_id: Option<&str>,
+    ) -> BoxFuture<'_, Result<OrderId, ExchangeError>>
     where
         Self: Sized + Send,
         <Self as Service<PlaceOrder>>::Future: Send,
@@ -19,6 +25,7 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
         let resp = ServiceExt::<PlaceOrder>::oneshot(
             ExcService::<PlaceOrder>::as_service_mut(self),
             PlaceOrder {
+                client_id: client_id.map(|s| s.to_string()),
                 instrument: inst.to_string(),
                 place: *place,
             },
@@ -65,3 +72,21 @@ pub trait CheckOrderService: ExcService<GetOrder> {
 }
 
 impl<S> CheckOrderService for S where S: ExcService<GetOrder> {}
+
+/// Subscribe orders service.
+pub trait SubscribeOrdersService: ExcService<SubscribeOrders> {
+    /// Subscribe orders.
+    fn subscribe_orders(&mut self, inst: &str) -> Oneshot<ExcMut<'_, Self>, SubscribeOrders>
+    where
+        Self: Sized,
+    {
+        ServiceExt::<SubscribeOrders>::oneshot(
+            self.as_service_mut(),
+            SubscribeOrders {
+                instrument: inst.to_string(),
+            },
+        )
+    }
+}
+
+impl<S> SubscribeOrdersService for S where S: ExcService<SubscribeOrders> {}

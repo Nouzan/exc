@@ -17,7 +17,7 @@ pub use services::{
         SubscribeTickersService, TradeBidAsk, TradeBidAskService, TradeBidAskServiceLayer,
     },
     trade::SubscribeTradesService,
-    trading::{CheckOrderService, TradingService},
+    trading::{CheckOrderService, SubscribeOrdersService, TradingService},
 };
 
 #[cfg(feature = "okx")]

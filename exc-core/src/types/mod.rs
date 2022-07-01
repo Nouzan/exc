@@ -24,3 +24,7 @@ pub use candle::{
     Candle, CandleStream, Period, PeriodKind, QueryCandles, QueryFirstCandles, QueryLastCandles,
 };
 pub use trade::{SubscribeTrades, Trade, TradeStream};
+pub use trading::{
+    CancelOrder, GetOrder, Order, OrderId, OrderKind, OrderState, OrderStatus, OrderStream, Place,
+    PlaceOrder, SubscribeOrders, TimeInForce,
+};

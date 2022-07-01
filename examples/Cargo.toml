@@ -51,6 +51,14 @@ path = "binance_trade_bid_ask.rs"
 name = "binance-ticker"
 path = "binance_ticker.rs"
 
+[[bin]]
+name = "binance-orders"
+path = "binance_orders.rs"
+
+[[bin]]
+name = "binance-trading"
+path = "binance_trading.rs"
+
 [dependencies]
 anyhow = "1"
 exc = { path = "../exc", features = ["http"] }
@@ -65,3 +73,5 @@ time = { version = "0.3", features = ["macros"] }
 console-subscriber = "0.1.5"
 rust_decimal = "1.24.0"
 rust_decimal_macros = "1.24.0"
+clap = { version = "3", features = ["derive", "env"] }
+serde_json = "1"

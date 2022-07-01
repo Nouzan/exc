@@ -66,12 +66,12 @@ impl WsEndpoint {
     pub(crate) fn private(&mut self, http: Http) -> &mut Self {
         self.target.host.private();
         self.target.key_provider = Some(http);
-        self.add_main_stream(Name::order_trade_update());
+        // self.add_main_stream(Name::order_trade_update());
         self
     }
 
     /// Add main stream.
-    pub(crate) fn add_main_stream(&mut self, name: Name) -> &mut Self {
+    pub(crate) fn _add_main_stream(&mut self, name: Name) -> &mut Self {
         self.main_stream.insert(name);
         self
     }

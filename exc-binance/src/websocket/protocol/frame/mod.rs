@@ -69,8 +69,8 @@ impl Name {
     }
 
     /// Order trade update.
-    pub fn order_trade_update() -> Self {
-        Self::new("orderTradeUpdate")
+    pub fn order_trade_update(inst: &str) -> Self {
+        Self::new("orderTradeUpdate").inst(inst)
     }
 }
 
