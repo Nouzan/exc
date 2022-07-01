@@ -69,6 +69,7 @@ tracing = "0.1.34"
 tracing-subscriber = { version = "0.3.3", features = ["env-filter"] }
 exc = { path = "../exc" }
 rust_decimal_macros = "1"
+clap = { version = "3", features = ["derive", "env"] }
 
 [package.metadata.docs.rs]
 all-features = true

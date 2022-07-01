@@ -5,7 +5,7 @@ pub mod place;
 pub mod order;
 
 use futures::{future::BoxFuture, stream::BoxStream};
-pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus};
+pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, TimeInForce};
 pub use place::Place;
 
 use crate::{ExchangeError, Request};
@@ -54,11 +54,11 @@ pub type OrderStream = BoxStream<'static, Result<Order, ExchangeError>>;
 
 /// Subscribe to order updates.
 #[derive(Debug, Clone)]
-pub struct SubscribeOrderUpdates {
+pub struct SubscribeOrders {
     /// Instrument.
     pub instrument: String,
 }
 
-impl Request for SubscribeOrderUpdates {
+impl Request for SubscribeOrders {
     type Response = OrderStream;
 }

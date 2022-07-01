@@ -39,6 +39,8 @@ pub enum OrderStatus {
     Pending,
     /// Finished.
     Finished,
+    /// Unknown.
+    Unknown,
 }
 
 /// Order State.

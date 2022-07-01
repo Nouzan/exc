@@ -164,7 +164,9 @@ impl Nameable for AccountEvent {
     fn to_name(&self) -> Name {
         match self {
             Self::ListenKeyExpired { .. } => Name::listen_key_expired(),
-            Self::OrderTradeUpdate { .. } => Name::order_trade_update(),
+            Self::OrderTradeUpdate { order, .. } => {
+                Name::order_trade_update(&order.symbol.to_lowercase())
+            }
         }
     }
 }
@@ -175,6 +177,22 @@ impl TryFrom<StreamFrame> for AccountEvent {
     fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
         if let StreamFrameKind::AccountEvent(e) = frame.data {
             Ok(e)
+        } else {
+            Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}")))
+        }
+    }
+}
+
+impl TryFrom<StreamFrame> for OrderUpdate {
+    type Error = WsError;
+
+    fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
+        if let StreamFrameKind::AccountEvent(e) = frame.data {
+            if let AccountEvent::OrderTradeUpdate { order, .. } = e {
+                Ok(order)
+            } else {
+                Err(WsError::UnexpectedFrame(anyhow::anyhow!("{e:?}")))
+            }
         } else {
             Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}")))
         }
