@@ -107,6 +107,7 @@ impl Adaptor<GetOrder> for HttpRequest {
                             id: OrderId::from(order.order_id),
                             target,
                             state,
+                            trade: None,
                         },
                     })
                 } else {

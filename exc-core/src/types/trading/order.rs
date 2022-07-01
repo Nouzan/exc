@@ -50,10 +50,6 @@ pub struct OrderState {
     pub filled: Decimal,
     /// Average cost.
     pub cost: Decimal,
-    /// Fee or bonus in base currency.
-    pub base_fee: Decimal,
-    /// Fee or bonus in quote currency.
-    pub quote_fee: Decimal,
     /// Status.
     pub status: OrderStatus,
     /// Fees.
@@ -65,8 +61,6 @@ impl Default for OrderState {
         Self {
             filled: Decimal::ZERO,
             cost: Decimal::ONE,
-            base_fee: Decimal::ZERO,
-            quote_fee: Decimal::ZERO,
             status: OrderStatus::Pending,
             fees: HashMap::default(),
         }
@@ -82,6 +76,8 @@ pub struct Order {
     pub target: Place,
     /// Current state.
     pub state: OrderState,
+    /// Trade.
+    pub trade: Option<OrderTrade>,
 }
 
 impl Order {
@@ -91,6 +87,7 @@ impl Order {
             id,
             target,
             state: OrderState::default(),
+            trade: None,
         }
     }
 
@@ -120,4 +117,17 @@ impl OrderId {
     pub fn as_str(&self) -> &str {
         self.inner.as_str()
     }
+}
+
+/// Order trade.
+#[derive(Debug, Clone)]
+pub struct OrderTrade {
+    /// Price.
+    pub price: Decimal,
+    /// Size.
+    pub size: Decimal,
+    /// Fee.
+    pub fee: Decimal,
+    /// Fee asset.
+    pub fee_asset: Option<String>,
 }

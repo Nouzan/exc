@@ -68,10 +68,26 @@ impl Adaptor<types::SubscribeOrders> for Request {
                     }
                     Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
                 };
-                // let mut fees = HashMap::default();
-                // if let Some(asset) = update.fee_asset {
-                //     fees.insert(asset, -update.fee);
-                // }
+                let trade_size = update.last_trade_size.abs();
+                let trade = if !trade_size.is_zero() {
+                    let mut trade = types::OrderTrade {
+                        price: update.last_trade_price,
+                        size: if matches!(update.side, OrderSide::Buy) {
+                            trade_size
+                        } else {
+                            -trade_size
+                        },
+                        fee: Decimal::ZERO,
+                        fee_asset: None,
+                    };
+                    if let Some(asset) = update.fee_asset {
+                        trade.fee = update.fee;
+                        trade.fee_asset = Some(asset);
+                    }
+                    Some(trade)
+                } else {
+                    None
+                };
                 Ok(types::OrderUpdate {
                     ts: super::from_timestamp(update.trade_ts)?,
                     order: types::Order {
@@ -84,11 +100,10 @@ impl Adaptor<types::SubscribeOrders> for Request {
                             } else {
                                 update.cost
                             },
-                            base_fee: Decimal::ZERO,
-                            quote_fee: Decimal::ZERO,
                             status,
                             fees: HashMap::default(),
                         },
+                        trade,
                     },
                 })
             })
@@ -147,11 +162,10 @@ impl TryFrom<Order> for types::Order {
                 } else {
                     order.avg_price
                 },
-                base_fee: Decimal::ZERO,
-                quote_fee: Decimal::ZERO,
                 status,
                 fees: HashMap::default(),
             },
+            trade: None,
         })
     }
 }

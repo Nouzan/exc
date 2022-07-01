@@ -5,7 +5,7 @@ pub mod place;
 pub mod order;
 
 use futures::{future::BoxFuture, stream::BoxStream};
-pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, TimeInForce};
+pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, OrderTrade, TimeInForce};
 pub use place::Place;
 use time::OffsetDateTime;
 
