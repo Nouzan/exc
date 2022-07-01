@@ -121,31 +121,39 @@ async fn main() -> anyhow::Result<()> {
                 println!("[{idx}] wait for {seconds}s");
                 tokio::time::sleep(Duration::from_secs(seconds)).await;
             }
-            Op::Check { name } => {
-                let update = exc.check(&inst, &OrderId::from(name)).await?;
-                println!("[{idx}] check: {update:#?}");
-            }
+            Op::Check { name } => match exc.check(&inst, &OrderId::from(name)).await {
+                Ok(update) => println!("[{idx}] check: {update:#?}"),
+                Err(err) => tracing::error!("[{idx}] check: {err}"),
+            },
             Op::Cancel { name } => {
-                let cancelled = exc.cancel(&inst, &OrderId::from(name)).await?;
-                println!("[{idx}] cancel: {cancelled:#?}");
+                match exc.cancel(&inst, &OrderId::from(name)).await {
+                    Ok(cancelled) => println!("[{idx}] cancel: {cancelled:#?}"),
+                    Err(err) => tracing::error!("[{idx}] cancel: {err}"),
+                };
             }
             Op::Market { name, size } => {
-                let placed = exc
-                    .place(&inst, &Place::with_size(size), Some(&name))
-                    .await?;
-                println!("[{idx}] market: {placed:#?}");
+                match exc.place(&inst, &Place::with_size(size), Some(&name)).await {
+                    Ok(placed) => println!("[{idx}] market: {placed:#?}"),
+                    Err(err) => tracing::error!("[{idx}] market: {err}"),
+                }
             }
             Op::Limit { name, price, size } => {
-                let placed = exc
+                match exc
                     .place(&inst, &Place::with_size(size).limit(price), Some(&name))
-                    .await?;
-                println!("[{idx}] limit: {placed:#?}");
+                    .await
+                {
+                    Ok(placed) => println!("[{idx}] limit: {placed:#?}"),
+                    Err(err) => tracing::error!("[{idx}] limit: {err}"),
+                }
             }
             Op::PostOnly { name, price, size } => {
-                let placed = exc
+                match exc
                     .place(&inst, &Place::with_size(size).post_only(price), Some(&name))
-                    .await?;
-                println!("[{idx}] post-only: {placed:#?}");
+                    .await
+                {
+                    Ok(placed) => println!("[{idx}] post-only: {placed:#?}"),
+                    Err(err) => tracing::error!("[{idx}] post-only: {err}"),
+                };
             }
         }
     }

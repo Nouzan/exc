@@ -181,18 +181,20 @@ impl Adaptor<types::PlaceOrder> for Request {
             OrderSide::Sell
         };
         let (order_type, price, tif) = match place.kind {
-            types::OrderKind::Market => (trading::OrderType::Market, None, TimeInForce::Gtc),
+            types::OrderKind::Market => (trading::OrderType::Market, None, None),
             types::OrderKind::Limit(price, tif) => {
                 let tif = match tif {
-                    types::TimeInForce::GoodTilCancelled => TimeInForce::Gtc,
-                    types::TimeInForce::FillOrKill => TimeInForce::Fok,
-                    types::TimeInForce::ImmediateOrCancel => TimeInForce::Ioc,
+                    types::TimeInForce::GoodTilCancelled => Some(TimeInForce::Gtc),
+                    types::TimeInForce::FillOrKill => Some(TimeInForce::Fok),
+                    types::TimeInForce::ImmediateOrCancel => Some(TimeInForce::Ioc),
                 };
                 (trading::OrderType::Limit, Some(price), tif)
             }
-            types::OrderKind::PostOnly(price) => {
-                (trading::OrderType::Limit, Some(price), TimeInForce::Gtx)
-            }
+            types::OrderKind::PostOnly(price) => (
+                trading::OrderType::Limit,
+                Some(price),
+                Some(TimeInForce::Gtx),
+            ),
         };
         Ok(Self::with_rest_payload(PlaceOrder {
             symbol: req.instrument.to_uppercase(),

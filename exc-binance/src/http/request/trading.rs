@@ -53,7 +53,8 @@ pub struct PlaceOrder {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub callback_rate: Option<Decimal>,
     /// Time-In-Force.
-    pub time_in_force: TimeInForce,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time_in_force: Option<TimeInForce>,
     /// Working type.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub working_type: Option<String>,

@@ -45,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
             close_position: None,
             activation_price: None,
             callback_rate: None,
-            time_in_force: TimeInForce::Gtc,
+            time_in_force: Some(TimeInForce::Gtc),
             working_type: None,
             price_protect: None,
             new_order_resp_type: None,
