@@ -140,3 +140,48 @@ impl Rest for CancelOrder {
         super::Payload::new(self.clone())
     }
 }
+
+/// Cancel order.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetOrder {
+    /// Symbol.
+    pub symbol: String,
+    /// Order Id.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order_id: Option<i64>,
+    /// Client Id.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub orig_client_order_id: Option<String>,
+}
+
+impl Rest for GetOrder {
+    fn method(&self, _endpoint: &RestEndpoint) -> Result<http::Method, RestError> {
+        Ok(http::Method::GET)
+    }
+
+    fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
+        match endpoint {
+            RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
+            _ => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
+                "{endpoint}"
+            ))),
+        }
+    }
+
+    fn need_apikey(&self) -> bool {
+        true
+    }
+
+    fn need_sign(&self) -> bool {
+        true
+    }
+
+    fn serialize(&self) -> Result<serde_json::Value, RestError> {
+        Ok(serde_json::to_value(self)?)
+    }
+
+    fn to_payload(&self) -> super::Payload {
+        super::Payload::new(self.clone())
+    }
+}

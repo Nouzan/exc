@@ -40,6 +40,12 @@ pub enum RestError {
     /// Sign error.
     #[error("sign error: {0}")]
     SignError(#[from] crate::types::key::SignError),
+    /// Utf-8 error.
+    #[error("utf-8 error: {0}")]
+    Utf8(#[from] std::str::Utf8Error),
+    /// Text response.
+    #[error("text response: {0}")]
+    Text(String),
 }
 
 impl RestError {

@@ -1,5 +1,6 @@
 use super::error::RestError;
 use anyhow::anyhow;
+use either::Either;
 use exc_core::ExchangeError;
 use http::StatusCode;
 use serde::{de::DeserializeOwned, Deserialize};
@@ -87,12 +88,19 @@ impl<T> RestResponse<T> {
     {
         let status = resp.status();
         tracing::trace!("http response status: {}", resp.status());
-        let value = hyper::body::to_bytes(resp.into_body())
+        let bytes = hyper::body::to_bytes(resp.into_body())
             .await
-            .map_err(RestError::from)
-            .and_then(|bytes| {
-                serde_json::from_slice::<serde_json::Value>(&bytes).map_err(RestError::from)
-            });
+            .map_err(RestError::from);
+        let value =
+            bytes.and_then(
+                |bytes| match serde_json::from_slice::<serde_json::Value>(&bytes) {
+                    Ok(value) => Ok(Either::Left(value)),
+                    Err(_) => match std::str::from_utf8(&bytes) {
+                        Ok(text) => Ok(Either::Right(text.to_string())),
+                        Err(err) => Err(err.into()),
+                    },
+                },
+            );
         match status {
             StatusCode::TOO_MANY_REQUESTS => Err(RestError::Exchange(ExchangeError::RateLimited(
                 anyhow!("too many requests"),
@@ -104,11 +112,23 @@ impl<T> RestResponse<T> {
                 Ok(msg) => ExchangeError::Unavailable(anyhow!("{msg}")),
                 Err(err) => ExchangeError::Unavailable(anyhow!("failed to read msg: {err}")),
             })),
+            StatusCode::FORBIDDEN => match value {
+                Ok(Either::Left(value)) => Err(RestError::Exchange(ExchangeError::Forbidden(
+                    anyhow!("{value}"),
+                ))),
+                Ok(Either::Right(_)) => Err(RestError::Exchange(ExchangeError::Forbidden(
+                    anyhow!("no msg"),
+                ))),
+                Err(err) => Err(RestError::Exchange(ExchangeError::Forbidden(anyhow!(
+                    "failed to parse msg: {err}"
+                )))),
+            },
             _ => match value {
-                Ok(value) => match serde_json::from_value::<T>(value) {
+                Ok(Either::Left(value)) => match serde_json::from_value::<T>(value) {
                     Ok(data) => Ok(Self { data }),
                     Err(err) => Err(err.into()),
                 },
+                Ok(Either::Right(text)) => Err(RestError::Text(text)),
                 Err(err) => Err(err),
             },
         }

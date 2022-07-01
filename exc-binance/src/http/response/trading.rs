@@ -15,9 +15,9 @@ pub struct Order {
     /// Client id.
     pub client_order_id: String,
     /// FIXME: what is this?
-    pub cum_qty: Decimal,
+    pub cum_qty: Option<Decimal>,
     /// FIXME: what is this?
-    pub cum_quote: Decimal,
+    pub cum_quote: Option<Decimal>,
     /// Filled size.
     pub executed_qty: Decimal,
     /// Order id.

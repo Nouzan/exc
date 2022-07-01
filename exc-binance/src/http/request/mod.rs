@@ -170,14 +170,22 @@ impl<T: Rest> RestRequest<T> {
         endpoint: &RestEndpoint,
         key: Option<&BinanceKey>,
     ) -> Result<Request<hyper::Body>, RestError> {
-        let uri = format!("{}{}", endpoint.host(), self.payload.to_path(endpoint)?);
+        let mut uri = format!("{}{}", endpoint.host(), self.payload.to_path(endpoint)?);
         let value = self.payload.serialize()?;
         let body = if self.payload.need_sign() {
             if let Some(key) = key.as_ref() {
                 let value = key.sign(value)?;
                 let s = serde_urlencoded::to_string(&value)?;
                 tracing::trace!("params: {s}");
-                hyper::Body::from(s)
+                match self.payload.method(endpoint)? {
+                    http::Method::GET => {
+                        // FIXME: this is too dirty.
+                        uri.push('?');
+                        uri.push_str(&s);
+                        hyper::Body::empty()
+                    }
+                    _ => hyper::Body::from(s),
+                }
             } else {
                 return Err(RestError::NeedApikey);
             }
