@@ -129,7 +129,7 @@ mod test {
             quantity: 1,
             price: 0.1,
         };
-        println!("raw={}", serde_qs::to_string(&params)?);
+        println!("raw={}", serde_urlencoded::to_string(&params)?);
         let signed = SigningParams::with_timestamp(params, 1499827319559).signed(&key)?;
         let target = serde_json::json!({
             "symbol": "LTCBTC",

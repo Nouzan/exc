@@ -16,9 +16,6 @@ pub enum RestError {
     /// Json errors.
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),
-    /// Query string errors.
-    #[error("qs: {0}")]
-    Qs(#[from] serde_qs::Error),
     /// Urlencoded.
     #[error("urlencoded: {0}")]
     Urlencoded(#[from] serde_urlencoded::ser::Error),
