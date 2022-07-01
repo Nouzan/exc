@@ -4,6 +4,8 @@ pub mod place;
 /// Order.
 pub mod order;
 
+use std::fmt;
+
 use futures::{future::BoxFuture, stream::BoxStream};
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, OrderTrade, TimeInForce};
 pub use place::Place;
@@ -23,7 +25,7 @@ pub struct PlaceOrder {
 }
 
 /// Place order response.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Placed {
     /// Order id.
     pub id: OrderId,
@@ -31,6 +33,16 @@ pub struct Placed {
     pub order: Option<Order>,
     /// Timestamp.
     pub ts: OffsetDateTime,
+}
+
+impl fmt::Debug for Placed {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Placed")
+            .field("ts", &self.ts.to_string())
+            .field("id", &self.id.as_str())
+            .field("order", &self.order)
+            .finish()
+    }
 }
 
 impl Request for PlaceOrder {
@@ -47,12 +59,21 @@ pub struct CancelOrder {
 }
 
 /// Cancel order response.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Cancelled {
     /// The placed order.
     pub order: Option<Order>,
     /// Timestamp.
     pub ts: OffsetDateTime,
+}
+
+impl fmt::Debug for Cancelled {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Cancelled")
+            .field("ts", &self.ts.to_string())
+            .field("order", &self.order)
+            .finish()
+    }
 }
 
 impl Request for CancelOrder {
@@ -69,12 +90,21 @@ pub struct GetOrder {
 }
 
 /// Order update.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct OrderUpdate {
     /// Timestamp.
     pub ts: OffsetDateTime,
     /// Order.
     pub order: Order,
+}
+
+impl fmt::Debug for OrderUpdate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OrderUpdate")
+            .field("ts", &self.ts.to_string())
+            .field("order", &self.order)
+            .finish()
+    }
 }
 
 impl Request for GetOrder {

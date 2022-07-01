@@ -3,10 +3,9 @@ use std::{io::Read, path::PathBuf, time::Duration};
 use clap::Parser;
 use exc::{
     types::{OrderId, Place},
-    CheckOrderService, IntoExc, SubscribeOrdersService, TradingService,
+    CheckOrderService, IntoExc, TradingService,
 };
 use exc_binance::Binance;
-use futures::StreamExt;
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
@@ -88,33 +87,33 @@ async fn main() -> anyhow::Result<()> {
         .connect()
         .into_exc();
 
-    let mut orders_provider = exc.clone();
-    let shared_inst = inst.clone();
-    tokio::spawn(async move {
-        let mut revision = 0;
-        loop {
-            revision += 1;
-            match orders_provider.subscribe_orders(&shared_inst).await {
-                Ok(mut orders) => {
-                    while let Some(t) = orders.next().await {
-                        match t {
-                            Ok(t) => {
-                                tracing::info!("[{revision}]{t:?}");
-                            }
-                            Err(err) => {
-                                tracing::error!("[{revision}]stream error: {err}");
-                                break;
-                            }
-                        }
-                    }
-                }
-                Err(err) => {
-                    tracing::error!("[{revision}]request error: {err}");
-                }
-            }
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
-    });
+    // let mut orders_provider = exc.clone();
+    // let shared_inst = inst.clone();
+    // tokio::spawn(async move {
+    //     let mut revision = 0;
+    //     loop {
+    //         revision += 1;
+    //         match orders_provider.subscribe_orders(&shared_inst).await {
+    //             Ok(mut orders) => {
+    //                 while let Some(t) = orders.next().await {
+    //                     match t {
+    //                         Ok(t) => {
+    //                             tracing::info!("{t:?}[{revision}]");
+    //                         }
+    //                         Err(err) => {
+    //                             tracing::error!("stream error: {err}[{revision}]");
+    //                             break;
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //             Err(err) => {
+    //                 tracing::error!("request error: {err}[{revision}]");
+    //             }
+    //         }
+    //         tokio::time::sleep(Duration::from_secs(1)).await;
+    //     }
+    // });
 
     for (idx, op) in execs.into_iter().enumerate() {
         match op {
@@ -124,29 +123,29 @@ async fn main() -> anyhow::Result<()> {
             }
             Op::Check { name } => {
                 let update = exc.check(&inst, &OrderId::from(name)).await?;
-                println!("[{idx}] check: {update:?}");
+                println!("[{idx}] check: {update:#?}");
             }
             Op::Cancel { name } => {
                 let cancelled = exc.cancel(&inst, &OrderId::from(name)).await?;
-                println!("[{idx}] cancel: {cancelled:?}");
+                println!("[{idx}] cancel: {cancelled:#?}");
             }
             Op::Market { name, size } => {
                 let placed = exc
                     .place(&inst, &Place::with_size(size), Some(&name))
                     .await?;
-                println!("[{idx}] market: {placed:?}");
+                println!("[{idx}] market: {placed:#?}");
             }
             Op::Limit { name, price, size } => {
                 let placed = exc
                     .place(&inst, &Place::with_size(size).limit(price), Some(&name))
                     .await?;
-                println!("[{idx}] limit: {placed:?}");
+                println!("[{idx}] limit: {placed:#?}");
             }
             Op::PostOnly { name, price, size } => {
                 let placed = exc
                     .place(&inst, &Place::with_size(size).post_only(price), Some(&name))
                     .await?;
-                println!("[{idx}] post-only: {placed:?}");
+                println!("[{idx}] post-only: {placed:#?}");
             }
         }
     }
