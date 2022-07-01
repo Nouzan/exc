@@ -13,9 +13,13 @@ pub mod candle;
 /// Listen key.
 pub mod listen_key;
 
-/// error message.
+/// Error message.
 pub mod error_message;
 
+/// Trading.
+pub mod trading;
+
+use self::trading::Order;
 pub use self::{
     candle::Candle, error_message::ErrorMessage, instrument::ExchangeInfo, listen_key::ListenKey,
 };
@@ -38,6 +42,8 @@ pub enum Data {
     ListenKey(ListenKey),
     /// Error Message.
     Error(ErrorMessage),
+    /// Order.
+    Order(Order),
     /// Unknwon.
     Unknwon(Unknown),
 }

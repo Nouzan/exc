@@ -2,7 +2,7 @@ use rust_decimal::Decimal;
 use serde::Deserialize;
 
 use crate::{
-    types::trading::{OrderSide, PositionSide, TimeInForce},
+    types::trading::{OrderSide, PositionSide, Status, TimeInForce},
     websocket::error::WsError,
 };
 
@@ -63,26 +63,6 @@ pub enum UpdateKind {
     Expired,
     /// Trade.
     Trade,
-}
-
-/// Status.
-#[derive(Debug, Clone, Copy, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Status {
-    /// New.
-    New,
-    /// Parttially filled.
-    PartiallyFilled,
-    /// Filled.
-    Filled,
-    /// Cancelled.
-    Canceled,
-    /// Expired.
-    Expired,
-    /// New insurance.
-    NewInsurance,
-    /// New ADL.
-    NewAdl,
 }
 
 /// Order update.

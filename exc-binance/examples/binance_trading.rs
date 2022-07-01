@@ -2,10 +2,10 @@ use std::time::Duration;
 
 use exc_binance::{
     http::{
-        request::trading::{OrderType, PlaceOrder},
-        response::Unknown,
+        request::trading::{CancelOrder, PlaceOrder},
+        response::trading::Order,
     },
-    types::trading::{OrderSide, PositionSide, TimeInForce},
+    types::trading::{OrderSide, OrderType, PositionSide, TimeInForce},
     Binance, Request,
 };
 use rust_decimal_macros::dec;
@@ -51,7 +51,19 @@ async fn main() -> anyhow::Result<()> {
             new_order_resp_type: None,
         }))
         .await?
-        .into_response::<Unknown>()?;
-    tracing::info!("{res}");
+        .into_response::<Order>()?;
+    tracing::info!("{res:#?}");
+    let id = res.order_id;
+    let symbol = res.symbol;
+    api.ready().await?;
+    let res = api
+        .call(Request::with_rest_payload(CancelOrder {
+            symbol,
+            order_id: Some(id),
+            orig_client_order_id: None,
+        }))
+        .await?
+        .into_response::<Order>()?;
+    tracing::info!("{res:#?}");
     Ok(())
 }

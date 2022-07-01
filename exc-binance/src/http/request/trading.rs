@@ -1,29 +1,9 @@
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use crate::types::trading::{OrderSide, PositionSide, TimeInForce};
+use crate::types::trading::{OrderSide, OrderType, PositionSide, TimeInForce};
 
 use super::{Rest, RestEndpoint, RestError};
-
-/// Order type.
-#[derive(Debug, Clone, Copy, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum OrderType {
-    /// Market.
-    Market,
-    /// Limit.
-    Limit,
-    /// Stop.
-    Stop,
-    /// Take-Profit.
-    TakeProfit,
-    /// Stop-Market.
-    StopMarket,
-    /// Take-Profit-Market.
-    TakeProfitMarket,
-    /// Trailing-Stop-Market.
-    TrailingStopMarket,
-}
 
 /// Responsee type.
 #[derive(Debug, Clone, Copy, Serialize)]
