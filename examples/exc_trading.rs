@@ -3,9 +3,10 @@ use std::{io::Read, path::PathBuf, time::Duration};
 use clap::Parser;
 use exc::{
     types::{OrderId, Place},
-    CheckOrderService, IntoExc, TradingService,
+    CheckOrderService, IntoExc, SubscribeOrdersService, TradingService,
 };
 use exc_binance::Binance;
+use futures::StreamExt;
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
@@ -87,33 +88,33 @@ async fn main() -> anyhow::Result<()> {
         .connect()
         .into_exc();
 
-    // let mut orders_provider = exc.clone();
-    // let shared_inst = inst.clone();
-    // tokio::spawn(async move {
-    //     let mut revision = 0;
-    //     loop {
-    //         revision += 1;
-    //         match orders_provider.subscribe_orders(&shared_inst).await {
-    //             Ok(mut orders) => {
-    //                 while let Some(t) = orders.next().await {
-    //                     match t {
-    //                         Ok(t) => {
-    //                             tracing::info!("{t:?}[{revision}]");
-    //                         }
-    //                         Err(err) => {
-    //                             tracing::error!("stream error: {err}[{revision}]");
-    //                             break;
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //             Err(err) => {
-    //                 tracing::error!("request error: {err}[{revision}]");
-    //             }
-    //         }
-    //         tokio::time::sleep(Duration::from_secs(1)).await;
-    //     }
-    // });
+    let mut orders_provider = exc.clone();
+    let shared_inst = inst.clone();
+    tokio::spawn(async move {
+        let mut revision = 0;
+        loop {
+            revision += 1;
+            match orders_provider.subscribe_orders(&shared_inst).await {
+                Ok(mut orders) => {
+                    while let Some(t) = orders.next().await {
+                        match t {
+                            Ok(t) => {
+                                println!("[*] watch: {t:#?}");
+                            }
+                            Err(err) => {
+                                tracing::error!("stream error: {err}[{revision}]");
+                                break;
+                            }
+                        }
+                    }
+                }
+                Err(err) => {
+                    tracing::error!("request error: {err}[{revision}]");
+                }
+            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+    });
 
     for (idx, op) in execs.into_iter().enumerate() {
         match op {
