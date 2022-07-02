@@ -1,3 +1,4 @@
+use exc_core::ExchangeError;
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
@@ -65,6 +66,12 @@ impl TryFrom<Data> for Order {
     fn try_from(value: Data) -> Result<Self, Self::Error> {
         match value {
             Data::Order(order) => Ok(order),
+            Data::Error(msg) => match msg.code {
+                -2013 => Err(RestError::Exchange(ExchangeError::OrderNotFound)),
+                err => Err(RestError::Exchange(ExchangeError::Api(anyhow::anyhow!(
+                    "{err:?}"
+                )))),
+            },
             _ => Err(RestError::UnexpectedResponseType(anyhow::anyhow!(
                 "{value:?}"
             ))),
