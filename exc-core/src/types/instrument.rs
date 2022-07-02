@@ -22,7 +22,7 @@ pub enum InstrumentMetaError<E> {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Display)]
 #[display(bound = "Num: std::fmt::Display")]
 #[display(
-    fmt = "name={name} r={is_reversed} unit={unit} pt={price_tick} st={size_tick} min={min_size}"
+    fmt = "name={name} r={is_reversed} unit={unit} pt={price_tick} st={size_tick} ms={min_size} mv={min_value}"
 )]
 pub struct InstrumentMeta<Num> {
     /// Name.
