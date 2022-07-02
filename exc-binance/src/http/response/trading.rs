@@ -68,8 +68,8 @@ impl TryFrom<Data> for Order {
             Data::Order(order) => Ok(order),
             Data::Error(msg) => match msg.code {
                 -2013 => Err(RestError::Exchange(ExchangeError::OrderNotFound)),
-                err => Err(RestError::Exchange(ExchangeError::Api(anyhow::anyhow!(
-                    "{err:?}"
+                _ => Err(RestError::Exchange(ExchangeError::Api(anyhow::anyhow!(
+                    "{msg:?}"
                 )))),
             },
             _ => Err(RestError::UnexpectedResponseType(anyhow::anyhow!(
