@@ -24,6 +24,7 @@ pub enum InstrumentMetaError<E> {
 #[display(
     fmt = "name={name} r={is_reversed} unit={unit} pt={price_tick} st={size_tick} ms={min_size} mv={min_value}"
 )]
+#[serde(bound = "Num: num_traits::Zero + Serialize + for<'a> Deserialize<'a>")]
 pub struct InstrumentMeta<Num> {
     /// Name.
     pub name: String,
@@ -38,6 +39,7 @@ pub struct InstrumentMeta<Num> {
     /// Min trade size.
     pub min_size: Num,
     /// Min value.
+    #[serde(default = "num_traits::Zero::zero")]
     pub min_value: Num,
 }
 
