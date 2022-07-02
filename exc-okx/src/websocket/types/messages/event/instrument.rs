@@ -296,6 +296,7 @@ impl From<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
             price_tick,
             size_tick,
             min_size,
+            min_value: Decimal::ZERO,
         }
     }
 }

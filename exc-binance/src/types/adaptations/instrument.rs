@@ -36,6 +36,7 @@ impl Adaptor<FetchInstruments> for Request {
             let mut price_tick = None;
             let mut size_tick = None;
             let mut min_size = None;
+            let mut min_value = None;
             for filter in symbol.filters {
                 if let Filter::Symbol(filter) = filter {
                     match filter {
@@ -48,6 +49,9 @@ impl Adaptor<FetchInstruments> for Request {
                             min_size = Some(min_qty.normalize());
                             size_tick = Some(step_size.normalize());
                         }
+                        SymbolFilter::MinNotional { notional } => {
+                            min_value = Some(notional);
+                        }
                         _ => {}
                     }
                 }
@@ -59,6 +63,7 @@ impl Adaptor<FetchInstruments> for Request {
                 price_tick: price_tick?,
                 size_tick: size_tick?,
                 min_size: min_size?,
+                min_value: min_value?,
             }))
         }))
         .boxed())

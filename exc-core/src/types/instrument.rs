@@ -37,6 +37,8 @@ pub struct InstrumentMeta<Num> {
     pub size_tick: Num,
     /// Min trade size.
     pub min_size: Num,
+    /// Min value.
+    pub min_value: Num,
 }
 
 impl<Num: num_traits::Num> InstrumentMeta<Num> {
@@ -75,6 +77,7 @@ impl<Num: num_traits::Num> InstrumentMeta<Num> {
             price_tick,
             size_tick,
             min_size,
+            min_value: Num::zero(),
         })
     }
 }
