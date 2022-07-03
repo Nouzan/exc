@@ -10,11 +10,14 @@ use crate::{
     websocket::{endpoint::WsEndpoint, BinanceWebsocketApi},
 };
 
+const CAP: usize = 512;
+
 /// Binance endpoint.
 pub struct Endpoint {
     pub(crate) key: Option<BinanceKey>,
     pub(crate) http: (RestEndpoint, HttpEndpoint),
     pub(crate) ws: WsEndpoint,
+    buffer: usize,
 }
 
 impl Endpoint {
@@ -24,6 +27,7 @@ impl Endpoint {
             key: None,
             http: (RestEndpoint::UsdMarginFutures, HttpEndpoint::default()),
             ws: BinanceWebsocketApi::usd_margin_futures(),
+            buffer: CAP,
         }
     }
 
@@ -57,6 +61,12 @@ impl Endpoint {
         self
     }
 
+    /// Set buffer capacity.
+    pub fn buffer(&mut self, capacity: usize) -> &mut Self {
+        self.buffer = capacity;
+        self
+    }
+
     /// Connect to binance service.
     pub fn connect(&self) -> Binance {
         let mut layer = BinanceRestApiLayer::new(self.http.0);
@@ -75,7 +85,7 @@ impl Endpoint {
         let mut svcs = ReadyCache::default();
         svcs.push(HTTP_KEY, Either::A(http));
         svcs.push(WS_KEY, Either::B(ws));
-        let inner = Buffer::new(BinanceInner { svcs }, 256);
+        let inner = Buffer::new(BinanceInner { svcs }, self.buffer);
         Binance { inner }
     }
 }
