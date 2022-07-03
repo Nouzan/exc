@@ -15,6 +15,8 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
+    let inst = std::env::var("INST")?;
+
     let mut binance = Binance::usd_margin_futures()
         .connect()
         .into_exc()
@@ -23,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
     let mut revision = 0;
     loop {
         revision += 1;
-        match binance.subscribe_tickers("btcbusd").await {
+        match binance.subscribe_tickers(&inst).await {
             Ok(mut tickers) => {
                 while let Some(t) = tickers.next().await {
                     match t {
