@@ -39,7 +39,18 @@ where
 {
     /// Convert into a [`SubscribeTickersService`].
     fn into_subscribe_tickers(self) -> TradeBidAsk<Self> {
-        TradeBidAsk { svc: self }
+        TradeBidAsk {
+            svc: self,
+            ignore_bid_ask_ts: true,
+        }
+    }
+
+    /// Convert into a [`SubscribeTickersService`].
+    fn into_subscribe_tickers_accpet_bid_ask_ts(self) -> TradeBidAsk<Self> {
+        TradeBidAsk {
+            svc: self,
+            ignore_bid_ask_ts: false,
+        }
     }
 }
 
@@ -54,18 +65,40 @@ where
 }
 
 /// Trade-Bid-Ask service layer.
-pub struct TradeBidAskServiceLayer;
+pub struct TradeBidAskServiceLayer {
+    ignore_bid_ask_ts: bool,
+}
+
+impl Default for TradeBidAskServiceLayer {
+    fn default() -> Self {
+        Self {
+            ignore_bid_ask_ts: true,
+        }
+    }
+}
+
+impl TradeBidAskServiceLayer {
+    /// Accept bid/ask ts.
+    pub fn accept_bid_ask_ts(&mut self) -> &mut Self {
+        self.ignore_bid_ask_ts = false;
+        self
+    }
+}
 
 impl<S> Layer<S> for TradeBidAsk<S> {
     type Service = TradeBidAsk<S>;
     fn layer(&self, inner: S) -> Self::Service {
-        TradeBidAsk { svc: inner }
+        TradeBidAsk {
+            svc: inner,
+            ignore_bid_ask_ts: self.ignore_bid_ask_ts,
+        }
     }
 }
 
 /// Trade-Bid-Ask service.
 #[derive(Debug, Clone, Copy)]
 pub struct TradeBidAsk<S> {
+    ignore_bid_ask_ts: bool,
     svc: S,
 }
 
@@ -96,6 +129,7 @@ where
             },
         );
         let mut svc = self.svc.clone();
+        let ignore_bid_ask_ts = self.ignore_bid_ask_ts;
         async move {
             let trades = trade.await?.map_ok(Either::Left);
             let bid_asks = svc
@@ -126,7 +160,9 @@ where
                             trade_init = true;
                         },
                         Either::Right(bid_ask) => {
-                            ticker.ts = bid_ask.ts;
+                            if !ignore_bid_ask_ts {
+                                ticker.ts = bid_ask.ts;
+                            }
                             ticker.size = Decimal::ZERO;
                             ticker.bid = bid_ask.bid.map(|b| b.0);
                             ticker.ask = bid_ask.ask.map(|a| a.0);
