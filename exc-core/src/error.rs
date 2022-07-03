@@ -33,7 +33,7 @@ pub enum ExchangeError {
     /// Rate limited.
     #[error("rate limited: {0}")]
     RateLimited(anyhow::Error),
-    /// Key error.
+    /// API Key error.
     #[error("key error: {0}")]
     KeyError(anyhow::Error),
     /// Order not found.
