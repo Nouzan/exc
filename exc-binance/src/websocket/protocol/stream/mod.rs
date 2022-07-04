@@ -78,14 +78,7 @@ where
 
 #[derive(Default)]
 pub(super) struct Shared {
-    waker: AtomicWaker,
-}
-
-impl Shared {
-    pub(super) fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), WsError>> {
-        self.waker.register(cx.waker());
-        Poll::Ready(Ok(()))
-    }
+    pub(super) waker: AtomicWaker,
 }
 
 #[derive(Debug, Clone, Copy)]

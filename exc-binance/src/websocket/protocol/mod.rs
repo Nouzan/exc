@@ -160,7 +160,9 @@ impl WsClient {
             default_stream_timeout,
             refresh,
         );
-        let svc = Multiplex::with_error_handler(protocol, |err| {
+        let shared = state.clone();
+        let svc = Multiplex::with_error_handler(protocol, move |err| {
+            shared.waker.wake();
             tracing::error!("protocol error: {err}");
         });
         Ok(Self { svc, state })
@@ -173,9 +175,7 @@ impl Service<WsRequest> for WsClient {
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        if let Err(err) = futures::ready!(self.state.poll_ready(cx)) {
-            return Poll::Ready(Err(err));
-        }
+        self.state.waker.register(cx.waker());
         self.svc.poll_ready(cx)
     }
 
