@@ -47,10 +47,17 @@ pub enum ExchangeError {
 impl ExchangeError {
     /// Is temporary.
     pub fn is_temporary(&self) -> bool {
-        matches!(
-            self,
-            Self::RateLimited(_) | Self::Unavailable(_) | Self::Http(_)
-        )
+        #[cfg(feature = "http")]
+        {
+            matches!(
+                self,
+                Self::RateLimited(_) | Self::Unavailable(_) | Self::Http(_)
+            )
+        }
+        #[cfg(not(feature = "http"))]
+        {
+            matches!(self, Self::RateLimited(_) | Self::Unavailable(_))
+        }
     }
 
     /// Flatten.

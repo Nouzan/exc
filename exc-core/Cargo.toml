@@ -10,6 +10,7 @@ repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower"]
 
 [features]
+default = ["websocket", "http", "retry"]
 websocket = [
     "tokio-tungstenite",
     "dep:http",
