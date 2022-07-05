@@ -27,10 +27,20 @@ impl From<Error> for ExchangeError {
             Error::Unknown(err) => Self::Other(err),
             Error::WrongResponseType => Self::Other(anyhow!("wrong response type")),
             Error::Rest(err) => match err {
+                RestError::Http(_) | RestError::Hyper(_) => Self::Unavailable(err.into()),
                 RestError::Exchange(err) => err,
                 _ => Self::Other(err.into()),
             },
-            Error::Ws(err) => Self::Other(err.into()),
+            Error::Ws(err) => match &err {
+                WsError::ListenKeyExpired(_)
+                | WsError::StreamSubscribed(_)
+                | WsError::TokioTower(_)
+                | WsError::TransportIsBoken
+                | WsError::TransportTimeout
+                | WsError::UnknownConnection(_)
+                | WsError::Websocket(_) => Self::Unavailable(err.into()),
+                _ => Self::Other(err.into()),
+            },
         }
     }
 }
