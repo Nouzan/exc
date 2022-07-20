@@ -45,7 +45,7 @@ enum Op {
         name: String,
     },
     Wait {
-        seconds: u64,
+        millis: u64,
     },
 }
 
@@ -118,9 +118,9 @@ async fn main() -> anyhow::Result<()> {
 
     for (idx, op) in execs.into_iter().enumerate() {
         match op {
-            Op::Wait { seconds } => {
-                println!("[{idx}] wait for {seconds}s");
-                tokio::time::sleep(Duration::from_secs(seconds)).await;
+            Op::Wait { millis } => {
+                println!("[{idx}] wait for {millis}ms");
+                tokio::time::sleep(Duration::from_millis(millis)).await;
             }
             Op::Check { name } => match exc.check(&inst, &OrderId::from(name)).await {
                 Ok(update) => println!("[{idx}] check: {update:#?}"),
