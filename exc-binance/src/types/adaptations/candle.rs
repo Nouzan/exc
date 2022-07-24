@@ -69,7 +69,7 @@ impl TryFrom<types::Period> for request::Interval {
 impl Adaptor<types::QueryFirstCandles> for Request {
     fn from_request(req: types::QueryFirstCandles) -> Result<Self, ExchangeError> {
         Ok(Request::with_rest_payload(request::QueryCandles {
-            symbol: req.query().inst().to_string(),
+            symbol: req.query().inst().to_uppercase(),
             interval: req.query().period().try_into()?,
             start_time: super::start_bound_to_timestamp(req.query().start_bound())?,
             end_time: super::end_bound_to_timestamp(req.query().end_bound())?,

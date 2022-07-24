@@ -36,7 +36,7 @@ impl Endpoint {
         Self {
             key: None,
             http: (RestEndpoint::Spot, HttpEndpoint::default()),
-            ws: BinanceWebsocketApi::usd_margin_futures(), // FIXME: use spot endpoint.
+            ws: BinanceWebsocketApi::spot(),
             buffer: CAP,
         }
     }

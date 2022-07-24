@@ -15,14 +15,21 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut binance = Binance::usd_margin_futures()
+    let endpoint = std::env::var("ENDPOINT").unwrap_or_else(|_| String::from("binance-u"));
+    let endpoint = match endpoint.as_str() {
+        "binance-u" => Binance::usd_margin_futures(),
+        "binance-s" => Binance::spot(),
+        _ => anyhow::bail!("unsupported"),
+    };
+
+    let mut binance = endpoint
         .connect()
         .into_exc()
         .into_rate_limited(200, Duration::from_secs(60))
         .into_fetch_candles_forward(1000);
     let mut stream = binance
         .fetch_candles(
-            "btcbusd",
+            "btcusdt",
             Period::minutes(UtcOffset::UTC, 1),
             datetime!(2020-06-27 00:00:00 +08:00)..,
         )

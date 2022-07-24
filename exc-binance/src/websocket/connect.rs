@@ -27,6 +27,8 @@ pub(crate) type Http = BinanceRestApi<HttpsChannel>;
 pub enum BinanceWsHost {
     UsdMarginFutures,
     UsdMarginFuturesPrivate,
+    Spot,
+    SpotPrivate,
 }
 
 impl BinanceWsHost {
@@ -34,12 +36,14 @@ impl BinanceWsHost {
         match self {
             Self::UsdMarginFutures => "wss://fstream.binance.com",
             Self::UsdMarginFuturesPrivate => "wss://fstream-auth.binance.com",
+            Self::Spot | Self::SpotPrivate => "wss://stream.binance.com:9443",
         }
     }
 
     pub(crate) fn private(&mut self) {
         match *self {
             Self::UsdMarginFutures => *self = Self::UsdMarginFuturesPrivate,
+            Self::Spot => *self = Self::SpotPrivate,
             _ => {}
         }
     }

@@ -155,7 +155,10 @@ pub(crate) enum SymbolFilter {
         limit: u64,
     },
     #[serde(rename = "MIN_NOTIONAL")]
-    MinNotional { notional: Decimal },
+    MinNotional {
+        #[serde(alias = "minNotional")]
+        notional: Decimal,
+    },
     #[serde(rename = "PERCENT_PRICE")]
     PercentPrice {
         #[serde(rename = "multiplierUp")]

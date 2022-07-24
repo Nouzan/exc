@@ -97,6 +97,7 @@ impl Adaptor<FetchInstruments> for Request {
                             }
                         }
                     }
+                    tracing::debug!("{price_tick:?} {size_tick:?} {min_size:?} {min_value:?}");
                     Some(Ok(InstrumentMeta {
                         name,
                         is_reversed,

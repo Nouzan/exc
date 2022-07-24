@@ -12,7 +12,14 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut binance = Binance::usd_margin_futures().connect().into_exc();
+    let endpoint = std::env::var("ENDPOINT").unwrap_or_else(|_| String::from("binance-u"));
+    let endpoint = match endpoint.as_str() {
+        "binance-u" => Binance::usd_margin_futures(),
+        "binance-s" => Binance::spot(),
+        _ => anyhow::bail!("unsupported"),
+    };
+
+    let mut binance = endpoint.connect().into_exc();
     let mut stream = binance.fetch_instruments("").await?;
     while let Some(meta) = stream.next().await {
         let meta = meta?;
