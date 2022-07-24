@@ -88,7 +88,7 @@ impl Rest for PlaceOrder {
         true
     }
 
-    fn serialize(&self) -> Result<serde_json::Value, RestError> {
+    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
         Ok(serde_json::to_value(self)?)
     }
 
@@ -133,7 +133,7 @@ impl Rest for CancelOrder {
         true
     }
 
-    fn serialize(&self) -> Result<serde_json::Value, RestError> {
+    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
         Ok(serde_json::to_value(self)?)
     }
 
@@ -178,7 +178,7 @@ impl Rest for GetOrder {
         true
     }
 
-    fn serialize(&self) -> Result<serde_json::Value, RestError> {
+    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
         Ok(serde_json::to_value(self)?)
     }
 
