@@ -21,8 +21,12 @@ pub mod error_message;
 pub mod trading;
 
 use self::trading::Order;
+
 pub use self::{
-    candle::Candle, error_message::ErrorMessage, instrument::ExchangeInfo, listen_key::ListenKey,
+    candle::Candle,
+    error_message::ErrorMessage,
+    instrument::{ExchangeInfo, SpotExchangeInfo, UFExchangeInfo},
+    listen_key::ListenKey,
 };
 
 /// Candles.

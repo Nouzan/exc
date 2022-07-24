@@ -117,6 +117,11 @@ impl Binance {
         Endpoint::usd_margin_futures()
     }
 
+    /// Spot endpoint.
+    pub fn spot() -> Endpoint {
+        Endpoint::spot()
+    }
+
     // /// Convert into an exchange.
     // pub fn into_exchange(self) -> Exchange<Self, Request> {
     //     ServiceBuilder::default()
