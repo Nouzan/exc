@@ -74,9 +74,7 @@ impl Rest for PlaceOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            _ => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "{endpoint}"
-            ))),
+            _ => Ok(format!("/api/v3/order")),
         }
     }
 
@@ -119,9 +117,7 @@ impl Rest for CancelOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            _ => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "{endpoint}"
-            ))),
+            _ => Ok(format!("/api/v3/order")),
         }
     }
 
@@ -164,9 +160,7 @@ impl Rest for GetOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            _ => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "{endpoint}"
-            ))),
+            _ => Ok(format!("/api/v3/order")),
         }
     }
 
