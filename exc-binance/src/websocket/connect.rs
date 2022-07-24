@@ -120,10 +120,13 @@ impl BinanceWsTarget {
                 .oneshot(RestRequest::with_payload(CurrentListenKey))
                 .await?
                 .into_response::<ListenKey>()?;
+            tracing::debug!("got listen key");
             uri.push_str("/");
             uri.push_str(listen_key.as_str());
-            uri.push_str("&listenKey=");
-            uri.push_str(listen_key.as_str());
+            if matches!(self.host, BinanceWsHost::UsdMarginFuturesPrivate) {
+                uri.push_str("&listenKey=");
+                uri.push_str(listen_key.as_str());
+            }
             worker = Some(Self::fresh_key_worker(
                 provider, listen_key, retry, interval,
             ));
