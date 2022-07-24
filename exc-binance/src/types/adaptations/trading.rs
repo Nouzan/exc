@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use either::Either;
 use exc_core::{types, Adaptor, ExchangeError};
 use futures::{FutureExt, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
@@ -13,9 +14,11 @@ use crate::{
         trading::{self, OrderSide, PositionSide, Status, TimeInForce},
         Name,
     },
-    websocket::protocol::frame::account::{OrderType, OrderUpdate},
+    websocket::protocol::frame::account::{ExecutionReport, OrderType, OrderUpdate},
     Request,
 };
+
+type OrderUpdateKind = Either<OrderUpdate, ExecutionReport>;
 
 impl Adaptor<types::SubscribeOrders> for Request {
     fn from_request(req: types::SubscribeOrders) -> Result<Self, ExchangeError> {
@@ -23,89 +26,176 @@ impl Adaptor<types::SubscribeOrders> for Request {
     }
 
     fn into_response(resp: Self::Response) -> Result<types::OrderStream, ExchangeError> {
-        let stream = resp.into_stream::<OrderUpdate>()?;
+        let stream = resp.into_stream::<OrderUpdateKind>()?;
         Ok(stream
             .map_err(ExchangeError::from)
             .and_then(|update| async move {
-                let kind = match update.order_type {
-                    OrderType::Limit => match update.time_in_force {
-                        TimeInForce::Gtc => types::OrderKind::Limit(
-                            update.price,
-                            types::TimeInForce::GoodTilCancelled,
-                        ),
-                        TimeInForce::Fok => {
-                            types::OrderKind::Limit(update.price, types::TimeInForce::FillOrKill)
+                match update {
+                    Either::Left(update) => {
+                        let kind = match update.order_type {
+                            OrderType::Limit => match update.time_in_force {
+                                TimeInForce::Gtc => types::OrderKind::Limit(
+                                    update.price,
+                                    types::TimeInForce::GoodTilCancelled,
+                                ),
+                                TimeInForce::Fok => types::OrderKind::Limit(
+                                    update.price,
+                                    types::TimeInForce::FillOrKill,
+                                ),
+                                TimeInForce::Ioc => types::OrderKind::Limit(
+                                    update.price,
+                                    types::TimeInForce::ImmediateOrCancel,
+                                ),
+                                TimeInForce::Gtx => types::OrderKind::PostOnly(update.price),
+                            },
+                            OrderType::Market => types::OrderKind::Market,
+                            other => {
+                                return Err(ExchangeError::Other(anyhow!(
+                                    "unsupported order type: {other:?}"
+                                )));
+                            }
+                        };
+                        let mut filled = update.filled_size.abs();
+                        let mut size = update.size.abs();
+                        match update.side {
+                            OrderSide::Buy => {
+                                filled.set_sign_positive(true);
+                                size.set_sign_positive(true)
+                            }
+                            OrderSide::Sell => {
+                                filled.set_sign_positive(false);
+                                size.set_sign_positive(false)
+                            }
                         }
-                        TimeInForce::Ioc => types::OrderKind::Limit(
-                            update.price,
-                            types::TimeInForce::ImmediateOrCancel,
-                        ),
-                        TimeInForce::Gtx => types::OrderKind::PostOnly(update.price),
-                    },
-                    OrderType::Market => types::OrderKind::Market,
-                    other => {
-                        return Err(ExchangeError::Other(anyhow!(
-                            "unsupported order type: {other:?}"
-                        )));
+                        let status = match update.status {
+                            Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
+                            Status::Canceled | Status::Expired | Status::Filled => {
+                                types::OrderStatus::Finished
+                            }
+                            Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
+                        };
+                        let trade_size = update.last_trade_size.abs();
+                        let trade = if !trade_size.is_zero() {
+                            let mut trade = types::OrderTrade {
+                                price: update.last_trade_price,
+                                size: if matches!(update.side, OrderSide::Buy) {
+                                    trade_size
+                                } else {
+                                    -trade_size
+                                },
+                                fee: Decimal::ZERO,
+                                fee_asset: None,
+                            };
+                            if let Some(asset) = update.fee_asset {
+                                trade.fee = update.fee;
+                                trade.fee_asset = Some(asset);
+                            }
+                            Some(trade)
+                        } else {
+                            None
+                        };
+                        Ok(types::OrderUpdate {
+                            ts: super::from_timestamp(update.trade_ts)?,
+                            order: types::Order {
+                                id: types::OrderId::from(update.client_id),
+                                target: types::Place { size, kind },
+                                state: types::OrderState {
+                                    filled,
+                                    cost: if filled.is_zero() {
+                                        Decimal::ONE
+                                    } else {
+                                        update.cost
+                                    },
+                                    status,
+                                    fees: HashMap::default(),
+                                },
+                                trade,
+                            },
+                        })
                     }
-                };
-                let mut filled = update.filled_size.abs();
-                let mut size = update.size.abs();
-                match update.side {
-                    OrderSide::Buy => {
-                        filled.set_sign_positive(true);
-                        size.set_sign_positive(true)
-                    }
-                    OrderSide::Sell => {
-                        filled.set_sign_positive(false);
-                        size.set_sign_positive(false)
+                    Either::Right(update) => {
+                        let kind = match update.order_type {
+                            OrderType::Limit => match update.time_in_force {
+                                TimeInForce::Gtc => types::OrderKind::Limit(
+                                    update.price,
+                                    types::TimeInForce::GoodTilCancelled,
+                                ),
+                                TimeInForce::Fok => types::OrderKind::Limit(
+                                    update.price,
+                                    types::TimeInForce::FillOrKill,
+                                ),
+                                TimeInForce::Ioc => types::OrderKind::Limit(
+                                    update.price,
+                                    types::TimeInForce::ImmediateOrCancel,
+                                ),
+                                TimeInForce::Gtx => types::OrderKind::PostOnly(update.price),
+                            },
+                            OrderType::Market => types::OrderKind::Market,
+                            other => {
+                                return Err(ExchangeError::Other(anyhow!(
+                                    "unsupported order type: {other:?}"
+                                )));
+                            }
+                        };
+                        let mut filled = update.filled_size.abs();
+                        let mut size = update.size.abs();
+                        match update.side {
+                            OrderSide::Buy => {
+                                filled.set_sign_positive(true);
+                                size.set_sign_positive(true)
+                            }
+                            OrderSide::Sell => {
+                                filled.set_sign_positive(false);
+                                size.set_sign_positive(false)
+                            }
+                        }
+                        let status = match update.status {
+                            Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
+                            Status::Canceled | Status::Expired | Status::Filled => {
+                                types::OrderStatus::Finished
+                            }
+                            Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
+                        };
+                        let trade_size = update.last_trade_size.abs();
+                        let trade = if !trade_size.is_zero() {
+                            let mut trade = types::OrderTrade {
+                                price: update.last_trade_price,
+                                size: if matches!(update.side, OrderSide::Buy) {
+                                    trade_size
+                                } else {
+                                    -trade_size
+                                },
+                                fee: Decimal::ZERO,
+                                fee_asset: None,
+                            };
+                            if let Some(asset) = update.fee_asset {
+                                trade.fee = update.fee;
+                                trade.fee_asset = Some(asset);
+                            }
+                            Some(trade)
+                        } else {
+                            None
+                        };
+                        Ok(types::OrderUpdate {
+                            ts: super::from_timestamp(update.trade_ts)?,
+                            order: types::Order {
+                                id: types::OrderId::from(update.client_id),
+                                target: types::Place { size, kind },
+                                state: types::OrderState {
+                                    filled,
+                                    cost: if update.filled_size.is_zero() {
+                                        Decimal::ONE
+                                    } else {
+                                        update.filled_quote_size / update.filled_size
+                                    },
+                                    status,
+                                    fees: HashMap::default(),
+                                },
+                                trade,
+                            },
+                        })
                     }
                 }
-                let status = match update.status {
-                    Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
-                    Status::Canceled | Status::Expired | Status::Filled => {
-                        types::OrderStatus::Finished
-                    }
-                    Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
-                };
-                let trade_size = update.last_trade_size.abs();
-                let trade = if !trade_size.is_zero() {
-                    let mut trade = types::OrderTrade {
-                        price: update.last_trade_price,
-                        size: if matches!(update.side, OrderSide::Buy) {
-                            trade_size
-                        } else {
-                            -trade_size
-                        },
-                        fee: Decimal::ZERO,
-                        fee_asset: None,
-                    };
-                    if let Some(asset) = update.fee_asset {
-                        trade.fee = update.fee;
-                        trade.fee_asset = Some(asset);
-                    }
-                    Some(trade)
-                } else {
-                    None
-                };
-                Ok(types::OrderUpdate {
-                    ts: super::from_timestamp(update.trade_ts)?,
-                    order: types::Order {
-                        id: types::OrderId::from(update.client_id),
-                        target: types::Place { size, kind },
-                        state: types::OrderState {
-                            filled,
-                            cost: if filled.is_zero() {
-                                Decimal::ONE
-                            } else {
-                                update.cost
-                            },
-                            status,
-                            fees: HashMap::default(),
-                        },
-                        trade,
-                    },
-                })
             })
             .boxed())
     }
