@@ -10,16 +10,16 @@ use super::{Name, Nameable, StreamFrame, StreamFrameKind};
 pub struct BookTicker {
     /// Event type.
     #[serde(rename = "e")]
-    pub event: String,
+    pub event: Option<String>,
     /// Event time.
     #[serde(rename = "E")]
-    pub event_timestamp: i64,
+    pub event_timestamp: Option<i64>,
     /// Symbol.
     #[serde(rename = "s")]
     pub symbol: String,
     /// Trade time.
     #[serde(rename = "T")]
-    pub trade_timestamp: i64,
+    pub trade_timestamp: Option<i64>,
     /// Book ticker ID.
     #[serde(rename = "u")]
     pub id: usize,
@@ -41,7 +41,10 @@ impl Nameable for BookTicker {
     fn to_name(&self) -> Name {
         Name {
             inst: Some(self.symbol.to_lowercase()),
-            channel: self.event.clone(),
+            channel: self
+                .event
+                .clone()
+                .unwrap_or_else(|| String::from("bookTicker")),
         }
     }
 }
