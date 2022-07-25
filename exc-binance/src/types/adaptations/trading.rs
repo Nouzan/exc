@@ -7,11 +7,11 @@ use rust_decimal::Decimal;
 
 use crate::{
     http::{
-        request::trading::{CancelOrder, GetOrder, PlaceOrder},
+        request::trading::{CancelOrder, GetOrder, GetOrderInner, PlaceOrder},
         response::trading::Order,
     },
     types::{
-        trading::{self, OrderSide, PositionSide, Status, TimeInForce},
+        trading::{self, OrderSide, Status, TimeInForce},
         Name,
     },
     websocket::protocol::frame::account::{ExecutionReport, OrderType, OrderUpdate},
@@ -262,48 +262,7 @@ impl TryFrom<Order> for types::Order {
 
 impl Adaptor<types::PlaceOrder> for Request {
     fn from_request(req: types::PlaceOrder) -> Result<Self, ExchangeError> {
-        let place = req.place;
-        let side = if place.size.is_zero() {
-            return Err(ExchangeError::Other(anyhow!("place zero size order")));
-        } else if place.size.is_sign_positive() {
-            OrderSide::Buy
-        } else {
-            OrderSide::Sell
-        };
-        let (order_type, price, tif) = match place.kind {
-            types::OrderKind::Market => (trading::OrderType::Market, None, None),
-            types::OrderKind::Limit(price, tif) => {
-                let tif = match tif {
-                    types::TimeInForce::GoodTilCancelled => Some(TimeInForce::Gtc),
-                    types::TimeInForce::FillOrKill => Some(TimeInForce::Fok),
-                    types::TimeInForce::ImmediateOrCancel => Some(TimeInForce::Ioc),
-                };
-                (trading::OrderType::Limit, Some(price), tif)
-            }
-            types::OrderKind::PostOnly(price) => (
-                trading::OrderType::Limit,
-                Some(price),
-                Some(TimeInForce::Gtx),
-            ),
-        };
-        Ok(Self::with_rest_payload(PlaceOrder {
-            symbol: req.instrument.to_uppercase(),
-            side,
-            position_side: PositionSide::Both,
-            order_type,
-            reduce_only: None,
-            quantity: Some(place.size.abs()),
-            price,
-            new_client_order_id: req.client_id,
-            stop_price: None,
-            close_position: None,
-            activation_price: None,
-            callback_rate: None,
-            time_in_force: tif,
-            working_type: None,
-            price_protect: None,
-            new_order_resp_type: None,
-        }))
+        Ok(Self::with_rest_payload(PlaceOrder { inner: req }))
     }
 
     fn into_response(
@@ -325,9 +284,11 @@ impl Adaptor<types::PlaceOrder> for Request {
 impl Adaptor<types::CancelOrder> for Request {
     fn from_request(req: types::CancelOrder) -> Result<Self, ExchangeError> {
         Ok(Self::with_rest_payload(CancelOrder {
-            symbol: req.instrument.to_uppercase(),
-            order_id: None,
-            orig_client_order_id: Some(req.id.as_str().to_string()),
+            inner: GetOrderInner {
+                symbol: req.instrument.to_uppercase(),
+                order_id: None,
+                orig_client_order_id: Some(req.id.as_str().to_string()),
+            },
         }))
     }
 
@@ -348,9 +309,11 @@ impl Adaptor<types::CancelOrder> for Request {
 impl Adaptor<types::GetOrder> for Request {
     fn from_request(req: types::GetOrder) -> Result<Self, ExchangeError> {
         Ok(Self::with_rest_payload(GetOrder {
-            symbol: req.instrument.to_uppercase(),
-            order_id: None,
-            orig_client_order_id: Some(req.id.as_str().to_string()),
+            inner: GetOrderInner {
+                symbol: req.instrument.to_uppercase(),
+                order_id: None,
+                orig_client_order_id: Some(req.id.as_str().to_string()),
+            },
         }))
     }
 

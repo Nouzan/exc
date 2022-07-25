@@ -121,13 +121,6 @@ impl Binance {
     pub fn spot() -> Endpoint {
         Endpoint::spot()
     }
-
-    // /// Convert into an exchange.
-    // pub fn into_exchange(self) -> Exchange<Self, Request> {
-    //     ServiceBuilder::default()
-    //         .layer(ExchangeLayer::default())
-    //         .service(self)
-    // }
 }
 
 impl Service<Request> for Binance {
