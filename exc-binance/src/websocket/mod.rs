@@ -38,6 +38,11 @@ impl BinanceWebsocketApi {
             Name::new("markPrice").inst("bnbusdt"),
         )
     }
+
+    /// Endpoint of Spot API.
+    pub fn spot() -> WsEndpoint {
+        WsEndpoint::new(BinanceWsHost::Spot, Name::new("miniTicker").inst("btcusdt"))
+    }
 }
 
 impl Service<WsRequest> for BinanceWebsocketApi {

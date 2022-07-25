@@ -55,7 +55,7 @@ pub trait Rest: Send + Sync + 'static {
     }
 
     /// Serialize.
-    fn serialize(&self) -> Result<serde_json::Value, RestError> {
+    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
         Ok(serde_json::json!({}))
     }
 
@@ -111,8 +111,8 @@ impl Rest for Payload {
         self.inner.need_sign()
     }
 
-    fn serialize(&self) -> Result<serde_json::Value, RestError> {
-        self.inner.serialize()
+    fn serialize(&self, endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
+        self.inner.serialize(endpoint)
     }
 
     fn to_payload(&self) -> Payload {
@@ -171,7 +171,7 @@ impl<T: Rest> RestRequest<T> {
         key: Option<&BinanceKey>,
     ) -> Result<Request<hyper::Body>, RestError> {
         let mut uri = format!("{}{}", endpoint.host(), self.payload.to_path(endpoint)?);
-        let value = self.payload.serialize()?;
+        let value = self.payload.serialize(endpoint)?;
         let body = if self.payload.need_sign() {
             if let Some(key) = key.as_ref() {
                 let value = key.sign(value)?;
@@ -221,12 +221,11 @@ mod test {
 
     use crate::{
         http::{request, response},
+        types::key::BinanceKey,
         Binance, Request,
     };
 
-    #[tokio::test]
-    async fn test_exchange_info() -> anyhow::Result<()> {
-        let api = Binance::usd_margin_futures().connect();
+    async fn do_test_exchange_info(api: Binance) -> anyhow::Result<()> {
         let resp = api
             .oneshot(Request::with_rest_payload(request::ExchangeInfo))
             .await?
@@ -235,12 +234,10 @@ mod test {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_candle() -> anyhow::Result<()> {
-        let api = Binance::usd_margin_futures().connect();
+    async fn do_test_candle(api: Binance, inst: &str) -> anyhow::Result<()> {
         let resp = api
             .oneshot(Request::with_rest_payload(request::QueryCandles {
-                symbol: "btcbusd".to_string(),
+                symbol: inst.to_uppercase(),
                 interval: request::Interval::M1,
                 start_time: None,
                 end_time: None,
@@ -254,16 +251,64 @@ mod test {
         Ok(())
     }
 
+    async fn do_test_listen_key(api: Binance) -> anyhow::Result<()> {
+        let listen_key = api
+            .oneshot(Request::with_rest_payload(request::CurrentListenKey))
+            .await?
+            .into_response::<response::ListenKey>()?;
+        println!("{listen_key}");
+        Ok(())
+    }
+
+    async fn do_test_delete_listen_key(
+        api: Binance,
+        listen_key: Option<String>,
+    ) -> anyhow::Result<()> {
+        let listen_key = api
+            .oneshot(Request::with_rest_payload(request::DeleteListenKey {
+                listen_key,
+            }))
+            .await?
+            .into_response::<response::Unknown>()?;
+        println!("{listen_key:?}");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_exchange_info() -> anyhow::Result<()> {
+        let apis = [
+            Binance::usd_margin_futures().connect(),
+            Binance::spot().connect(),
+        ];
+        for api in apis {
+            do_test_exchange_info(api).await?;
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_candle() -> anyhow::Result<()> {
+        let apis = [
+            (Binance::usd_margin_futures().connect(), "btcbusd"),
+            (Binance::spot().connect(), "btcusdt"),
+        ];
+        for (api, inst) in apis {
+            do_test_candle(api, inst).await?;
+        }
+        Ok(())
+    }
+
     #[tokio::test]
     async fn test_listen_key() -> anyhow::Result<()> {
         if let Ok(key) = var("BINANCE_KEY") {
-            let key = serde_json::from_str(&key)?;
-            let api = Binance::usd_margin_futures().private(key).connect();
-            let listen_key = api
-                .oneshot(Request::with_rest_payload(request::CurrentListenKey))
-                .await?
-                .into_response::<response::ListenKey>()?;
-            println!("{listen_key}");
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let apis = [
+                Binance::usd_margin_futures().private(key.clone()).connect(),
+                Binance::spot().private(key).connect(),
+            ];
+            for api in apis {
+                do_test_listen_key(api).await?;
+            }
         }
         Ok(())
     }
@@ -271,13 +316,26 @@ mod test {
     #[tokio::test]
     async fn test_delete_listen_key() -> anyhow::Result<()> {
         if let Ok(key) = var("BINANCE_KEY") {
-            let key = serde_json::from_str(&key)?;
-            let api = Binance::usd_margin_futures().private(key).connect();
-            let listen_key = api
-                .oneshot(Request::with_rest_payload(request::DeleteListenKey))
-                .await?
-                .into_response::<response::Unknown>()?;
-            println!("{listen_key:?}");
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let apis = [
+                (
+                    Binance::usd_margin_futures().private(key.clone()).connect(),
+                    false,
+                ),
+                (Binance::spot().private(key).connect(), true),
+            ];
+            for (mut api, listen_key) in apis {
+                let listen_key = if listen_key {
+                    let listen_key = (&mut api)
+                        .oneshot(Request::with_rest_payload(request::CurrentListenKey))
+                        .await?
+                        .into_response::<response::ListenKey>()?;
+                    Some(listen_key.to_string())
+                } else {
+                    None
+                };
+                do_test_delete_listen_key(api, listen_key).await?;
+            }
         }
         Ok(())
     }

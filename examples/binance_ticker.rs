@@ -17,10 +17,14 @@ async fn main() -> anyhow::Result<()> {
 
     let inst = std::env::var("INST")?;
 
-    let mut binance = Binance::usd_margin_futures()
-        .connect()
-        .into_exc()
-        .into_subscribe_tickers();
+    let endpoint = std::env::var("ENDPOINT").unwrap_or_else(|_| String::from("binance-u"));
+    let endpoint = match endpoint.as_str() {
+        "binance-u" => Binance::usd_margin_futures(),
+        "binance-s" => Binance::spot(),
+        _ => anyhow::bail!("unsupported"),
+    };
+
+    let mut binance = endpoint.connect().into_exc().into_subscribe_tickers();
 
     let mut revision = 0;
     loop {

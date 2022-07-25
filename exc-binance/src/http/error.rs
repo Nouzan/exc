@@ -43,6 +43,9 @@ pub enum RestError {
     /// Text response.
     #[error("text response: {0}")]
     Text(String),
+    /// Place Zero size.
+    #[error("trying to place an order with zero size")]
+    PlaceZeroSize,
 }
 
 impl RestError {

@@ -13,7 +13,9 @@ use serde::Deserialize;
 #[derive(Parser)]
 struct Args {
     #[clap(long, env)]
-    binance_key: String,
+    exchange: String,
+    #[clap(long, env)]
+    key: String,
     inst: String,
     #[clap(long, short)]
     exec: Option<Vec<String>>,
@@ -81,12 +83,23 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let inst = args.inst;
-    let key = serde_json::from_str(&args.binance_key)?;
 
-    let mut exc = Binance::usd_margin_futures()
-        .private(key)
-        .connect()
-        .into_exc();
+    let mut exc = match args.exchange.as_str() {
+        "binance-u" => {
+            let key = serde_json::from_str(&args.key)?;
+            Binance::usd_margin_futures()
+                .private(key)
+                .connect()
+                .into_exc()
+        }
+        "binance-s" => {
+            let key = serde_json::from_str(&args.key)?;
+            Binance::spot().private(key).connect().into_exc()
+        }
+        exchange => {
+            anyhow::bail!("unsupported exchange: {exchange}");
+        }
+    };
 
     let mut orders_provider = exc.clone();
     let shared_inst = inst.clone();

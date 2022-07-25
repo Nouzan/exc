@@ -9,12 +9,34 @@ use super::Data;
 
 /// Exchange info.
 #[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum ExchangeInfo {
+    /// Usd-margin futures.
+    UsdMarginFutures(UFExchangeInfo),
+    /// Spot.
+    Spot(SpotExchangeInfo),
+}
+
+/// Usd-margin futures exchange info.
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ExchangeInfo {
+pub struct UFExchangeInfo {
     pub(crate) exchange_filters: Vec<serde_json::Value>,
     pub(crate) rate_limits: Vec<RateLimit>,
     pub(crate) assets: Vec<serde_json::Value>,
-    pub(crate) symbols: Vec<Symbol>,
+    pub(crate) symbols: Vec<UFSymbol>,
+    pub(crate) timezone: String,
+}
+
+/// Spot exchange info.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpotExchangeInfo {
+    pub(crate) exchange_filters: Vec<serde_json::Value>,
+    pub(crate) rate_limits: Vec<RateLimit>,
+    #[serde(default)]
+    pub(crate) assets: Vec<serde_json::Value>,
+    pub(crate) symbols: Vec<SpotSymbol>,
     pub(crate) timezone: String,
 }
 
@@ -29,7 +51,28 @@ pub(crate) struct RateLimit {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct Symbol {
+pub(crate) struct SpotSymbol {
+    pub(crate) symbol: String,
+    pub(crate) status: String,
+    pub(crate) base_asset: String,
+    pub(crate) base_asset_precision: u32,
+    pub(crate) quote_asset: String,
+    pub(crate) quote_precision: u32,
+    pub(crate) order_types: Vec<String>,
+    pub(crate) iceberg_allowed: bool,
+    pub(crate) oco_allowed: bool,
+    pub(crate) quote_order_qty_market_allowed: bool,
+    pub(crate) allow_trailing_stop: bool,
+    pub(crate) cancel_replace_allowed: bool,
+    pub(crate) is_spot_trading_allowed: bool,
+    pub(crate) is_margin_trading_allowed: bool,
+    pub(crate) filters: Vec<Filter>,
+    pub(crate) permissions: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct UFSymbol {
     pub(crate) symbol: String,
     pub(crate) pair: String,
     pub(crate) contract_type: String,
@@ -112,7 +155,10 @@ pub(crate) enum SymbolFilter {
         limit: u64,
     },
     #[serde(rename = "MIN_NOTIONAL")]
-    MinNotional { notional: Decimal },
+    MinNotional {
+        #[serde(alias = "minNotional")]
+        notional: Decimal,
+    },
     #[serde(rename = "PERCENT_PRICE")]
     PercentPrice {
         #[serde(rename = "multiplierUp")]

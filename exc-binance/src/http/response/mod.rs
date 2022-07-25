@@ -21,8 +21,12 @@ pub mod error_message;
 pub mod trading;
 
 use self::trading::Order;
+
 pub use self::{
-    candle::Candle, error_message::ErrorMessage, instrument::ExchangeInfo, listen_key::ListenKey,
+    candle::Candle,
+    error_message::ErrorMessage,
+    instrument::{ExchangeInfo, SpotExchangeInfo, UFExchangeInfo},
+    listen_key::ListenKey,
 };
 
 /// Candles.
@@ -94,7 +98,10 @@ impl<T> RestResponse<T> {
         let value =
             bytes.and_then(
                 |bytes| match serde_json::from_slice::<serde_json::Value>(&bytes) {
-                    Ok(value) => Ok(Either::Left(value)),
+                    Ok(value) => {
+                        tracing::debug!("resp: {value}");
+                        Ok(Either::Left(value))
+                    }
                     Err(_) => match std::str::from_utf8(&bytes) {
                         Ok(text) => Ok(Either::Right(text.to_string())),
                         Err(err) => Err(err.into()),

@@ -117,12 +117,10 @@ impl Binance {
         Endpoint::usd_margin_futures()
     }
 
-    // /// Convert into an exchange.
-    // pub fn into_exchange(self) -> Exchange<Self, Request> {
-    //     ServiceBuilder::default()
-    //         .layer(ExchangeLayer::default())
-    //         .service(self)
-    // }
+    /// Spot endpoint.
+    pub fn spot() -> Endpoint {
+        Endpoint::spot()
+    }
 }
 
 impl Service<Request> for Binance {

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use exc_binance::{
     http::{
-        request::trading::{CancelOrder, GetOrder, PlaceOrder},
+        request::trading::{usd_margin_futures::PlaceOrder, CancelOrder, GetOrder, GetOrderInner},
         response::trading::Order,
     },
     types::trading::{OrderSide, OrderType, PositionSide, TimeInForce},
@@ -53,14 +53,16 @@ async fn main() -> anyhow::Result<()> {
         .await?
         .into_response::<Order>()?;
     tracing::info!("{res:#?}");
-    let id = res.order_id;
-    let symbol = res.symbol;
+    let id = res.id();
+    let symbol = res.symbol();
     api.ready().await?;
     let res = api
         .call(Request::with_rest_payload(GetOrder {
-            symbol: symbol.clone(),
-            order_id: Some(id),
-            orig_client_order_id: None,
+            inner: GetOrderInner {
+                symbol: symbol.to_string(),
+                order_id: Some(id),
+                orig_client_order_id: None,
+            },
         }))
         .await?
         .into_response::<Order>()?;
@@ -68,9 +70,11 @@ async fn main() -> anyhow::Result<()> {
     api.ready().await?;
     let res = api
         .call(Request::with_rest_payload(CancelOrder {
-            symbol,
-            order_id: Some(id),
-            orig_client_order_id: None,
+            inner: GetOrderInner {
+                symbol: symbol.to_string(),
+                order_id: Some(id),
+                orig_client_order_id: None,
+            },
         }))
         .await?
         .into_response::<Order>()?;

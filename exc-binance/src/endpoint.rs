@@ -31,6 +31,16 @@ impl Endpoint {
         }
     }
 
+    /// Spot.
+    pub fn spot() -> Self {
+        Self {
+            key: None,
+            http: (RestEndpoint::Spot, HttpEndpoint::default()),
+            ws: BinanceWebsocketApi::spot(),
+            buffer: CAP,
+        }
+    }
+
     /// Set websocket keep-alive timeout.
     pub fn ws_keep_alive_timeout(&mut self, timeout: Duration) -> &mut Self {
         self.ws.keep_alive_timeout(timeout);
