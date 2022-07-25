@@ -268,8 +268,8 @@ impl TryFrom<Order> for types::Order {
             Order::Spot(order) => {
                 let ack = order.ack;
                 if let Some(result) = order.result {
-                    let mut filled = result.executed_qty.abs();
-                    let mut size = result.orig_qty.abs();
+                    let mut filled = result.executed_qty.abs().normalize();
+                    let mut size = result.orig_qty.abs().normalize();
                     match result.side {
                         OrderSide::Buy => {
                             filled.set_sign_positive(true);
@@ -283,20 +283,22 @@ impl TryFrom<Order> for types::Order {
                     let kind = match result.order_type {
                         trading::OrderType::Limit => match result.time_in_force {
                             TimeInForce::Gtc | TimeInForce::Gtx => types::OrderKind::Limit(
-                                result.price,
+                                result.price.normalize(),
                                 types::TimeInForce::GoodTilCancelled,
                             ),
                             TimeInForce::Fok => types::OrderKind::Limit(
-                                result.price,
+                                result.price.normalize(),
                                 types::TimeInForce::FillOrKill,
                             ),
                             TimeInForce::Ioc => types::OrderKind::Limit(
-                                result.price,
+                                result.price.normalize(),
                                 types::TimeInForce::ImmediateOrCancel,
                             ),
                         },
                         trading::OrderType::Market => types::OrderKind::Market,
-                        trading::OrderType::LimitMaker => types::OrderKind::PostOnly(result.price),
+                        trading::OrderType::LimitMaker => {
+                            types::OrderKind::PostOnly(result.price.normalize())
+                        }
                         other => {
                             return Err(ExchangeError::Other(anyhow!(
                                 "unsupported order type: {other:?}"
@@ -314,23 +316,23 @@ impl TryFrom<Order> for types::Order {
                     let mut last_trade = None;
                     for fill in order.fills {
                         let fee = fees.entry(fill.commission_asset.clone()).or_default();
-                        *fee -= fill.commission;
+                        *fee -= fill.commission.normalize();
                         last_trade = Some(types::OrderTrade {
-                            price: fill.price,
-                            size: fill.qty,
-                            fee: -fill.commission,
+                            price: fill.price.normalize(),
+                            size: fill.qty.normalize(),
+                            fee: -fill.commission.normalize(),
                             fee_asset: Some(fill.commission_asset),
                         });
                     }
                     Ok(types::Order {
-                        id: types::OrderId::from(ack.client_order_id),
+                        id: types::OrderId::from(ack.client_order_id().to_string()),
                         target: types::Place { size, kind },
                         state: types::OrderState {
                             filled,
                             cost: if result.executed_qty.is_zero() {
                                 Decimal::ONE
                             } else {
-                                result.cummulative_quote_qty / result.executed_qty
+                                (result.cummulative_quote_qty / result.executed_qty).normalize()
                             },
                             status,
                             fees,

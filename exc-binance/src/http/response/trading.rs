@@ -38,9 +38,10 @@ impl Order {
 
     /// Get client order id.
     pub fn client_id(&self) -> &str {
+        tracing::debug!("get client id; {self:?}");
         match self {
             Self::UsdMarginFutures(order) => order.client_order_id.as_str(),
-            Self::Spot(order) => order.ack.client_order_id.as_str(),
+            Self::Spot(order) => order.ack.client_order_id(),
         }
     }
 
@@ -131,11 +132,23 @@ pub struct SpotAck {
     pub symbol: String,
     /// Order id.
     pub order_id: i64,
+    /// Orignal client order id.
+    orig_client_order_id: Option<String>,
     /// Client id.
-    pub client_order_id: String,
+    client_order_id: String,
     /// Update timestamp.
     #[serde(alias = "updateTime")]
     pub transact_time: Option<i64>,
+}
+
+impl SpotAck {
+    /// Client order id.
+    pub fn client_order_id(&self) -> &str {
+        match &self.orig_client_order_id {
+            Some(id) => id.as_str(),
+            None => self.client_order_id.as_str(),
+        }
+    }
 }
 
 /// Spot Result.
