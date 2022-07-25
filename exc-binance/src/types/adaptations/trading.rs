@@ -205,58 +205,66 @@ impl TryFrom<Order> for types::Order {
     type Error = ExchangeError;
 
     fn try_from(order: Order) -> Result<Self, Self::Error> {
-        let mut filled = order.executed_qty.abs();
-        let mut size = order.orig_qty.abs();
-        match order.side {
-            OrderSide::Buy => {
-                filled.set_sign_positive(true);
-                size.set_sign_positive(true);
-            }
-            OrderSide::Sell => {
-                filled.set_sign_positive(false);
-                size.set_sign_positive(false);
+        match order {
+            Order::UsdMarginFutures(order) => {
+                let mut filled = order.executed_qty.abs();
+                let mut size = order.orig_qty.abs();
+                match order.side {
+                    OrderSide::Buy => {
+                        filled.set_sign_positive(true);
+                        size.set_sign_positive(true);
+                    }
+                    OrderSide::Sell => {
+                        filled.set_sign_positive(false);
+                        size.set_sign_positive(false);
+                    }
+                }
+                let kind = match order.order_type {
+                    trading::OrderType::Limit => match order.time_in_force {
+                        TimeInForce::Gtc => types::OrderKind::Limit(
+                            order.price,
+                            types::TimeInForce::GoodTilCancelled,
+                        ),
+                        TimeInForce::Fok => {
+                            types::OrderKind::Limit(order.price, types::TimeInForce::FillOrKill)
+                        }
+                        TimeInForce::Ioc => types::OrderKind::Limit(
+                            order.price,
+                            types::TimeInForce::ImmediateOrCancel,
+                        ),
+                        TimeInForce::Gtx => types::OrderKind::PostOnly(order.price),
+                    },
+                    trading::OrderType::Market => types::OrderKind::Market,
+                    other => {
+                        return Err(ExchangeError::Other(anyhow!(
+                            "unsupported order type: {other:?}"
+                        )));
+                    }
+                };
+                let status = match order.status {
+                    Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
+                    Status::Canceled | Status::Expired | Status::Filled => {
+                        types::OrderStatus::Finished
+                    }
+                    Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
+                };
+                Ok(types::Order {
+                    id: types::OrderId::from(order.client_order_id),
+                    target: types::Place { size, kind },
+                    state: types::OrderState {
+                        filled,
+                        cost: if filled.is_zero() {
+                            Decimal::ONE
+                        } else {
+                            order.avg_price
+                        },
+                        status,
+                        fees: HashMap::default(),
+                    },
+                    trade: None,
+                })
             }
         }
-        let kind = match order.order_type {
-            trading::OrderType::Limit => match order.time_in_force {
-                TimeInForce::Gtc => {
-                    types::OrderKind::Limit(order.price, types::TimeInForce::GoodTilCancelled)
-                }
-                TimeInForce::Fok => {
-                    types::OrderKind::Limit(order.price, types::TimeInForce::FillOrKill)
-                }
-                TimeInForce::Ioc => {
-                    types::OrderKind::Limit(order.price, types::TimeInForce::ImmediateOrCancel)
-                }
-                TimeInForce::Gtx => types::OrderKind::PostOnly(order.price),
-            },
-            trading::OrderType::Market => types::OrderKind::Market,
-            other => {
-                return Err(ExchangeError::Other(anyhow!(
-                    "unsupported order type: {other:?}"
-                )));
-            }
-        };
-        let status = match order.status {
-            Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
-            Status::Canceled | Status::Expired | Status::Filled => types::OrderStatus::Finished,
-            Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
-        };
-        Ok(types::Order {
-            id: types::OrderId::from(order.client_order_id),
-            target: types::Place { size, kind },
-            state: types::OrderState {
-                filled,
-                cost: if filled.is_zero() {
-                    Decimal::ONE
-                } else {
-                    order.avg_price
-                },
-                status,
-                fees: HashMap::default(),
-            },
-            trade: None,
-        })
     }
 }
 
@@ -270,9 +278,9 @@ impl Adaptor<types::PlaceOrder> for Request {
     ) -> Result<<types::PlaceOrder as exc_core::Request>::Response, ExchangeError> {
         Ok(async move {
             let order = resp.into_response::<Order>()?;
-            let id = types::OrderId::from(order.client_order_id.clone());
+            let id = types::OrderId::from(order.client_id().to_string());
             Ok(types::Placed {
-                ts: super::from_timestamp(order.update_time)?,
+                ts: super::from_timestamp(order.updated())?,
                 id,
                 order: Some(order.try_into()?),
             })
@@ -298,7 +306,7 @@ impl Adaptor<types::CancelOrder> for Request {
         Ok(async move {
             let order = resp.into_response::<Order>()?;
             Ok(types::Cancelled {
-                ts: super::from_timestamp(order.update_time)?,
+                ts: super::from_timestamp(order.updated())?,
                 order: Some(order.try_into()?),
             })
         }
@@ -323,7 +331,7 @@ impl Adaptor<types::GetOrder> for Request {
         Ok(async move {
             let order = resp.into_response::<Order>()?;
             Ok(types::OrderUpdate {
-                ts: super::from_timestamp(order.update_time)?,
+                ts: super::from_timestamp(order.updated())?,
                 order: order.try_into()?,
             })
         }

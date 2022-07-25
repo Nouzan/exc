@@ -53,13 +53,13 @@ async fn main() -> anyhow::Result<()> {
         .await?
         .into_response::<Order>()?;
     tracing::info!("{res:#?}");
-    let id = res.order_id;
-    let symbol = res.symbol;
+    let id = res.id();
+    let symbol = res.symbol();
     api.ready().await?;
     let res = api
         .call(Request::with_rest_payload(GetOrder {
             inner: GetOrderInner {
-                symbol: symbol.clone(),
+                symbol: symbol.to_string(),
                 order_id: Some(id),
                 orig_client_order_id: None,
             },
@@ -71,7 +71,7 @@ async fn main() -> anyhow::Result<()> {
     let res = api
         .call(Request::with_rest_payload(CancelOrder {
             inner: GetOrderInner {
-                symbol: symbol.clone(),
+                symbol: symbol.to_string(),
                 order_id: Some(id),
                 orig_client_order_id: None,
             },

@@ -11,8 +11,46 @@ use super::Data;
 
 /// Order.
 #[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum Order {
+    /// Usd-Margin Futures.
+    UsdMarginFutures(UFOrder),
+}
+
+impl Order {
+    /// Get order id.
+    pub fn id(&self) -> i64 {
+        match self {
+            Self::UsdMarginFutures(order) => order.order_id,
+        }
+    }
+
+    /// Get symbol.
+    pub fn symbol(&self) -> &str {
+        match self {
+            Self::UsdMarginFutures(order) => order.symbol.as_str(),
+        }
+    }
+
+    /// Get client order id.
+    pub fn client_id(&self) -> &str {
+        match self {
+            Self::UsdMarginFutures(order) => order.client_order_id.as_str(),
+        }
+    }
+
+    /// Get updated time.
+    pub fn updated(&self) -> i64 {
+        match self {
+            Self::UsdMarginFutures(order) => order.update_time,
+        }
+    }
+}
+
+/// Order.
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Order {
+pub struct UFOrder {
     /// Client id.
     pub client_order_id: String,
     /// FIXME: what is this?
