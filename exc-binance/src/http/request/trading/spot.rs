@@ -72,9 +72,7 @@ impl<'a> TryFrom<&'a exc_core::types::PlaceOrder> for PlaceOrder {
                 };
                 (OrderType::Limit, Some(price), tif)
             }
-            types::OrderKind::PostOnly(price) => {
-                (OrderType::Limit, Some(price), Some(TimeInForce::Gtx))
-            }
+            types::OrderKind::PostOnly(price) => (OrderType::LimitMaker, Some(price), None),
         };
         Ok(Self {
             symbol: req.instrument.to_uppercase(),

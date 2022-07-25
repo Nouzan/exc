@@ -45,9 +45,9 @@ impl Order {
     }
 
     /// Get updated time.
-    pub fn updated(&self) -> i64 {
+    pub fn updated(&self) -> Option<i64> {
         match self {
-            Self::UsdMarginFutures(order) => order.update_time,
+            Self::UsdMarginFutures(order) => Some(order.update_time),
             Self::Spot(order) => order.ack.transact_time,
         }
     }
@@ -134,7 +134,8 @@ pub struct SpotAck {
     /// Client id.
     pub client_order_id: String,
     /// Update timestamp.
-    pub transact_time: i64,
+    #[serde(alias = "updateTime")]
+    pub transact_time: Option<i64>,
 }
 
 /// Spot Result.

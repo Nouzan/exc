@@ -74,4 +74,6 @@ pub enum OrderType {
     TakeProfitMarket,
     /// Trailing-Stop-Market.
     TrailingStopMarket,
+    /// Limit Maker.
+    LimitMaker,
 }

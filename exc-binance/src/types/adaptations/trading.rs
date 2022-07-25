@@ -4,6 +4,7 @@ use either::Either;
 use exc_core::{types, Adaptor, ExchangeError};
 use futures::{FutureExt, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
+use time::OffsetDateTime;
 
 use crate::{
     http::{
@@ -281,7 +282,7 @@ impl TryFrom<Order> for types::Order {
                     }
                     let kind = match result.order_type {
                         trading::OrderType::Limit => match result.time_in_force {
-                            TimeInForce::Gtc => types::OrderKind::Limit(
+                            TimeInForce::Gtc | TimeInForce::Gtx => types::OrderKind::Limit(
                                 result.price,
                                 types::TimeInForce::GoodTilCancelled,
                             ),
@@ -293,9 +294,9 @@ impl TryFrom<Order> for types::Order {
                                 result.price,
                                 types::TimeInForce::ImmediateOrCancel,
                             ),
-                            TimeInForce::Gtx => types::OrderKind::PostOnly(result.price),
                         },
                         trading::OrderType::Market => types::OrderKind::Market,
+                        trading::OrderType::LimitMaker => types::OrderKind::PostOnly(result.price),
                         other => {
                             return Err(ExchangeError::Other(anyhow!(
                                 "unsupported order type: {other:?}"
@@ -358,7 +359,10 @@ impl Adaptor<types::PlaceOrder> for Request {
             let order = resp.into_response::<Order>()?;
             let id = types::OrderId::from(order.client_id().to_string());
             Ok(types::Placed {
-                ts: super::from_timestamp(order.updated())?,
+                ts: order
+                    .updated()
+                    .map(super::from_timestamp)
+                    .unwrap_or_else(|| Ok(OffsetDateTime::now_utc()))?,
                 id,
                 order: order.try_into().ok(),
             })
@@ -384,7 +388,10 @@ impl Adaptor<types::CancelOrder> for Request {
         Ok(async move {
             let order = resp.into_response::<Order>()?;
             Ok(types::Cancelled {
-                ts: super::from_timestamp(order.updated())?,
+                ts: order
+                    .updated()
+                    .map(super::from_timestamp)
+                    .unwrap_or_else(|| Ok(OffsetDateTime::now_utc()))?,
                 order: Some(order.try_into()?),
             })
         }
@@ -409,7 +416,10 @@ impl Adaptor<types::GetOrder> for Request {
         Ok(async move {
             let order = resp.into_response::<Order>()?;
             Ok(types::OrderUpdate {
-                ts: super::from_timestamp(order.updated())?,
+                ts: order
+                    .updated()
+                    .map(super::from_timestamp)
+                    .unwrap_or_else(|| Ok(OffsetDateTime::now_utc()))?,
                 order: order.try_into()?,
             })
         }
