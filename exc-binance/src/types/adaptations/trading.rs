@@ -180,7 +180,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                         Ok(types::OrderUpdate {
                             ts: super::from_timestamp(update.trade_ts)?,
                             order: types::Order {
-                                id: types::OrderId::from(update.client_id),
+                                id: types::OrderId::from(update.orignal_client_id),
                                 target: types::Place { size, kind },
                                 state: types::OrderState {
                                     filled,

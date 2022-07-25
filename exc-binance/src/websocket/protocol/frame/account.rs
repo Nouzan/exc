@@ -176,6 +176,9 @@ pub struct ExecutionReport {
     /// Client id.
     #[serde(rename = "c")]
     pub client_id: String,
+    /// Orignal Client id.
+    #[serde(rename = "C")]
+    pub orignal_client_id: String,
     /// Order side.
     #[serde(rename = "S")]
     pub side: OrderSide,
