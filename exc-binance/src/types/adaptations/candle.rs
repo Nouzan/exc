@@ -84,11 +84,11 @@ impl Adaptor<types::QueryFirstCandles> for Request {
             .map(|c| {
                 Ok(types::Candle {
                     ts: super::from_timestamp(c.0)?,
-                    open: c.1,
-                    high: c.2,
-                    low: c.3,
-                    close: c.4,
-                    volume: c.5,
+                    open: c.1.normalize(),
+                    high: c.2.normalize(),
+                    low: c.3.normalize(),
+                    close: c.4.normalize(),
+                    volume: c.5.normalize(),
                 })
             });
         Ok(futures::stream::iter(candles).boxed())

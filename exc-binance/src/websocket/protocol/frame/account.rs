@@ -241,6 +241,17 @@ pub struct ExecutionReport {
     pub create_ts: i64,
 }
 
+impl ExecutionReport {
+    /// Get client id (original).
+    pub fn client_id(&self) -> &str {
+        if self.orignal_client_id.is_empty() {
+            self.client_id.as_str()
+        } else {
+            self.orignal_client_id.as_str()
+        }
+    }
+}
+
 impl Nameable for AccountEvent {
     fn to_name(&self) -> Name {
         match self {

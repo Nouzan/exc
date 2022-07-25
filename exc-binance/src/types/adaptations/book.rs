@@ -19,8 +19,8 @@ impl Adaptor<types::SubscribeBidAsk> for Request {
                         .trade_timestamp
                         .map(super::from_timestamp)
                         .unwrap_or_else(|| Ok(OffsetDateTime::now_utc()))?,
-                    bid: Some((t.bid, t.bid_size)),
-                    ask: Some((t.ask, t.ask_size)),
+                    bid: Some((t.bid.normalize(), t.bid_size.normalize())),
+                    ask: Some((t.ask.normalize(), t.ask_size.normalize())),
                 })
             })
             .boxed())
