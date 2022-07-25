@@ -115,6 +115,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                         })
                     }
                     Either::Right(update) => {
+                        let client_id = update.client_id().to_string();
                         let kind = match update.order_type {
                             OrderType::Limit => match update.time_in_force {
                                 TimeInForce::Gtc => types::OrderKind::Limit(
@@ -180,7 +181,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                         Ok(types::OrderUpdate {
                             ts: super::from_timestamp(update.trade_ts)?,
                             order: types::Order {
-                                id: types::OrderId::from(update.orignal_client_id),
+                                id: types::OrderId::from(client_id),
                                 target: types::Place { size, kind },
                                 state: types::OrderState {
                                     filled,
