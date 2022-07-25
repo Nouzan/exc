@@ -14,7 +14,9 @@ use super::Data;
 #[serde(untagged)]
 pub enum Order {
     /// Usd-Margin Futures.
-    UsdMarginFutures(UFOrder),
+    UsdMarginFutures(UsdMarginFuturesOrder),
+    /// Spot.
+    Spot(SpotOrder),
 }
 
 impl Order {
@@ -22,6 +24,7 @@ impl Order {
     pub fn id(&self) -> i64 {
         match self {
             Self::UsdMarginFutures(order) => order.order_id,
+            Self::Spot(order) => order.ack.order_id,
         }
     }
 
@@ -29,6 +32,7 @@ impl Order {
     pub fn symbol(&self) -> &str {
         match self {
             Self::UsdMarginFutures(order) => order.symbol.as_str(),
+            Self::Spot(order) => order.ack.symbol.as_str(),
         }
     }
 
@@ -36,6 +40,7 @@ impl Order {
     pub fn client_id(&self) -> &str {
         match self {
             Self::UsdMarginFutures(order) => order.client_order_id.as_str(),
+            Self::Spot(order) => order.ack.client_order_id.as_str(),
         }
     }
 
@@ -43,14 +48,34 @@ impl Order {
     pub fn updated(&self) -> i64 {
         match self {
             Self::UsdMarginFutures(order) => order.update_time,
+            Self::Spot(order) => order.ack.transact_time,
         }
     }
 }
 
-/// Order.
+impl TryFrom<Data> for Order {
+    type Error = RestError;
+
+    fn try_from(value: Data) -> Result<Self, Self::Error> {
+        match value {
+            Data::Order(order) => Ok(order),
+            Data::Error(msg) => match msg.code {
+                -2013 => Err(RestError::Exchange(ExchangeError::OrderNotFound)),
+                _ => Err(RestError::Exchange(ExchangeError::Api(anyhow::anyhow!(
+                    "{msg:?}"
+                )))),
+            },
+            _ => Err(RestError::UnexpectedResponseType(anyhow::anyhow!(
+                "{value:?}"
+            ))),
+        }
+    }
+}
+
+/// Usd-Margin Futures Order.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UFOrder {
+pub struct UsdMarginFuturesOrder {
     /// Client id.
     pub client_order_id: String,
     /// FIXME: what is this?
@@ -98,21 +123,72 @@ pub struct UFOrder {
     pub price_protect: bool,
 }
 
-impl TryFrom<Data> for Order {
-    type Error = RestError;
+/// Spot Ack.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpotAck {
+    /// Symbol.
+    pub symbol: String,
+    /// Order id.
+    pub order_id: i64,
+    /// Client id.
+    pub client_order_id: String,
+    /// Update timestamp.
+    pub transact_time: i64,
+}
 
-    fn try_from(value: Data) -> Result<Self, Self::Error> {
-        match value {
-            Data::Order(order) => Ok(order),
-            Data::Error(msg) => match msg.code {
-                -2013 => Err(RestError::Exchange(ExchangeError::OrderNotFound)),
-                _ => Err(RestError::Exchange(ExchangeError::Api(anyhow::anyhow!(
-                    "{msg:?}"
-                )))),
-            },
-            _ => Err(RestError::UnexpectedResponseType(anyhow::anyhow!(
-                "{value:?}"
-            ))),
-        }
-    }
+/// Spot Result.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpotResult {
+    /// Price.
+    pub price: Decimal,
+    /// Size.
+    pub orig_qty: Decimal,
+    /// Filled size.
+    pub executed_qty: Decimal,
+    /// Filled quote size.
+    pub cummulative_quote_qty: Decimal,
+    /// Status.
+    pub status: Status,
+    /// Time-In-Force.
+    pub time_in_force: TimeInForce,
+    /// Order type.
+    #[serde(rename = "type")]
+    pub order_type: OrderType,
+    /// Order side.
+    pub side: OrderSide,
+}
+
+/// Spot Order.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpotOrder {
+    /// Ack.
+    #[serde(flatten)]
+    pub ack: SpotAck,
+
+    /// Result.
+    #[serde(flatten)]
+    pub result: Option<SpotResult>,
+
+    /// Fills.
+    #[serde(default)]
+    pub fills: Vec<SpotFill>,
+}
+
+/// Spot fill.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpotFill {
+    /// Price.
+    pub price: Decimal,
+    /// Size.
+    pub qty: Decimal,
+    /// Fee.
+    pub commission: Decimal,
+    /// Fee asset.
+    pub commission_asset: String,
+    /// Trade id.
+    pub trade_id: i64,
 }

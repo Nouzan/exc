@@ -264,6 +264,84 @@ impl TryFrom<Order> for types::Order {
                     trade: None,
                 })
             }
+            Order::Spot(order) => {
+                let ack = order.ack;
+                if let Some(result) = order.result {
+                    let mut filled = result.executed_qty.abs();
+                    let mut size = result.orig_qty.abs();
+                    match result.side {
+                        OrderSide::Buy => {
+                            filled.set_sign_positive(true);
+                            size.set_sign_positive(true);
+                        }
+                        OrderSide::Sell => {
+                            filled.set_sign_positive(false);
+                            size.set_sign_positive(false);
+                        }
+                    }
+                    let kind = match result.order_type {
+                        trading::OrderType::Limit => match result.time_in_force {
+                            TimeInForce::Gtc => types::OrderKind::Limit(
+                                result.price,
+                                types::TimeInForce::GoodTilCancelled,
+                            ),
+                            TimeInForce::Fok => types::OrderKind::Limit(
+                                result.price,
+                                types::TimeInForce::FillOrKill,
+                            ),
+                            TimeInForce::Ioc => types::OrderKind::Limit(
+                                result.price,
+                                types::TimeInForce::ImmediateOrCancel,
+                            ),
+                            TimeInForce::Gtx => types::OrderKind::PostOnly(result.price),
+                        },
+                        trading::OrderType::Market => types::OrderKind::Market,
+                        other => {
+                            return Err(ExchangeError::Other(anyhow!(
+                                "unsupported order type: {other:?}"
+                            )));
+                        }
+                    };
+                    let status = match result.status {
+                        Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
+                        Status::Canceled | Status::Expired | Status::Filled => {
+                            types::OrderStatus::Finished
+                        }
+                        Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
+                    };
+                    let mut fees = HashMap::default();
+                    let mut last_trade = None;
+                    for fill in order.fills {
+                        let fee = fees.entry(fill.commission_asset.clone()).or_default();
+                        *fee -= fill.commission;
+                        last_trade = Some(types::OrderTrade {
+                            price: fill.price,
+                            size: fill.qty,
+                            fee: -fill.commission,
+                            fee_asset: Some(fill.commission_asset),
+                        });
+                    }
+                    Ok(types::Order {
+                        id: types::OrderId::from(ack.client_order_id),
+                        target: types::Place { size, kind },
+                        state: types::OrderState {
+                            filled,
+                            cost: if result.executed_qty.is_zero() {
+                                Decimal::ONE
+                            } else {
+                                result.cummulative_quote_qty / result.executed_qty
+                            },
+                            status,
+                            fees,
+                        },
+                        trade: last_trade,
+                    })
+                } else {
+                    Err(ExchangeError::Other(anyhow::anyhow!(
+                        "order result is missing"
+                    )))
+                }
+            }
         }
     }
 }
@@ -282,7 +360,7 @@ impl Adaptor<types::PlaceOrder> for Request {
             Ok(types::Placed {
                 ts: super::from_timestamp(order.updated())?,
                 id,
-                order: Some(order.try_into()?),
+                order: order.try_into().ok(),
             })
         }
         .boxed())
