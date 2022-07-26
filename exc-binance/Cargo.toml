@@ -1,6 +1,6 @@
 [package]
 name = "exc-binance"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
@@ -27,7 +27,7 @@ rust_decimal = "1"
 # sign
 hmac = "0.12.0"
 sha2 = "0.10.0"
-hex = "0.4.3"
+hex = "0.4.4"
 
 [dependencies.time]
 version = "0.3.9"
@@ -38,7 +38,7 @@ version = "1.0.136"
 features = ["derive"]
 
 [dependencies.exc-core]
-version = "0.4.3"
+version = "0.4.4"
 path = "../exc-core"
 features = ["websocket", "http", "retry"]
 
