@@ -38,7 +38,7 @@ impl Service<Request> for Http {
     fn call(&mut self, req: Request) -> Self::Future {
         if let Request::Http(req) = req {
             Service::call(self, req)
-                .map_ok(Response::Http)
+                .map_ok(|resp| Response::Http(Box::new(resp)))
                 .map_err(Error::from)
                 .boxed()
         } else {
