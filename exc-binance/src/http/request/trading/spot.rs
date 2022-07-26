@@ -19,6 +19,18 @@ pub enum RespType {
     Full,
 }
 
+/// Side effect (for margin)
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SideEffect {
+    /// No side effect.
+    NoSideEffect,
+    /// Margin buy.
+    MarginBuy,
+    /// Auto repay.
+    AutoRepay,
+}
+
 /// Place order.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -42,6 +54,9 @@ pub struct PlaceOrder {
     /// Price.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub price: Option<Decimal>,
+    /// Side effect (for margin).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub side_effect_type: Option<SideEffect>,
     /// Client id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_client_order_id: Option<String>,
@@ -83,6 +98,7 @@ impl<'a> TryFrom<&'a exc_core::types::PlaceOrder> for PlaceOrder {
             price,
             new_client_order_id: req.client_id.clone(),
             time_in_force: tif,
+            side_effect_type: None,
             new_order_resp_type: Some(RespType::Ack),
         })
     }
