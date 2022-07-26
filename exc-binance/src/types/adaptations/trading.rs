@@ -36,18 +36,20 @@ impl Adaptor<types::SubscribeOrders> for Request {
                         let kind = match update.order_type {
                             OrderType::Limit => match update.time_in_force {
                                 TimeInForce::Gtc => types::OrderKind::Limit(
-                                    update.price,
+                                    update.price.normalize(),
                                     types::TimeInForce::GoodTilCancelled,
                                 ),
                                 TimeInForce::Fok => types::OrderKind::Limit(
-                                    update.price,
+                                    update.price.normalize(),
                                     types::TimeInForce::FillOrKill,
                                 ),
                                 TimeInForce::Ioc => types::OrderKind::Limit(
-                                    update.price,
+                                    update.price.normalize(),
                                     types::TimeInForce::ImmediateOrCancel,
                                 ),
-                                TimeInForce::Gtx => types::OrderKind::PostOnly(update.price),
+                                TimeInForce::Gtx => {
+                                    types::OrderKind::PostOnly(update.price.normalize())
+                                }
                             },
                             OrderType::Market => types::OrderKind::Market,
                             other => {
@@ -56,8 +58,8 @@ impl Adaptor<types::SubscribeOrders> for Request {
                                 )));
                             }
                         };
-                        let mut filled = update.filled_size.abs();
-                        let mut size = update.size.abs();
+                        let mut filled = update.filled_size.abs().normalize();
+                        let mut size = update.size.abs().normalize();
                         match update.side {
                             OrderSide::Buy => {
                                 filled.set_sign_positive(true);
@@ -75,10 +77,10 @@ impl Adaptor<types::SubscribeOrders> for Request {
                             }
                             Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
                         };
-                        let trade_size = update.last_trade_size.abs();
+                        let trade_size = update.last_trade_size.abs().normalize();
                         let trade = if !trade_size.is_zero() {
                             let mut trade = types::OrderTrade {
-                                price: update.last_trade_price,
+                                price: update.last_trade_price.normalize(),
                                 size: if matches!(update.side, OrderSide::Buy) {
                                     trade_size
                                 } else {
@@ -88,7 +90,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                                 fee_asset: None,
                             };
                             if let Some(asset) = update.fee_asset {
-                                trade.fee = update.fee;
+                                trade.fee = update.fee.normalize();
                                 trade.fee_asset = Some(asset);
                             }
                             Some(trade)
@@ -119,28 +121,33 @@ impl Adaptor<types::SubscribeOrders> for Request {
                         let kind = match update.order_type {
                             OrderType::Limit => match update.time_in_force {
                                 TimeInForce::Gtc => types::OrderKind::Limit(
-                                    update.price,
+                                    update.price.normalize(),
                                     types::TimeInForce::GoodTilCancelled,
                                 ),
                                 TimeInForce::Fok => types::OrderKind::Limit(
-                                    update.price,
+                                    update.price.normalize(),
                                     types::TimeInForce::FillOrKill,
                                 ),
                                 TimeInForce::Ioc => types::OrderKind::Limit(
-                                    update.price,
+                                    update.price.normalize(),
                                     types::TimeInForce::ImmediateOrCancel,
                                 ),
-                                TimeInForce::Gtx => types::OrderKind::PostOnly(update.price),
+                                TimeInForce::Gtx => {
+                                    types::OrderKind::PostOnly(update.price.normalize())
+                                }
                             },
                             OrderType::Market => types::OrderKind::Market,
+                            OrderType::LimitMaker => {
+                                types::OrderKind::PostOnly(update.price.normalize())
+                            }
                             other => {
                                 return Err(ExchangeError::Other(anyhow!(
                                     "unsupported order type: {other:?}"
                                 )));
                             }
                         };
-                        let mut filled = update.filled_size.abs();
-                        let mut size = update.size.abs();
+                        let mut filled = update.filled_size.abs().normalize();
+                        let mut size = update.size.abs().normalize();
                         match update.side {
                             OrderSide::Buy => {
                                 filled.set_sign_positive(true);
@@ -158,7 +165,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                             }
                             Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
                         };
-                        let trade_size = update.last_trade_size.abs();
+                        let trade_size = update.last_trade_size.abs().normalize();
                         let trade = if !trade_size.is_zero() {
                             let mut trade = types::OrderTrade {
                                 price: update.last_trade_price,
@@ -171,7 +178,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                                 fee_asset: None,
                             };
                             if let Some(asset) = update.fee_asset {
-                                trade.fee = update.fee;
+                                trade.fee = update.fee.normalize();
                                 trade.fee_asset = Some(asset);
                             }
                             Some(trade)
@@ -188,7 +195,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                                     cost: if update.filled_size.is_zero() {
                                         Decimal::ONE
                                     } else {
-                                        update.filled_quote_size / update.filled_size
+                                        (update.filled_quote_size / update.filled_size).normalize()
                                     },
                                     status,
                                     fees: HashMap::default(),

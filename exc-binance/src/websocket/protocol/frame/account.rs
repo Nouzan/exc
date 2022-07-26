@@ -51,6 +51,8 @@ pub enum OrderType {
     TakeProfit,
     /// Liquidation.
     Liquidation,
+    /// Limit maker.
+    LimitMaker,
 }
 
 /// Update kind.
