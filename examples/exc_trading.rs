@@ -1,14 +1,29 @@
 use std::{io::Read, path::PathBuf, time::Duration};
 
-use clap::Parser;
+use clap::{clap_derive::ArgEnum, Parser};
 use exc::{
     types::{OrderId, Place},
     CheckOrderService, IntoExc, SubscribeOrdersService, TradingService,
 };
-use exc_binance::Binance;
+use exc_binance::{Binance, SpotOptions};
 use futures::StreamExt;
 use rust_decimal::Decimal;
 use serde::Deserialize;
+
+#[derive(Clone, Copy, ArgEnum)]
+enum MarginOp {
+    Loan,
+    Repay,
+}
+
+impl From<MarginOp> for exc_binance::MarginOp {
+    fn from(op: MarginOp) -> Self {
+        match op {
+            MarginOp::Loan => Self::Loan,
+            MarginOp::Repay => Self::Repay,
+        }
+    }
+}
 
 #[derive(Parser)]
 struct Args {
@@ -21,8 +36,10 @@ struct Args {
     exec: Option<Vec<String>>,
     #[clap(long, short)]
     script: Option<PathBuf>,
-    #[clap(long)]
-    margin: bool,
+    #[clap(long, arg_enum)]
+    buy_margin: Option<MarginOp>,
+    #[clap(long, arg_enum)]
+    sell_margin: Option<MarginOp>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -96,7 +113,13 @@ async fn main() -> anyhow::Result<()> {
         }
         "binance-s" => {
             let key = serde_json::from_str(&args.key)?;
-            Binance::spot_with_options(args.margin)
+            let options = match (args.buy_margin, args.sell_margin) {
+                (None, None) => SpotOptions::default(),
+                (buy, sell) => {
+                    SpotOptions::with_margin(buy.map(|o| o.into()), sell.map(|o| o.into()))
+                }
+            };
+            Binance::spot_with_options(options)
                 .private(key)
                 .connect()
                 .into_exc()

@@ -17,7 +17,7 @@ use crate::{
     },
     types::{request::Request, response::Response},
     websocket::{request::WsRequest, BinanceWebsocketApi},
-    Error,
+    Error, SpotOptions,
 };
 
 type Http = BinanceRestApi<HttpsChannel>;
@@ -119,12 +119,12 @@ impl Binance {
 
     /// Spot endpoint.
     pub fn spot() -> Endpoint {
-        Endpoint::spot_with_options(false)
+        Endpoint::spot_with_options(SpotOptions::default())
     }
 
     /// Spot endpoint.
-    pub fn spot_with_options(margin: bool) -> Endpoint {
-        Endpoint::spot_with_options(margin)
+    pub fn spot_with_options(options: SpotOptions) -> Endpoint {
+        Endpoint::spot_with_options(options)
     }
 }
 

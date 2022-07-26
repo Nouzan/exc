@@ -120,6 +120,40 @@ impl Rest for Payload {
     }
 }
 
+/// Margin mode.
+#[derive(Debug, Clone, Copy)]
+pub enum MarginOp {
+    /// Loan.
+    Loan,
+    /// Repay.
+    Repay,
+}
+
+/// Margin options.
+#[derive(Debug, Clone, Copy)]
+pub struct MarginOptions {
+    /// Buy.
+    pub buy: Option<MarginOp>,
+    /// Sell.
+    pub sell: Option<MarginOp>,
+}
+
+/// Spot options.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct SpotOptions {
+    /// Enable margin.
+    pub margin: Option<MarginOptions>,
+}
+
+impl SpotOptions {
+    /// With margin.
+    pub fn with_margin(buy: Option<MarginOp>, sell: Option<MarginOp>) -> Self {
+        Self {
+            margin: Some(MarginOptions { buy, sell }),
+        }
+    }
+}
+
 /// Binance rest api endpoints.
 #[derive(Debug, Clone, Copy)]
 pub enum RestEndpoint {
@@ -127,7 +161,7 @@ pub enum RestEndpoint {
     UsdMarginFutures,
     /// Spot.
     /// Set it to `true` to enable margin trading.
-    Spot(bool),
+    Spot(SpotOptions),
 }
 
 impl fmt::Display for RestEndpoint {
