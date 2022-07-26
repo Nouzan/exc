@@ -90,7 +90,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                                 fee_asset: None,
                             };
                             if let Some(asset) = update.fee_asset {
-                                trade.fee = update.fee.normalize();
+                                trade.fee = -update.fee.normalize();
                                 trade.fee_asset = Some(asset);
                             }
                             Some(trade)
@@ -178,7 +178,7 @@ impl Adaptor<types::SubscribeOrders> for Request {
                                 fee_asset: None,
                             };
                             if let Some(asset) = update.fee_asset {
-                                trade.fee = update.fee.normalize();
+                                trade.fee = -update.fee.normalize();
                                 trade.fee_asset = Some(asset);
                             }
                             Some(trade)
