@@ -1,3 +1,5 @@
+use self::spot::SideEffect;
+
 use super::{Rest, RestEndpoint, RestError};
 use serde::Serialize;
 
@@ -19,9 +21,14 @@ impl PlaceOrder {
             RestEndpoint::UsdMarginFutures => Ok(PlaceOrderKind::UsdMarginFutures(
                 usd_margin_futures::PlaceOrder::try_from(&self.inner)?,
             )),
-            RestEndpoint::Spot(_) => Ok(PlaceOrderKind::Spot(spot::PlaceOrder::try_from(
-                &self.inner,
-            )?)),
+            RestEndpoint::Spot(margin) => {
+                let mut req = spot::PlaceOrder::try_from(&self.inner)?;
+                if *margin {
+                    // FIXME: it is better to make it an option.
+                    req.side_effect_type = Some(SideEffect::MarginBuy);
+                }
+                Ok(PlaceOrderKind::Spot(req))
+            }
         }
     }
 }
