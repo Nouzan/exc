@@ -32,10 +32,10 @@ impl Endpoint {
     }
 
     /// Spot.
-    pub fn spot() -> Self {
+    pub fn spot_with_options(margin: bool) -> Self {
         Self {
             key: None,
-            http: (RestEndpoint::Spot, HttpEndpoint::default()),
+            http: (RestEndpoint::Spot(margin), HttpEndpoint::default()),
             ws: BinanceWebsocketApi::spot(),
             buffer: CAP,
         }

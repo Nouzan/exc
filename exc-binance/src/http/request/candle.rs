@@ -80,7 +80,7 @@ impl Rest for QueryCandles {
         let qs = serde_urlencoded::to_string(self)?;
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/klines?{qs}")),
-            RestEndpoint::Spot => Ok(format!("/api/v3/klines?{qs}")),
+            RestEndpoint::Spot(_) => Ok(format!("/api/v3/klines?{qs}")),
         }
     }
 

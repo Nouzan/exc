@@ -119,7 +119,12 @@ impl Binance {
 
     /// Spot endpoint.
     pub fn spot() -> Endpoint {
-        Endpoint::spot()
+        Endpoint::spot_with_options(false)
+    }
+
+    /// Spot endpoint.
+    pub fn spot_with_options(margin: bool) -> Endpoint {
+        Endpoint::spot_with_options(margin)
     }
 }
 
