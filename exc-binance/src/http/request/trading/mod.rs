@@ -1,6 +1,6 @@
 use self::spot::SideEffect;
 
-use super::{Rest, RestEndpoint, RestError};
+use super::{MarginOp, Rest, RestEndpoint, RestError};
 use serde::Serialize;
 
 /// Usd-Margin futures.
@@ -21,11 +21,25 @@ impl PlaceOrder {
             RestEndpoint::UsdMarginFutures => Ok(PlaceOrderKind::UsdMarginFutures(
                 usd_margin_futures::PlaceOrder::try_from(&self.inner)?,
             )),
-            RestEndpoint::Spot(margin) => {
+            RestEndpoint::Spot(options) => {
                 let mut req = spot::PlaceOrder::try_from(&self.inner)?;
-                if *margin {
-                    // FIXME: it is better to make it an option.
-                    req.side_effect_type = Some(SideEffect::MarginBuy);
+                if let Some(margin) = options.margin.as_ref() {
+                    let margin = if self.inner.place.size.is_sign_positive() {
+                        margin.buy.as_ref()
+                    } else {
+                        margin.sell.as_ref()
+                    };
+                    match margin {
+                        Some(MarginOp::Loan) => {
+                            req.side_effect_type = Some(SideEffect::MarginBuy);
+                        }
+                        Some(MarginOp::Repay) => {
+                            req.side_effect_type = Some(SideEffect::AutoRepay);
+                        }
+                        None => {
+                            req.side_effect_type = None;
+                        }
+                    }
                 }
                 Ok(PlaceOrderKind::Spot(req))
             }
@@ -51,8 +65,13 @@ impl Rest for PlaceOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            RestEndpoint::Spot(true) => Ok(format!("/sapi/v1/margin/order")),
-            RestEndpoint::Spot(false) => Ok(format!("/api/v3/order")),
+            RestEndpoint::Spot(options) => {
+                if options.margin.is_some() {
+                    Ok(format!("/sapi/v1/margin/order"))
+                } else {
+                    Ok(format!("/api/v3/order"))
+                }
+            }
         }
     }
 
@@ -104,8 +123,13 @@ impl Rest for CancelOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            RestEndpoint::Spot(true) => Ok(format!("/sapi/v1/margin/order")),
-            RestEndpoint::Spot(false) => Ok(format!("/api/v3/order")),
+            RestEndpoint::Spot(options) => {
+                if options.margin.is_some() {
+                    Ok(format!("/sapi/v1/margin/order"))
+                } else {
+                    Ok(format!("/api/v3/order"))
+                }
+            }
         }
     }
 
@@ -143,8 +167,13 @@ impl Rest for GetOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            RestEndpoint::Spot(true) => Ok(format!("/sapi/v1/margin/order")),
-            RestEndpoint::Spot(false) => Ok(format!("/api/v3/order")),
+            RestEndpoint::Spot(options) => {
+                if options.margin.is_some() {
+                    Ok(format!("/sapi/v1/margin/order"))
+                } else {
+                    Ok(format!("/api/v3/order"))
+                }
+            }
         }
     }
 

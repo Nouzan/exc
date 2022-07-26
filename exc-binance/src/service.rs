@@ -17,7 +17,7 @@ use crate::{
     },
     types::{request::Request, response::Response},
     websocket::{request::WsRequest, BinanceWebsocketApi},
-    Error,
+    Error, SpotOptions,
 };
 
 type Http = BinanceRestApi<HttpsChannel>;
@@ -38,7 +38,7 @@ impl Service<Request> for Http {
     fn call(&mut self, req: Request) -> Self::Future {
         if let Request::Http(req) = req {
             Service::call(self, req)
-                .map_ok(Response::Http)
+                .map_ok(|resp| Response::Http(Box::new(resp)))
                 .map_err(Error::from)
                 .boxed()
         } else {
@@ -119,12 +119,12 @@ impl Binance {
 
     /// Spot endpoint.
     pub fn spot() -> Endpoint {
-        Endpoint::spot_with_options(false)
+        Endpoint::spot_with_options(SpotOptions::default())
     }
 
     /// Spot endpoint.
-    pub fn spot_with_options(margin: bool) -> Endpoint {
-        Endpoint::spot_with_options(margin)
+    pub fn spot_with_options(options: SpotOptions) -> Endpoint {
+        Endpoint::spot_with_options(options)
     }
 }
 

@@ -13,7 +13,7 @@ use crate::{
 #[derive(Debug)]
 pub enum Response {
     /// Http resposne.
-    Http(RestResponse<Data>),
+    Http(Box<RestResponse<Data>>),
     /// Websocket response.
     Ws(WsResponse),
 }

@@ -4,7 +4,10 @@ use exc_core::transport::http::endpoint::Endpoint as HttpEndpoint;
 use tower::{buffer::Buffer, ready_cache::ReadyCache, util::Either, ServiceBuilder};
 
 use crate::{
-    http::{layer::BinanceRestApiLayer, request::RestEndpoint},
+    http::{
+        layer::BinanceRestApiLayer,
+        request::{RestEndpoint, SpotOptions},
+    },
     service::{Binance, BinanceInner, HTTP_KEY, WS_KEY},
     types::key::BinanceKey,
     websocket::{endpoint::WsEndpoint, BinanceWebsocketApi},
@@ -32,10 +35,10 @@ impl Endpoint {
     }
 
     /// Spot.
-    pub fn spot_with_options(margin: bool) -> Self {
+    pub fn spot_with_options(options: SpotOptions) -> Self {
         Self {
             key: None,
-            http: (RestEndpoint::Spot(margin), HttpEndpoint::default()),
+            http: (RestEndpoint::Spot(options), HttpEndpoint::default()),
             ws: BinanceWebsocketApi::spot(),
             buffer: CAP,
         }

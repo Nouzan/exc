@@ -21,6 +21,7 @@ pub mod endpoint;
 pub mod service;
 
 pub use self::error::Error;
+pub use self::http::request::{MarginOp, SpotOptions};
 pub use self::service::Binance;
 pub use self::types::{request::Request, response::Response};
 
