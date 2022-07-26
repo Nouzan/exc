@@ -1,6 +1,7 @@
 use exc_core::ExchangeError;
 use rust_decimal::Decimal;
 use serde::Deserialize;
+use serde_with::serde_as;
 
 use crate::{
     http::error::RestError,
@@ -125,12 +126,14 @@ pub struct UsdMarginFuturesOrder {
 }
 
 /// Spot Ack.
+#[serde_as]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SpotAck {
     /// Symbol.
     pub symbol: String,
     /// Order id.
+    #[serde_as(as = "serde_with::PickFirst<(_, serde_with::DisplayFromStr)>")]
     pub order_id: i64,
     /// Orignal client order id.
     orig_client_order_id: Option<String>,
