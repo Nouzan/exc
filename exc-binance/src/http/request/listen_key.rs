@@ -18,7 +18,7 @@ impl Rest for CurrentListenKey {
                 if options.margin.is_some() {
                     Ok(format!("/sapi/v1/userDataStream"))
                 } else {
-                    Ok(format!("/sapi/v1/userDataStream"))
+                    Ok(format!("/api/v3/userDataStream"))
                 }
             }
         }
@@ -54,7 +54,7 @@ impl Rest for DeleteListenKey {
                 if options.margin.is_some() {
                     Ok(format!("/sapi/v1/userDataStream"))
                 } else {
-                    Ok(format!("/sapi/v1/userDataStream"))
+                    Ok(format!("/api/v3/userDataStream"))
                 }
             }
         }
