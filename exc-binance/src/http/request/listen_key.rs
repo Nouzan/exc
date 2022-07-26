@@ -14,7 +14,8 @@ impl Rest for CurrentListenKey {
     fn to_path(&self, endpoint: &super::RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/listenKey")),
-            _ => Ok(format!("/api/v3/userDataStream")),
+            RestEndpoint::Spot(false) => Ok(format!("/api/v3/userDataStream")),
+            RestEndpoint::Spot(true) => Ok(format!("/sapi/v1/userDataStream")),
         }
     }
 
