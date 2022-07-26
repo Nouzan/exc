@@ -21,6 +21,8 @@ struct Args {
     exec: Option<Vec<String>>,
     #[clap(long, short)]
     script: Option<PathBuf>,
+    #[clap(long)]
+    margin: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -94,7 +96,10 @@ async fn main() -> anyhow::Result<()> {
         }
         "binance-s" => {
             let key = serde_json::from_str(&args.key)?;
-            Binance::spot().private(key).connect().into_exc()
+            Binance::spot_with_options(args.margin)
+                .private(key)
+                .connect()
+                .into_exc()
         }
         exchange => {
             anyhow::bail!("unsupported exchange: {exchange}");

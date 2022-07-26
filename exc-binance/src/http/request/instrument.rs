@@ -14,7 +14,7 @@ impl Rest for ExchangeInfo {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/exchangeInfo".to_string()),
-            RestEndpoint::Spot => Ok("/api/v3/exchangeInfo".to_string()),
+            RestEndpoint::Spot(_) => Ok("/api/v3/exchangeInfo".to_string()),
         }
     }
 

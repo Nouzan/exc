@@ -11,7 +11,7 @@ impl Rest for Ping {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::Spot => Ok("/api/v1/ping".to_string()),
+            RestEndpoint::Spot(_) => Ok("/api/v3/ping".to_string()),
             RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/ping".to_string()),
         }
     }

@@ -126,14 +126,15 @@ pub enum RestEndpoint {
     /// USD-M Futures.
     UsdMarginFutures,
     /// Spot.
-    Spot,
+    /// Set it to `true` to enable margin trading.
+    Spot(bool),
 }
 
 impl fmt::Display for RestEndpoint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UsdMarginFutures => write!(f, "binance-u"),
-            Self::Spot => write!(f, "binance-s"),
+            Self::Spot(_) => write!(f, "binance-s"),
         }
     }
 }
@@ -143,7 +144,7 @@ impl RestEndpoint {
     pub fn host(&self) -> &'static str {
         match self {
             Self::UsdMarginFutures => "https://fapi.binance.com",
-            Self::Spot => "https://api.binance.com",
+            Self::Spot(_) => "https://api.binance.com",
         }
     }
 }

@@ -19,7 +19,7 @@ impl PlaceOrder {
             RestEndpoint::UsdMarginFutures => Ok(PlaceOrderKind::UsdMarginFutures(
                 usd_margin_futures::PlaceOrder::try_from(&self.inner)?,
             )),
-            RestEndpoint::Spot => Ok(PlaceOrderKind::Spot(spot::PlaceOrder::try_from(
+            RestEndpoint::Spot(_) => Ok(PlaceOrderKind::Spot(spot::PlaceOrder::try_from(
                 &self.inner,
             )?)),
         }
@@ -44,7 +44,8 @@ impl Rest for PlaceOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            _ => Ok(format!("/api/v3/order")),
+            RestEndpoint::Spot(true) => Ok(format!("/sapi/v1/margin/order")),
+            RestEndpoint::Spot(false) => Ok(format!("/api/v3/order")),
         }
     }
 
@@ -96,7 +97,8 @@ impl Rest for CancelOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            _ => Ok(format!("/api/v3/order")),
+            RestEndpoint::Spot(true) => Ok(format!("/sapi/v1/margin/order")),
+            RestEndpoint::Spot(false) => Ok(format!("/api/v3/order")),
         }
     }
 
@@ -134,7 +136,8 @@ impl Rest for GetOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
-            _ => Ok(format!("/api/v3/order")),
+            RestEndpoint::Spot(true) => Ok(format!("/sapi/v1/margin/order")),
+            RestEndpoint::Spot(false) => Ok(format!("/api/v3/order")),
         }
     }
 
