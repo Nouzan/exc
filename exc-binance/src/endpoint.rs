@@ -68,6 +68,12 @@ impl Endpoint {
         self
     }
 
+    /// Set listen key active stop duration.
+    pub fn ws_listen_key_stop_refreshing_after(&mut self, interval: Duration) -> &mut Self {
+        self.ws.listen_key_stop_refreshing_after(interval);
+        self
+    }
+
     /// Private mode.
     pub fn private(&mut self, key: BinanceKey) -> &mut Self {
         self.key = Some(key);

@@ -19,6 +19,7 @@ pub struct WsEndpoint {
     default_stream_timeout: Option<Duration>,
     listen_key_retry: Option<usize>,
     listen_key_refresh_interval: Option<Duration>,
+    listen_key_stop_refreshing_after: Option<Duration>,
 }
 
 impl WsEndpoint {
@@ -35,6 +36,7 @@ impl WsEndpoint {
             default_stream_timeout: None,
             listen_key_retry: None,
             listen_key_refresh_interval: None,
+            listen_key_stop_refreshing_after: None,
         }
     }
 
@@ -59,6 +61,12 @@ impl WsEndpoint {
     /// Set listen key refresh interval.
     pub fn listen_key_refresh_interval(&mut self, interval: Duration) -> &mut Self {
         self.listen_key_refresh_interval = Some(interval);
+        self
+    }
+
+    /// Set listen key active stop duration.
+    pub fn listen_key_stop_refreshing_after(&mut self, interval: Duration) -> &mut Self {
+        self.listen_key_stop_refreshing_after = Some(interval);
         self
     }
 
@@ -91,6 +99,7 @@ impl WsEndpoint {
             default_stream_timeout,
             retry: self.listen_key_retry,
             interval: self.listen_key_refresh_interval,
+            stop_refresing_after: self.listen_key_stop_refreshing_after,
         };
         let connection = Reconnect::new::<WsClient, WsRequest>(connect, self.target.clone())
             .map_err(|err| match err.downcast::<WsError>() {
