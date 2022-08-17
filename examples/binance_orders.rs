@@ -31,7 +31,11 @@ async fn main() -> anyhow::Result<()> {
         _ => anyhow::bail!("unsupported"),
     };
 
-    let mut binance = endpoint.private(key).connect().into_exc();
+    let mut binance = endpoint
+        .private(key)
+        .ws_listen_key_stop_refreshing_after(Duration::from_secs(60))
+        .connect()
+        .into_exc();
 
     let mut revision = 0;
     loop {

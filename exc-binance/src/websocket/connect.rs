@@ -60,58 +60,75 @@ const RETRY: usize = 5;
 const INTERVAL: Duration = Duration::from_secs(60 * 5);
 
 impl BinanceWsTarget {
-    async fn fresh_key_worker(
+    async fn refresh_key_worker(
         mut provider: Http,
         key: ListenKey,
         retry: Option<usize>,
         interval: Option<Duration>,
+        stop_after: Option<Duration>,
     ) {
-        let mut failed = false;
-        loop {
-            tokio::time::sleep(interval.unwrap_or(INTERVAL)).await;
-            for _ in 0..retry.unwrap_or(RETRY) {
-                match (&mut provider)
-                    .oneshot(RestRequest::with_payload(CurrentListenKey))
-                    .await
-                {
-                    Ok(current) => {
-                        failed = false;
-                        match current.into_response::<ListenKey>() {
-                            Ok(current) => {
-                                if current.as_str() != key.as_str() {
-                                    tracing::error!("fresh worker; listen key is expired");
+        let worker = async move {
+            let mut failed = false;
+            loop {
+                tokio::time::sleep(interval.unwrap_or(INTERVAL)).await;
+                for _ in 0..retry.unwrap_or(RETRY) {
+                    match (&mut provider)
+                        .oneshot(RestRequest::with_payload(CurrentListenKey))
+                        .await
+                    {
+                        Ok(current) => {
+                            failed = false;
+                            match current.into_response::<ListenKey>() {
+                                Ok(current) => {
+                                    if current.as_str() != key.as_str() {
+                                        tracing::error!("refresh worker; listen key is expired");
+                                        return;
+                                    } else {
+                                        tracing::trace!("refresh worker; listen key refreshed");
+                                    }
+                                }
+                                Err(err) => {
+                                    tracing::error!(
+                                        "refresh worker; parse refresh response error: {err}"
+                                    );
                                     return;
-                                } else {
-                                    tracing::trace!("fresh worker; listen key refreshed");
                                 }
                             }
-                            Err(err) => {
-                                tracing::error!(
-                                    "fresh worker; parse refresh response error: {err}"
-                                );
-                                return;
-                            }
+                            break;
                         }
-                        break;
-                    }
-                    Err(err) => {
-                        tracing::error!("fresh worker; refresh listen key error: {err}");
-                        failed = true;
-                        tokio::time::sleep(Duration::from_secs(1)).await;
+                        Err(err) => {
+                            tracing::error!("refresh worker; refresh listen key error: {err}");
+                            failed = true;
+                            tokio::time::sleep(Duration::from_secs(1)).await;
+                        }
                     }
                 }
+                if failed {
+                    break;
+                }
             }
-            if failed {
-                break;
+        };
+        if let Some(stop_after) = stop_after {
+            tokio::select! {
+                _ = worker => {
+                    tracing::error!("refresh worker; refresh failed");
+                },
+                _ = tokio::time::sleep(stop_after) => {
+                    tracing::warn!("refresh worker; stop actively");
+                }
             }
+        } else {
+            worker.await;
+            tracing::error!("refresh worker; refresh failed");
         }
-        tracing::error!("fresh worker; refresh failed");
+        tracing::warn!("refresh worker; refresh stopped");
     }
 
     async fn into_uri(
         self,
         retry: Option<usize>,
         interval: Option<Duration>,
+        stop_refreshing_after: Option<Duration>,
     ) -> Result<(Uri, Option<impl Future<Output = ()>>), WsError> {
         let mut uri = format!("{}/stream?streams={}", self.host.as_str(), self.name);
         let mut worker = None;
@@ -127,8 +144,12 @@ impl BinanceWsTarget {
                 uri.push_str("&listenKey=");
                 uri.push_str(listen_key.as_str());
             }
-            worker = Some(Self::fresh_key_worker(
-                provider, listen_key, retry, interval,
+            worker = Some(Self::refresh_key_worker(
+                provider,
+                listen_key,
+                retry,
+                interval,
+                stop_refreshing_after,
             ));
         }
         tracing::trace!("ws uri={uri}");
@@ -142,6 +163,7 @@ pub(crate) struct BinanceWsConnect {
     pub(crate) default_stream_timeout: Duration,
     pub(crate) retry: Option<usize>,
     pub(crate) interval: Option<Duration>,
+    pub(crate) stop_refresing_after: Option<Duration>,
 }
 
 impl Service<BinanceWsTarget> for BinanceWsConnect {
@@ -156,7 +178,7 @@ impl Service<BinanceWsTarget> for BinanceWsConnect {
     fn call(&mut self, req: BinanceWsTarget) -> Self::Future {
         let connect = WsConnector::default();
         let res = req
-            .into_uri(self.retry, self.interval)
+            .into_uri(self.retry, self.interval, self.stop_refresing_after)
             .and_then(|(uri, worker)| {
                 connect
                     .oneshot(uri)
