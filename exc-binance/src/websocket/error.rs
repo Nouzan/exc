@@ -20,6 +20,9 @@ pub enum WsError {
     /// Websocket errors.
     #[error("websocket: {0}")]
     Websocket(#[from] tokio_tungstenite::tungstenite::Error),
+    /// Remote close.
+    #[error("websocket: remote close (received a close frame)")]
+    RemoteClose,
     /// Json errors.
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),

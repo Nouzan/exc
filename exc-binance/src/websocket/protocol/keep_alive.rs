@@ -212,6 +212,10 @@ where
                                 tracing::trace!("keep-alive; new text frame: {msg}");
                                 return Poll::Ready(Some(Ok(msg)));
                             }
+                            Ok(Message::Close(msg)) => {
+                                tracing::error!("keep-alive; remote close: {msg:?}");
+                                return Poll::Ready(Some(Err(WsError::RemoteClose)));
+                            }
                             Err(err) => {
                                 return Poll::Ready(Some(Err(err)));
                             }
