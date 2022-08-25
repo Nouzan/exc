@@ -111,7 +111,7 @@ where
     type Future = S::Future;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready(cx).map_err(|err| err.into())
+        self.inner.poll_ready(cx)
     }
 
     fn call(&mut self, req: R) -> Self::Future {
