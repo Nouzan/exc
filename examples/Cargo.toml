@@ -63,6 +63,10 @@ path = "binance_orders.rs"
 name = "binance-trading"
 path = "binance_trading.rs"
 
+[[bin]]
+name = "binance-streams"
+path = "binance_streams.rs"
+
 [dependencies]
 anyhow = "1"
 exc = { path = "../exc", features = ["http"] }
