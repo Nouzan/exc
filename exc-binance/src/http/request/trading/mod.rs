@@ -64,12 +64,12 @@ impl Rest for PlaceOrder {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/order".to_string()),
             RestEndpoint::Spot(options) => {
                 if options.margin.is_some() {
-                    Ok(format!("/sapi/v1/margin/order"))
+                    Ok("/sapi/v1/margin/order".to_string())
                 } else {
-                    Ok(format!("/api/v3/order"))
+                    Ok("/api/v3/order".to_string())
                 }
             }
         }
@@ -122,12 +122,12 @@ impl Rest for CancelOrder {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/order".to_string()),
             RestEndpoint::Spot(options) => {
                 if options.margin.is_some() {
-                    Ok(format!("/sapi/v1/margin/order"))
+                    Ok("/sapi/v1/margin/order".to_string())
                 } else {
-                    Ok(format!("/api/v3/order"))
+                    Ok("/api/v3/order".to_string())
                 }
             }
         }
@@ -166,12 +166,12 @@ impl Rest for GetOrder {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/order".to_string()),
             RestEndpoint::Spot(options) => {
                 if options.margin.is_some() {
-                    Ok(format!("/sapi/v1/margin/order"))
+                    Ok("/sapi/v1/margin/order".to_string())
                 } else {
-                    Ok(format!("/api/v3/order"))
+                    Ok("/api/v3/order".to_string())
                 }
             }
         }

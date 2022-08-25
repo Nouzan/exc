@@ -125,7 +125,7 @@ impl Rest for PlaceOrder {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/order")),
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/order".to_string()),
             _ => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
                 "only support usd-margin futures"
             ))),

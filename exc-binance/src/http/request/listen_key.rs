@@ -13,12 +13,12 @@ impl Rest for CurrentListenKey {
 
     fn to_path(&self, endpoint: &super::RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/listenKey")),
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/listenKey".to_string()),
             RestEndpoint::Spot(options) => {
                 if options.margin.is_some() {
-                    Ok(format!("/sapi/v1/userDataStream"))
+                    Ok("/sapi/v1/userDataStream".to_string())
                 } else {
-                    Ok(format!("/api/v3/userDataStream"))
+                    Ok("/api/v3/userDataStream".to_string())
                 }
             }
         }
@@ -29,7 +29,7 @@ impl Rest for CurrentListenKey {
     }
 
     fn to_payload(&self) -> super::Payload {
-        super::Payload::new(self.clone())
+        super::Payload::new(*self)
     }
 }
 
@@ -49,12 +49,12 @@ impl Rest for DeleteListenKey {
 
     fn to_path(&self, endpoint: &super::RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/listenKey")),
+            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/listenKey".to_string()),
             RestEndpoint::Spot(options) => {
                 if options.margin.is_some() {
-                    Ok(format!("/sapi/v1/userDataStream"))
+                    Ok("/sapi/v1/userDataStream".to_string())
                 } else {
-                    Ok(format!("/api/v3/userDataStream"))
+                    Ok("/api/v3/userDataStream".to_string())
                 }
             }
         }

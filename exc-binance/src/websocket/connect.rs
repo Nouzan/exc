@@ -138,7 +138,7 @@ impl BinanceWsTarget {
                 .await?
                 .into_response::<ListenKey>()?;
             tracing::debug!("got listen key");
-            uri.push_str("/");
+            uri.push('/');
             uri.push_str(listen_key.as_str());
             if matches!(self.host, BinanceWsHost::UsdMarginFuturesPrivate) {
                 uri.push_str("&listenKey=");
@@ -186,8 +186,8 @@ impl Service<BinanceWsTarget> for BinanceWsConnect {
                     .map_err(WsError::from)
             });
         let main_stream = self.main_stream.clone();
-        let keep_alive_timeout = self.keep_alive_timeout.clone();
-        let default_stream_timeout = self.default_stream_timeout.clone();
+        let keep_alive_timeout = self.keep_alive_timeout;
+        let default_stream_timeout = self.default_stream_timeout;
         async move {
             let (ws, worker) = res.await?;
             WsClient::with_websocket(

@@ -29,7 +29,7 @@ pub struct BinanceKey {
 impl BinanceKey {
     /// Sign.
     pub fn sign<T: Serialize>(&self, params: T) -> Result<SignedParams<T>, SignError> {
-        SigningParams::now(params).signed(&self)
+        SigningParams::now(params).signed(self)
     }
 }
 
