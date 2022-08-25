@@ -31,10 +31,7 @@ impl BinanceRestApiLayer {
     pub fn new(endpoint: RestEndpoint) -> Self {
         Self {
             endpoint,
-            retry: RetryPolicy::On {
-                f: RestError::is_temporary,
-                times: 0,
-            },
+            retry: RetryPolicy::default().retry_on(RestError::is_temporary),
             key: None,
         }
     }
