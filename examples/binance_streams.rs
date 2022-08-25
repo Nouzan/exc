@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
         other => anyhow::bail!("unsupported endpoint {other}"),
     };
     let exc = endpoint
-        .ws_rate_limit(10, Duration::from_secs(1))
+        .ws_rate_limit(2, Duration::from_secs(1))
         .connect()
         .into_exc();
 
