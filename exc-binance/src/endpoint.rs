@@ -74,6 +74,12 @@ impl Endpoint {
         self
     }
 
+    /// Set rate-limit of ws requests.
+    pub fn ws_rate_limit(&mut self, num: u64, per: Duration) -> &mut Self {
+        self.ws.rate_limit(num, per);
+        self
+    }
+
     /// Private mode.
     pub fn private(&mut self, key: BinanceKey) -> &mut Self {
         self.key = Some(key);
