@@ -48,15 +48,12 @@ impl<'a, F> OkxHttpApiLayer<'a, F> {
         F2: Fn(&ExchangeError) -> bool,
         F2: Send + 'static + Clone,
     {
-        self.retry(RetryPolicy::On { f, times: 0 })
+        self.retry(RetryPolicy::default().retry_on(f))
     }
 
     /// Always retry on errors.
     pub fn retry_on_error(self) -> OkxHttpApiLayer<'a, fn(&ExchangeError) -> bool> {
-        self.retry(RetryPolicy::On {
-            f: |_| true,
-            times: 0,
-        })
+        self.retry(RetryPolicy::default().retry_on(|_| true))
     }
 }
 
