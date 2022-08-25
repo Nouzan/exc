@@ -45,6 +45,23 @@ where
     fn as_service_mut(&mut self) -> ExcMut<'_, Self> {
         ExcMut { inner: self }
     }
+
+    #[cfg(feature = "retry")]
+    /// Create a retry service.
+    fn as_service_mut_with_retry_on<F>(
+        &mut self,
+        f: F,
+        max_wait_secs: u64,
+    ) -> tower::retry::Retry<crate::retry::RetryPolicy<R, R::Response, F>, ExcMut<'_, Self>>
+    where
+        F: Fn(&ExchangeError) -> bool + Clone + Send + 'static,
+    {
+        tower::ServiceBuilder::default()
+            .retry(
+                crate::retry::RetryPolicy::default().retry_on_with_max_wait_secs(f, max_wait_secs),
+            )
+            .service(self.as_service_mut())
+    }
 }
 
 impl<S, R> ExcService<R> for S
