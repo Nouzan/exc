@@ -1,5 +1,6 @@
 use std::{collections::HashSet, time::Duration};
 
+use tower::ServiceBuilder;
 use tower::{reconnect::Reconnect, ServiceExt};
 
 use crate::types::Name;
@@ -9,6 +10,7 @@ use super::{error::WsError, protocol::WsClient, request::WsRequest, BinanceWebso
 
 const DEFAULT_KEEP_ALIVE_TIMEOUT: Duration = Duration::from_secs(30);
 const DEFAULT_STREAM_TIMEOUT: Duration = Duration::from_secs(30);
+const DEFAULT_RATE_LIMIT: (u64, Duration) = (2, Duration::from_secs(1));
 
 /// A builder of binance websocket api service.
 #[derive(Clone)]
@@ -20,6 +22,7 @@ pub struct WsEndpoint {
     listen_key_retry: Option<usize>,
     listen_key_refresh_interval: Option<Duration>,
     listen_key_stop_refreshing_after: Option<Duration>,
+    rate_limit: (u64, Duration),
 }
 
 impl WsEndpoint {
@@ -37,6 +40,7 @@ impl WsEndpoint {
             listen_key_retry: None,
             listen_key_refresh_interval: None,
             listen_key_stop_refreshing_after: None,
+            rate_limit: DEFAULT_RATE_LIMIT,
         }
     }
 
@@ -84,6 +88,12 @@ impl WsEndpoint {
         self
     }
 
+    /// Set rate-limit of the websocket request.
+    pub fn rate_limit(&mut self, num: u64, per: Duration) -> &mut Self {
+        self.rate_limit = (num, per);
+        self
+    }
+
     /// Connect to binance websocket api.
     pub fn connect(&self) -> BinanceWebsocketApi {
         let main_stream = self.main_stream.clone();
@@ -106,8 +116,10 @@ impl WsEndpoint {
                 Ok(err) => *err,
                 Err(err) => WsError::UnknownConnection(err),
             });
-        BinanceWebsocketApi {
-            svc: connection.boxed(),
-        }
+        let svc = ServiceBuilder::default()
+            .rate_limit(self.rate_limit.0, self.rate_limit.1)
+            .service(connection)
+            .boxed();
+        BinanceWebsocketApi { svc }
     }
 }
