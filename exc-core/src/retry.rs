@@ -1,6 +1,14 @@
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 
 use futures::{future::BoxFuture, FutureExt};
+use humantime::format_duration;
 use tower::retry::Policy;
 
 const DEFAULT_MAX_SECS_TO_WAIT: u64 = 128;
@@ -116,5 +124,67 @@ where
 
     fn clone_request(&self, req: &T) -> Option<T> {
         Some(req.clone())
+    }
+}
+
+/// Always.
+#[derive(Debug, Clone)]
+pub struct Always {
+    times: Arc<AtomicU64>,
+    max_duration: Duration,
+}
+
+impl Default for Always {
+    fn default() -> Self {
+        Self {
+            times: Arc::new(AtomicU64::new(0)),
+            max_duration: Duration::from_secs(DEFAULT_MAX_SECS_TO_WAIT),
+        }
+    }
+}
+
+impl Always {
+    /// Create a new always retry policy with max duration to wait.
+    pub fn with_max_duration(dur: Duration) -> Self {
+        Self {
+            times: Arc::new(AtomicU64::new(0)),
+            max_duration: dur,
+        }
+    }
+}
+
+impl<T, U, E> Policy<T, U, E> for Always
+where
+    T: Clone,
+    E: std::fmt::Display,
+{
+    type Future = BoxFuture<'static, Self>;
+
+    fn clone_request(&self, req: &T) -> Option<T> {
+        Some(req.clone())
+    }
+
+    fn retry(&self, _req: &T, result: Result<&U, &E>) -> Option<Self::Future> {
+        match result {
+            Ok(_) => {
+                self.times.store(0, Ordering::Release);
+                None
+            }
+            Err(err) => {
+                let times = self.times.fetch_add(1, Ordering::AcqRel);
+                let max_duration = self.max_duration;
+                let dur = Duration::from_secs(1 << times).min(max_duration);
+                tracing::error!("request error: {err}, retry in {}", format_duration(dur));
+                let shared = self.times.clone();
+                let fut = async move {
+                    tokio::time::sleep(dur).await;
+                    Self {
+                        times: shared,
+                        max_duration,
+                    }
+                };
+                Some(fut.boxed())
+            }
+        }
     }
 }

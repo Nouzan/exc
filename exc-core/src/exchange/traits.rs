@@ -48,19 +48,17 @@ where
 
     #[cfg(feature = "retry")]
     /// Create a retry service.
-    fn as_service_mut_with_retry_on<F>(
-        &mut self,
-        f: F,
-        max_wait_secs: u64,
-    ) -> tower::retry::Retry<crate::retry::RetryPolicy<R, R::Response, F>, ExcMut<'_, Self>>
+    fn into_retry(
+        self,
+        max_duration: std::time::Duration,
+    ) -> tower::retry::Retry<crate::retry::Always, Self>
     where
-        F: Fn(&ExchangeError) -> bool + Clone + Send + 'static,
+        R: Clone,
+        Self: Sized + Clone,
     {
         tower::ServiceBuilder::default()
-            .retry(
-                crate::retry::RetryPolicy::default().retry_on_with_max_wait_secs(f, max_wait_secs),
-            )
-            .service(self.as_service_mut())
+            .retry(crate::retry::Always::with_max_duration(max_duration))
+            .service(self)
     }
 }
 
