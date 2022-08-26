@@ -149,7 +149,7 @@ async fn main() -> anyhow::Result<()> {
                     while let Some(t) = orders.next().await {
                         match t {
                             Ok(t) => {
-                                println!("[*] watch: {t:#?}");
+                                tracing::info!("[*] watch: {t:#?}");
                             }
                             Err(err) => {
                                 tracing::error!("stream error: {err}[{revision}]");
@@ -170,24 +170,26 @@ async fn main() -> anyhow::Result<()> {
         let begin = Instant::now();
         match op {
             Op::Wait { millis } => {
-                println!("[{idx}] wait for {millis}ms");
+                tracing::info!("[{idx}] wait for {millis}ms");
                 tokio::time::sleep(Duration::from_millis(millis)).await;
             }
             Op::Check { name } => match exc.check(&inst, &OrderId::from(name)).await {
                 Ok(update) => {
-                    println!("[{idx}] check(rrt={}): {update:#?}", rrt(begin))
+                    tracing::info!("[{idx}] check(rrt={}): {update:#?}", rrt(begin))
                 }
                 Err(err) => tracing::error!("[{idx}] check(rrt={}): {err}", rrt(begin)),
             },
             Op::Cancel { name } => {
                 match exc.cancel(&inst, &OrderId::from(name)).await {
-                    Ok(cancelled) => println!("[{idx}] cancel(rrt={}): {cancelled:#?}", rrt(begin)),
+                    Ok(cancelled) => {
+                        tracing::info!("[{idx}] cancel(rrt={}): {cancelled:#?}", rrt(begin))
+                    }
                     Err(err) => tracing::error!("[{idx}] cancel(rrt={}): {err}", rrt(begin)),
                 };
             }
             Op::Market { name, size } => {
                 match exc.place(&inst, &Place::with_size(size), Some(&name)).await {
-                    Ok(placed) => println!("[{idx}] market(rrt={}): {placed:#?}", rrt(begin)),
+                    Ok(placed) => tracing::info!("[{idx}] market(rrt={}): {placed:#?}", rrt(begin)),
                     Err(err) => tracing::error!("[{idx}] market(rrt={}): {err}", rrt(begin)),
                 }
             }
@@ -196,7 +198,7 @@ async fn main() -> anyhow::Result<()> {
                     .place(&inst, &Place::with_size(size).limit(price), Some(&name))
                     .await
                 {
-                    Ok(placed) => println!("[{idx}] limit(rrt={}): {placed:#?}", rrt(begin)),
+                    Ok(placed) => tracing::info!("[{idx}] limit(rrt={}): {placed:#?}", rrt(begin)),
                     Err(err) => tracing::error!("[{idx}] limit(rrt={}): {err}", rrt(begin)),
                 }
             }
@@ -205,7 +207,9 @@ async fn main() -> anyhow::Result<()> {
                     .place(&inst, &Place::with_size(size).post_only(price), Some(&name))
                     .await
                 {
-                    Ok(placed) => println!("[{idx}] post-only(rrt={}): {placed:#?}", rrt(begin)),
+                    Ok(placed) => {
+                        tracing::info!("[{idx}] post-only(rrt={}): {placed:#?}", rrt(begin))
+                    }
                     Err(err) => tracing::error!("[{idx}] post-only(rrt={}): {err}", rrt(begin)),
                 };
             }
