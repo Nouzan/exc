@@ -1,9 +1,12 @@
+use std::time::Instant;
+
 use exc::transport::http::endpoint::Endpoint;
 use exc_binance::http::{
     layer::BinanceRestApiLayer,
     request::{utils::Ping, RestRequest},
     response::Data,
 };
+use humantime::format_duration;
 use tower::{ServiceBuilder, ServiceExt};
 
 #[tokio::main]
@@ -12,18 +15,27 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "error,exc_binance=trace,binance_http_ping=debug".into()),
+                .unwrap_or_else(|_| "error,exc_binance=trace,binance_http_ping=trace".into()),
         ))
         .init();
-
+    let times: usize = std::env::var("TIMES")
+        .ok()
+        .and_then(|times| times.parse().ok())
+        .unwrap_or(100);
     let http = Endpoint::default().connect_https();
-    let svc = ServiceBuilder::default()
+    let mut svc = ServiceBuilder::default()
         .layer(BinanceRestApiLayer::usd_margin_futures())
         .service(http);
-    let resp: Data = svc
-        .oneshot(RestRequest::with_payload(Ping))
-        .await?
-        .into_inner();
-    tracing::info!("{resp:?}");
+    for _ in 0..times {
+        let begin = Instant::now();
+        let resp: Data = (&mut svc)
+            .oneshot(RestRequest::with_payload(Ping))
+            .await?
+            .into_inner();
+        let end = Instant::now();
+        let rrt = format_duration(end.duration_since(begin));
+        tracing::trace!("{resp:?}");
+        tracing::info!("rrt={rrt}");
+    }
     Ok(())
 }
