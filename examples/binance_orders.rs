@@ -1,14 +1,19 @@
 use clap::Parser;
-use exc::{IntoExc, SubscribeOrdersService};
+use exc::{
+    types::SubscribeOrders, ExcService, IntoExc, SubscribeOrdersService, SubscribeTickersService,
+    TradeBidAskService,
+};
 use exc_binance::Binance;
 use futures::StreamExt;
 use std::time::Duration;
 
 #[derive(Parser)]
 struct Args {
+    inst: String,
     #[clap(long, env)]
     binance_key: String,
-    inst: String,
+    #[clap(long, short, default_value = "12h")]
+    reconnect: humantime::Duration,
 }
 
 #[tokio::main]
@@ -31,16 +36,49 @@ async fn main() -> anyhow::Result<()> {
         _ => anyhow::bail!("unsupported"),
     };
 
-    let mut binance = endpoint
+    let binance = endpoint
         .private(key)
-        .ws_listen_key_stop_refreshing_after(Duration::from_secs(60))
+        .ws_listen_key_stop_refreshing_after(args.reconnect.into())
         .connect()
         .into_exc();
 
+    let inst = args.inst.clone();
+    let mut market = binance
+        .clone()
+        .into_subscribe_tickers()
+        .into_retry(Duration::from_secs(30));
+    tokio::spawn(async move {
+        let mut revision = 0;
+        loop {
+            revision += 1;
+            match market.subscribe_tickers(&inst).await {
+                Ok(mut stream) => {
+                    while let Some(ticker) = stream.next().await {
+                        match ticker {
+                            Ok(ticker) => {
+                                if !ticker.size.is_zero() {
+                                    tracing::info!("[{revision}] {inst}: {ticker}");
+                                }
+                            }
+                            Err(err) => {
+                                tracing::error!("[{revision}] {inst} stream error: {err}");
+                                break;
+                            }
+                        }
+                    }
+                }
+                Err(err) => {
+                    tracing::error!("[{revision}] request a new {inst} stream error: {err}");
+                }
+            }
+        }
+    });
+
     let mut revision = 0;
+    let mut orders = ExcService::<SubscribeOrders>::into_retry(binance, Duration::from_secs(30));
     loop {
         revision += 1;
-        match binance.subscribe_orders(&args.inst).await {
+        match orders.subscribe_orders(&args.inst).await {
             Ok(mut orders) => {
                 while let Some(t) = orders.next().await {
                     match t {
@@ -48,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
                             tracing::info!("[{revision}]{t:#?}");
                         }
                         Err(err) => {
-                            tracing::error!("[{revision}]stream error: {err}");
+                            tracing::error!("[{revision}] stream error: {err}");
                             break;
                         }
                     }
