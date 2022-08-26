@@ -108,7 +108,7 @@ impl<T> RestResponse<T> {
                     },
                 },
             );
-        match status {
+        let res = match status {
             StatusCode::TOO_MANY_REQUESTS => Err(RestError::Exchange(ExchangeError::RateLimited(
                 anyhow!("too many requests"),
             ))),
@@ -138,6 +138,8 @@ impl<T> RestResponse<T> {
                 Ok(Either::Right(text)) => Err(RestError::Text(text)),
                 Err(err) => Err(err),
             },
-        }
+        };
+        tracing::trace!("finished processing http response");
+        res
     }
 }

@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use exc::transport::http::endpoint::Endpoint;
 use exc_binance::http::{
@@ -8,6 +8,44 @@ use exc_binance::http::{
 };
 use humantime::format_duration;
 use tower::{ServiceBuilder, ServiceExt};
+
+struct Stats {
+    count: u32,
+    total: Duration,
+    max: Option<Duration>,
+    min: Option<Duration>,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            count: 0,
+            total: Duration::ZERO,
+            max: None,
+            min: None,
+        }
+    }
+}
+
+impl Stats {
+    fn update(&mut self, rrt: Duration) {
+        self.count += 1;
+        self.total += rrt;
+        self.max = Some(self.max.map(|max| max.max(rrt)).unwrap_or(rrt));
+        self.min = Some(self.min.map(|min| min.min(rrt)).unwrap_or(rrt));
+    }
+
+    fn show(&self) {
+        if self.count > 0 {
+            println!(
+                "max={} min={} avg={}",
+                format_duration(self.max.unwrap()),
+                format_duration(self.min.unwrap()),
+                format_duration(self.total / self.count),
+            );
+        }
+    }
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -26,6 +64,7 @@ async fn main() -> anyhow::Result<()> {
     let mut svc = ServiceBuilder::default()
         .layer(BinanceRestApiLayer::usd_margin_futures())
         .service(http);
+    let mut stats = Stats::default();
     for _ in 0..times {
         let begin = Instant::now();
         let resp: Data = (&mut svc)
@@ -33,9 +72,11 @@ async fn main() -> anyhow::Result<()> {
             .await?
             .into_inner();
         let end = Instant::now();
-        let rrt = format_duration(end.duration_since(begin));
+        let rrt = end.duration_since(begin);
         tracing::trace!("{resp:?}");
-        tracing::info!("rrt={rrt}");
+        tracing::info!("rrt={}", format_duration(rrt));
+        stats.update(rrt);
     }
+    stats.show();
     Ok(())
 }

@@ -206,6 +206,7 @@ impl<T: Rest> RestRequest<T> {
         key: Option<&BinanceKey>,
     ) -> Result<Request<hyper::Body>, RestError> {
         let mut uri = format!("{}{}", endpoint.host(), self.payload.to_path(endpoint)?);
+        tracing::trace!("building http request: uri={uri}");
         let value = self.payload.serialize(endpoint)?;
         let body = if self.payload.need_sign() {
             if let Some(key) = key.as_ref() {

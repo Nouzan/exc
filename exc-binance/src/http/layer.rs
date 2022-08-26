@@ -84,12 +84,14 @@ where
 
     fn call(&mut self, req: RestRequest<R>) -> Self::Future {
         match req.to_http(&self.endpoint, self.key.as_ref()) {
-            Ok(req) => self
-                .http
-                .call(req)
-                .map_err(RestError::from)
-                .and_then(RestResponse::from_http)
-                .boxed(),
+            Ok(req) => {
+                tracing::trace!("sent http request: {}", req.uri());
+                self.http
+                    .call(req)
+                    .map_err(RestError::from)
+                    .and_then(RestResponse::from_http)
+                    .boxed()
+            }
             Err(err) => futures::future::ready(Err(err)).boxed(),
         }
     }
