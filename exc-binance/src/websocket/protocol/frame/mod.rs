@@ -1,3 +1,5 @@
+#![allow(clippy::large_enum_variant)]
+
 use std::fmt;
 
 use futures::{future, stream, Sink, SinkExt, Stream, TryStreamExt};
@@ -149,10 +151,9 @@ impl ServerFrame {
     fn health(self) -> Result<Self, WsError> {
         match &self {
             Self::Stream(f) => match &f.data {
-                StreamFrameKind::AccountEvent(e) => match e {
-                    AccountEvent::ListenKeyExpired { ts } => Err(WsError::ListenKeyExpired(*ts)),
-                    _ => Ok(self),
-                },
+                StreamFrameKind::AccountEvent(AccountEvent::ListenKeyExpired { ts }) => {
+                    Err(WsError::ListenKeyExpired(*ts))
+                }
                 _ => Ok(self),
             },
             _ => Ok(self),
