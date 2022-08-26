@@ -1,4 +1,8 @@
-use std::{io::Read, path::PathBuf, time::Duration};
+use std::{
+    io::Read,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use clap::{clap_derive::ArgEnum, Parser};
 use exc::{
@@ -7,6 +11,7 @@ use exc::{
 };
 use exc_binance::{Binance, SpotOptions};
 use futures::StreamExt;
+use humantime::{format_duration, FormattedDuration};
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
@@ -73,6 +78,10 @@ enum Op {
 #[derive(Debug, Deserialize)]
 struct Script {
     exec: Vec<Op>,
+}
+
+fn rrt(begin: Instant) -> FormattedDuration {
+    format_duration(Instant::now().duration_since(begin))
 }
 
 #[tokio::main]
@@ -158,25 +167,28 @@ async fn main() -> anyhow::Result<()> {
     });
 
     for (idx, op) in execs.into_iter().enumerate() {
+        let begin = Instant::now();
         match op {
             Op::Wait { millis } => {
                 println!("[{idx}] wait for {millis}ms");
                 tokio::time::sleep(Duration::from_millis(millis)).await;
             }
             Op::Check { name } => match exc.check(&inst, &OrderId::from(name)).await {
-                Ok(update) => println!("[{idx}] check: {update:#?}"),
-                Err(err) => tracing::error!("[{idx}] check: {err}"),
+                Ok(update) => {
+                    println!("[{idx}] check(rrt={}): {update:#?}", rrt(begin))
+                }
+                Err(err) => tracing::error!("[{idx}] check(rrt={}): {err}", rrt(begin)),
             },
             Op::Cancel { name } => {
                 match exc.cancel(&inst, &OrderId::from(name)).await {
-                    Ok(cancelled) => println!("[{idx}] cancel: {cancelled:#?}"),
-                    Err(err) => tracing::error!("[{idx}] cancel: {err}"),
+                    Ok(cancelled) => println!("[{idx}] cancel(rrt={}): {cancelled:#?}", rrt(begin)),
+                    Err(err) => tracing::error!("[{idx}] cancel(rrt={}): {err}", rrt(begin)),
                 };
             }
             Op::Market { name, size } => {
                 match exc.place(&inst, &Place::with_size(size), Some(&name)).await {
-                    Ok(placed) => println!("[{idx}] market: {placed:#?}"),
-                    Err(err) => tracing::error!("[{idx}] market: {err}"),
+                    Ok(placed) => println!("[{idx}] market(rrt={}): {placed:#?}", rrt(begin)),
+                    Err(err) => tracing::error!("[{idx}] market(rrt={}): {err}", rrt(begin)),
                 }
             }
             Op::Limit { name, price, size } => {
@@ -184,8 +196,8 @@ async fn main() -> anyhow::Result<()> {
                     .place(&inst, &Place::with_size(size).limit(price), Some(&name))
                     .await
                 {
-                    Ok(placed) => println!("[{idx}] limit: {placed:#?}"),
-                    Err(err) => tracing::error!("[{idx}] limit: {err}"),
+                    Ok(placed) => println!("[{idx}] limit(rrt={}): {placed:#?}", rrt(begin)),
+                    Err(err) => tracing::error!("[{idx}] limit(rrt={}): {err}", rrt(begin)),
                 }
             }
             Op::PostOnly { name, price, size } => {
@@ -193,8 +205,8 @@ async fn main() -> anyhow::Result<()> {
                     .place(&inst, &Place::with_size(size).post_only(price), Some(&name))
                     .await
                 {
-                    Ok(placed) => println!("[{idx}] post-only: {placed:#?}"),
-                    Err(err) => tracing::error!("[{idx}] post-only: {err}"),
+                    Ok(placed) => println!("[{idx}] post-only(rrt={}): {placed:#?}", rrt(begin)),
+                    Err(err) => tracing::error!("[{idx}] post-only(rrt={}): {err}", rrt(begin)),
                 };
             }
         }
