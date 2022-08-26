@@ -80,7 +80,7 @@ struct Script {
     exec: Vec<Op>,
 }
 
-fn rrt(begin: Instant) -> FormattedDuration {
+fn rtt(begin: Instant) -> FormattedDuration {
     format_duration(Instant::now().duration_since(begin))
 }
 
@@ -175,22 +175,22 @@ async fn main() -> anyhow::Result<()> {
             }
             Op::Check { name } => match exc.check(&inst, &OrderId::from(name)).await {
                 Ok(update) => {
-                    tracing::info!("[{idx}] check(rrt={}): {update:#?}", rrt(begin))
+                    tracing::info!("[{idx}] check(rtt={}): {update:#?}", rtt(begin))
                 }
-                Err(err) => tracing::error!("[{idx}] check(rrt={}): {err}", rrt(begin)),
+                Err(err) => tracing::error!("[{idx}] check(rtt={}): {err}", rtt(begin)),
             },
             Op::Cancel { name } => {
                 match exc.cancel(&inst, &OrderId::from(name)).await {
                     Ok(cancelled) => {
-                        tracing::info!("[{idx}] cancel(rrt={}): {cancelled:#?}", rrt(begin))
+                        tracing::info!("[{idx}] cancel(rtt={}): {cancelled:#?}", rtt(begin))
                     }
-                    Err(err) => tracing::error!("[{idx}] cancel(rrt={}): {err}", rrt(begin)),
+                    Err(err) => tracing::error!("[{idx}] cancel(rtt={}): {err}", rtt(begin)),
                 };
             }
             Op::Market { name, size } => {
                 match exc.place(&inst, &Place::with_size(size), Some(&name)).await {
-                    Ok(placed) => tracing::info!("[{idx}] market(rrt={}): {placed:#?}", rrt(begin)),
-                    Err(err) => tracing::error!("[{idx}] market(rrt={}): {err}", rrt(begin)),
+                    Ok(placed) => tracing::info!("[{idx}] market(rtt={}): {placed:#?}", rtt(begin)),
+                    Err(err) => tracing::error!("[{idx}] market(rtt={}): {err}", rtt(begin)),
                 }
             }
             Op::Limit { name, price, size } => {
@@ -198,8 +198,8 @@ async fn main() -> anyhow::Result<()> {
                     .place(&inst, &Place::with_size(size).limit(price), Some(&name))
                     .await
                 {
-                    Ok(placed) => tracing::info!("[{idx}] limit(rrt={}): {placed:#?}", rrt(begin)),
-                    Err(err) => tracing::error!("[{idx}] limit(rrt={}): {err}", rrt(begin)),
+                    Ok(placed) => tracing::info!("[{idx}] limit(rtt={}): {placed:#?}", rtt(begin)),
+                    Err(err) => tracing::error!("[{idx}] limit(rtt={}): {err}", rtt(begin)),
                 }
             }
             Op::PostOnly { name, price, size } => {
@@ -208,9 +208,9 @@ async fn main() -> anyhow::Result<()> {
                     .await
                 {
                     Ok(placed) => {
-                        tracing::info!("[{idx}] post-only(rrt={}): {placed:#?}", rrt(begin))
+                        tracing::info!("[{idx}] post-only(rtt={}): {placed:#?}", rtt(begin))
                     }
-                    Err(err) => tracing::error!("[{idx}] post-only(rrt={}): {err}", rrt(begin)),
+                    Err(err) => tracing::error!("[{idx}] post-only(rtt={}): {err}", rtt(begin)),
                 };
             }
         }

@@ -28,11 +28,11 @@ impl Default for Stats {
 }
 
 impl Stats {
-    fn update(&mut self, rrt: Duration) {
+    fn update(&mut self, rtt: Duration) {
         self.count += 1;
-        self.total += rrt;
-        self.max = Some(self.max.map(|max| max.max(rrt)).unwrap_or(rrt));
-        self.min = Some(self.min.map(|min| min.min(rrt)).unwrap_or(rrt));
+        self.total += rtt;
+        self.max = Some(self.max.map(|max| max.max(rtt)).unwrap_or(rtt));
+        self.min = Some(self.min.map(|min| min.min(rtt)).unwrap_or(rtt));
     }
 
     fn show(&self) {
@@ -72,10 +72,10 @@ async fn main() -> anyhow::Result<()> {
             .await?
             .into_inner();
         let end = Instant::now();
-        let rrt = end.duration_since(begin);
+        let rtt = end.duration_since(begin);
         tracing::trace!("{resp:?}");
-        tracing::info!("rrt={}", format_duration(rrt));
-        stats.update(rrt);
+        tracing::info!("rtt={}", format_duration(rtt));
+        stats.update(rtt);
     }
     stats.show();
     Ok(())
