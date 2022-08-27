@@ -58,11 +58,11 @@ async fn main() -> anyhow::Result<()> {
                         match ticker {
                             Ok(ticker) => {
                                 if !ticker.size.is_zero() {
-                                    tracing::info!(rev = revision, inst = inst, "{ticker}");
+                                    tracing::info!(rev = revision, %inst, "{ticker}");
                                 }
                             }
                             Err(err) => {
-                                tracing::error!(rev = revision, inst = inst, "stream error: {err}");
+                                tracing::error!(rev = revision, %inst, "stream error: {err}");
                                 break;
                             }
                         }
@@ -71,7 +71,7 @@ async fn main() -> anyhow::Result<()> {
                 Err(err) => {
                     tracing::error!(
                         rev = revision,
-                        inst = inst,
+                        %inst,
                         "request new stream error: {err}"
                     );
                 }
