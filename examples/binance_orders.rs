@@ -24,6 +24,7 @@ async fn main() -> anyhow::Result<()> {
             std::env::var("RUST_LOG")
                 .unwrap_or_else(|_| "error,binance_orders=debug,exc_binance=debug".into()),
         ))
+        .with_line_number(true)
         .init();
 
     let args = Args::from_args();
@@ -57,18 +58,22 @@ async fn main() -> anyhow::Result<()> {
                         match ticker {
                             Ok(ticker) => {
                                 if !ticker.size.is_zero() {
-                                    tracing::info!("[{revision}] {inst}: {ticker}");
+                                    tracing::info!(rev = revision, inst = inst, "{ticker}");
                                 }
                             }
                             Err(err) => {
-                                tracing::error!("[{revision}] {inst} stream error: {err}");
+                                tracing::error!(rev = revision, inst = inst, "stream error: {err}");
                                 break;
                             }
                         }
                     }
                 }
                 Err(err) => {
-                    tracing::error!("[{revision}] request a new {inst} stream error: {err}");
+                    tracing::error!(
+                        rev = revision,
+                        inst = inst,
+                        "request new stream error: {err}"
+                    );
                 }
             }
         }
@@ -83,17 +88,17 @@ async fn main() -> anyhow::Result<()> {
                 while let Some(t) = orders.next().await {
                     match t {
                         Ok(t) => {
-                            tracing::info!("[{revision}]{t:#?}");
+                            tracing::info!(rev = revision, "{t:#?}");
                         }
                         Err(err) => {
-                            tracing::error!("[{revision}] stream error: {err}");
+                            tracing::error!(rev = revision, "stream error: {err}");
                             break;
                         }
                     }
                 }
             }
             Err(err) => {
-                tracing::error!("[{revision}]request error: {err}");
+                tracing::error!(rev = revision, "request error: {err}");
             }
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
