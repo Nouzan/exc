@@ -6,6 +6,8 @@ use exc::{
 use exc_binance::Binance;
 use futures::StreamExt;
 use std::time::Duration;
+use tracing::instrument;
+use tracing_subscriber::{prelude::*, EnvFilter, Registry};
 
 #[derive(Parser)]
 struct Args {
@@ -18,15 +20,34 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::fmt()
+    let env_filter = EnvFilter::new(
+        std::env::var("RUST_LOG")
+            .unwrap_or_else(|_| "error,binance_orders=debug,exc_binance=debug".into()),
+    );
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .with_service_name("binance-orders-3")
+        .with_collector_endpoint("http://localhost:14268/api/traces")
+        .install_batch(opentelemetry::runtime::Tokio)?;
+    let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
+    let fmt_layer = tracing_subscriber::fmt::layer()
         .with_writer(std::io::stderr)
-        .with_env_filter(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "error,binance_orders=debug,exc_binance=debug".into()),
-        ))
         .with_line_number(true)
-        .init();
+        .with_filter(env_filter);
 
+    Registry::default()
+        .with(otel_layer)
+        .with(fmt_layer)
+        .try_init()?;
+    
+    tracing::info!("hello, world");
+
+    start().await?;
+    Ok(())
+}
+
+#[instrument]
+async fn start() -> anyhow::Result<()> {
+    tracing::info!("start!");
     let args = Args::from_args();
     let key = serde_json::from_str(&args.binance_key)?;
 
@@ -77,6 +98,13 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         }
+    });
+
+    tokio::spawn(async move {
+        let _ = tokio::signal::ctrl_c().await;
+        tracing::info!("`ctrl + c`");
+        opentelemetry::global::shutdown_tracer_provider();
+        std::process::exit(0);
     });
 
     let mut revision = 0;
