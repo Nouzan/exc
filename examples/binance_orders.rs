@@ -54,6 +54,7 @@ async fn main() -> anyhow::Result<()> {
             tracing::info!("ctrl + c");
         }
     }
+    tokio::time::sleep(Duration::from_secs(5)).await;
     opentelemetry::global::shutdown_tracer_provider();
     Ok(())
 }
