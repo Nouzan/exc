@@ -28,6 +28,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let channel = Endpoint::default()
+        .testing(true)
         .request_timeout(std::time::Duration::from_secs(5))
         .private(key.clone())
         .connect();
@@ -38,12 +39,12 @@ async fn main() -> anyhow::Result<()> {
     let mut http = ServiceBuilder::default()
         .rate_limit(59, std::time::Duration::from_secs(2))
         .layer(ExcLayer::<HttpRequest>::default())
-        .layer(OkxHttpApiLayer::default().private(key))
+        .layer(OkxHttpApiLayer::default().private(key).testing(true))
         .service(HttpEndpoint::default().connect_https());
 
     let inst = "DOGE-USDT";
     let id = ws
-        .place(inst, &Place::with_size(dec!(-10)).limit(dec!(0.06)), None)
+        .place(inst, &Place::with_size(dec!(10)).limit(dec!(0.01)), None)
         .await?
         .id;
     tracing::info!("id={id:?}");
