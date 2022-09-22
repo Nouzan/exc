@@ -16,6 +16,7 @@ use tower::{retry::Retry, Layer, Service, ServiceBuilder};
 /// Okx HTTP API layer.
 pub struct OkxHttpApiLayer<'a, F> {
     host: &'a str,
+    testing: bool,
     key: Option<Key>,
     retry_policy: RetryPolicy<HttpRequest, HttpResponse, F>,
 }
@@ -24,6 +25,12 @@ impl<'a, F> OkxHttpApiLayer<'a, F> {
     /// Set key.
     pub fn private(mut self, key: Key) -> Self {
         self.key = Some(key);
+        self
+    }
+
+    /// Set whether to use the testing environment.
+    pub fn testing(mut self, enable: bool) -> Self {
+        self.testing = enable;
         self
     }
 
@@ -39,6 +46,7 @@ impl<'a, F> OkxHttpApiLayer<'a, F> {
             host: self.host,
             retry_policy: policy,
             key: self.key,
+            testing: self.testing,
         }
     }
 
@@ -70,6 +78,7 @@ impl<'a> OkxHttpApiLayer<'a, fn(&ExchangeError) -> bool> {
             host,
             retry_policy: RetryPolicy::never(),
             key: None,
+            testing: false,
         }
     }
 }
@@ -90,6 +99,7 @@ where
             host: self.host.to_string(),
             http: inner,
             key: self.key.clone(),
+            testing: self.testing,
         };
         ServiceBuilder::default()
             .retry(self.retry_policy.clone())
@@ -103,7 +113,10 @@ pub struct OkxHttpApi<S> {
     host: String,
     key: Option<Key>,
     http: S,
+    testing: bool,
 }
+
+const TESTING_HEADER: &str = "x-simulated-trading";
 
 impl<S> Service<HttpRequest> for OkxHttpApi<S>
 where
@@ -144,23 +157,28 @@ where
             }
         };
         match req {
-            Ok(req) => self
-                .http
-                .call(req)
-                .map_err(ExchangeError::from)
-                .and_then(|resp| {
-                    trace!("http response; status: {:?}", resp.status());
-                    hyper::body::to_bytes(resp.into_body())
-                        .map_err(|err| ExchangeError::Other(err.into()))
-                })
-                .and_then(|bytes| {
-                    let resp = serde_json::from_slice::<FullHttpResponse>(&bytes)
-                        .map_err(|err| ExchangeError::Other(err.into()));
+            Ok(mut req) => {
+                if self.testing {
+                    req.headers_mut()
+                        .insert(TESTING_HEADER, http::HeaderValue::from_static("1"));
+                }
+                self.http
+                    .call(req)
+                    .map_err(ExchangeError::from)
+                    .and_then(|resp| {
+                        trace!("http response; status: {:?}", resp.status());
+                        hyper::body::to_bytes(resp.into_body())
+                            .map_err(|err| ExchangeError::Other(err.into()))
+                    })
+                    .and_then(|bytes| {
+                        let resp = serde_json::from_slice::<FullHttpResponse>(&bytes)
+                            .map_err(|err| ExchangeError::Other(err.into()));
 
-                    futures::future::ready(resp)
-                })
-                .and_then(|resp| ready(resp.try_into()))
-                .boxed(),
+                        futures::future::ready(resp)
+                    })
+                    .and_then(|resp| ready(resp.try_into()))
+                    .boxed()
+            }
             Err(err) => ready(Err(err)).boxed(),
         }
     }

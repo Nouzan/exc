@@ -36,6 +36,10 @@ name = "okx-ws-trading"
 path = "okx_ws_trading.rs"
 
 [[bin]]
+name = "okx-ws-trading-testing"
+path = "okx_ws_trading_testing.rs"
+
+[[bin]]
 name = "binance-instrument"
 path = "binance_instrument.rs"
 

@@ -10,7 +10,8 @@ const DEFAULT_PING_TIMEOUT: Duration = Duration::from_secs(15);
 /// Okx websocket endpoint.
 /// Builder for channels.
 pub struct Endpoint {
-    pub(crate) uri: Uri,
+    pub(crate) testing: bool,
+    pub(crate) aws: bool,
     pub(crate) request_timeout: Option<Duration>,
     pub(crate) connection_timeout: Option<Duration>,
     pub(crate) ping_timeout: Duration,
@@ -43,28 +44,24 @@ impl Endpoint {
         self
     }
 
+    /// Switch to testing environment.
+    pub fn testing(mut self, enable: bool) -> Self {
+        self.testing = enable;
+        self
+    }
+
+    /// Switch to AWS endpoint.
+    pub fn aws(mut self, enable: bool) -> Self {
+        self.aws = enable;
+        self
+    }
+
     /// Switch to private channel.
     pub fn private(mut self, key: Key) -> Self {
-        self.uri = Uri::from_static("wss://ws.okx.com:8443/ws/v5/private");
         self.login = Some(key);
         self
     }
-}
 
-impl Default for Endpoint {
-    fn default() -> Self {
-        Self {
-            uri: Uri::from_static("wss://ws.okx.com:8443/ws/v5/public"),
-            request_timeout: None,
-            connection_timeout: None,
-            buffer_size: None,
-            ping_timeout: DEFAULT_PING_TIMEOUT,
-            login: None,
-        }
-    }
-}
-
-impl Endpoint {
     /// Create a okx websocket channel.
     pub fn connect(&self) -> Channel {
         let svc = match self.request_timeout {
@@ -86,5 +83,35 @@ impl Endpoint {
         });
 
         Channel { svc }
+    }
+
+    /// Get current uri.
+    pub fn uri(&self) -> Uri {
+        match (self.login.is_some(), self.testing, self.aws) {
+            (true, true, _) => {
+                Uri::from_static("wss://wspap.okx.com:8443/ws/v5/private?brokerId=9999")
+            }
+            (false, true, _) => {
+                Uri::from_static("wss://wspap.okx.com:8443/ws/v5/public?brokerId=9999")
+            }
+            (true, false, true) => Uri::from_static("wss://wsaws.okx.com:8443/ws/v5/private"),
+            (false, false, true) => Uri::from_static("wss://wsaws.okx.com:8443/ws/v5/public"),
+            (true, false, false) => Uri::from_static("wss://ws.okx.com:8443/ws/v5/private"),
+            (false, false, false) => Uri::from_static("wss://ws.okx.com:8443/ws/v5/public"),
+        }
+    }
+}
+
+impl Default for Endpoint {
+    fn default() -> Self {
+        Self {
+            aws: false,
+            testing: false,
+            request_timeout: None,
+            connection_timeout: None,
+            buffer_size: None,
+            ping_timeout: DEFAULT_PING_TIMEOUT,
+            login: None,
+        }
     }
 }
