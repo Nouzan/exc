@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "info,okx_ws_trading=debug,exc_okx=trace".into()),
+                .unwrap_or_else(|_| "info,okx_ws_trading_testing=debug,exc_okx=trace".into()),
         ))
         .init();
 
@@ -29,6 +29,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let channel = Endpoint::default()
+        .testing(true)
         .request_timeout(std::time::Duration::from_secs(5))
         .private(key.clone())
         .connect();
@@ -39,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
     let mut http = ServiceBuilder::default()
         .rate_limit(59, std::time::Duration::from_secs(2))
         .layer(ExcLayer::<HttpRequest>::default())
-        .layer(OkxHttpApiLayer::default().private(key))
+        .layer(OkxHttpApiLayer::default().private(key).testing(true))
         .service(HttpEndpoint::default().connect_https());
 
     let inst = "DOGE-USDT";

@@ -104,11 +104,9 @@ impl Connection {
                 endpoint.login.as_ref(),
             ))
             .boxed();
-        let conn = Reconnect::new::<<Connect as Service<Uri>>::Response, Uri>(
-            connector,
-            endpoint.uri.clone(),
-        )
-        .map_err(OkxError::Connection);
+        let conn =
+            Reconnect::new::<<Connect as Service<Uri>>::Response, Uri>(connector, endpoint.uri())
+                .map_err(OkxError::Connection);
         Self {
             inner: BoxService::new(conn),
         }

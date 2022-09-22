@@ -76,7 +76,7 @@ impl Key {
         mac.update(raw_sign.as_bytes());
 
         Ok(Signature {
-            signature: base64::encode(&mac.finalize().into_bytes()),
+            signature: base64::encode(mac.finalize().into_bytes()),
             timestamp,
         })
     }
