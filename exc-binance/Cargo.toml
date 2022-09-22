@@ -1,6 +1,6 @@
 [package]
 name = "exc-binance"
-version = "0.4.8"
+version = "0.4.9"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
@@ -38,7 +38,7 @@ version = "1.0.136"
 features = ["derive"]
 
 [dependencies.exc-core]
-version = "0.4.8"
+version = "0.4.9"
 path = "../exc-core"
 features = ["websocket", "http", "retry"]
 
