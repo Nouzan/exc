@@ -27,7 +27,7 @@ hmac = { workspace = true }
 sha2 = { workspace = true }
 base64 = "0.13.0"
 atomic-waker = "1.0.0"
-serde_qs = "0.9"
+serde_qs = "0.10.1"
 
 [dependencies.serde]
 workspace = true
