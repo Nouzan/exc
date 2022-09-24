@@ -20,6 +20,8 @@ pub struct PlaceOrderOptions {
     pub instrument: String,
     /// Client id.
     pub client_id: Option<String>,
+    /// Margin currency perferred to use.
+    pub margin: Option<String>,
 }
 
 impl PlaceOrderOptions {
@@ -28,12 +30,22 @@ impl PlaceOrderOptions {
         Self {
             instrument: inst.to_string(),
             client_id: None,
+            margin: None,
         }
     }
 
     /// Set the client id to place.
     pub fn with_client_id(&mut self, id: Option<&str>) -> &mut Self {
         self.client_id = id.map(|s| s.to_string());
+        self
+    }
+
+    /// Set the margin currency preffered to use.
+    /// # Warning
+    /// It is up to the exchange to decide if this option applies,
+    /// so please check the documents of the exchange you use.
+    pub fn with_margin(&mut self, currency: &str) -> &mut Self {
+        self.margin = Some(currency.to_string());
         self
     }
 }
