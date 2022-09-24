@@ -90,13 +90,13 @@ impl<'a> TryFrom<&'a exc_core::types::PlaceOrder> for PlaceOrder {
             types::OrderKind::PostOnly(price) => (OrderType::LimitMaker, Some(price), None),
         };
         Ok(Self {
-            symbol: req.opts.instrument.to_uppercase(),
+            symbol: req.opts.instrument().to_uppercase(),
             side,
             order_type,
             quantity: Some(place.size.abs()),
             quote_order_qty: None,
             price,
-            new_client_order_id: req.opts.client_id.clone(),
+            new_client_order_id: req.opts.client_id().map(|s| s.to_string()),
             time_in_force: tif,
             side_effect_type: None,
             new_order_resp_type: Some(RespType::Ack),

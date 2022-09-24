@@ -4,7 +4,7 @@ pub mod place;
 /// Order.
 pub mod order;
 
-use std::{fmt, sync::Arc};
+use std::{collections::BTreeMap, fmt, sync::Arc};
 
 use futures::{future::BoxFuture, stream::BoxStream};
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, OrderTrade, TimeInForce};
@@ -17,11 +17,13 @@ use crate::{ExchangeError, Request};
 #[derive(Debug, Clone)]
 pub struct PlaceOrderOptions {
     /// Instrument.
-    pub instrument: String,
+    instrument: String,
     /// Client id.
-    pub client_id: Option<String>,
+    client_id: Option<String>,
     /// Margin currency perferred to use.
-    pub margin: Option<String>,
+    margin: Option<String>,
+    /// Exchange-defined options.
+    custom: BTreeMap<String, String>,
 }
 
 impl PlaceOrderOptions {
@@ -31,6 +33,7 @@ impl PlaceOrderOptions {
             instrument: inst.to_string(),
             client_id: None,
             margin: None,
+            custom: BTreeMap::default(),
         }
     }
 
@@ -47,6 +50,26 @@ impl PlaceOrderOptions {
     pub fn with_margin(&mut self, currency: &str) -> &mut Self {
         self.margin = Some(currency.to_string());
         self
+    }
+
+    /// Get the instrument name to trade.
+    pub fn instrument(&self) -> &str {
+        &self.instrument
+    }
+
+    /// Get the client id to use.
+    pub fn client_id(&self) -> Option<&str> {
+        self.client_id.as_deref()
+    }
+
+    /// Get the margin currency perferred to use.
+    pub fn margin(&self) -> Option<&str> {
+        self.margin.as_deref()
+    }
+
+    /// Get the exchange-defined custom options.
+    pub fn custom(&self) -> &BTreeMap<String, String> {
+        &self.custom
     }
 }
 

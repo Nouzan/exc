@@ -111,7 +111,7 @@ impl WsRequest {
 
     /// Order request.
     pub(crate) fn order(place: &Place, opts: &PlaceOrderOptions) -> Self {
-        let inst = opts.instrument.as_str();
+        let inst = opts.instrument();
         let size = place.size.abs();
         let side = if place.size.is_sign_negative() {
             "sell"
@@ -125,7 +125,7 @@ impl WsRequest {
             ("posSide".to_string(), "net".to_string()),
             ("sz".to_string(), size.to_string()),
         ]);
-        if let Some(margin) = opts.margin.as_ref() {
+        if let Some(margin) = opts.margin() {
             map.insert("ccy".to_string(), margin.to_string());
         }
         match place.kind {
