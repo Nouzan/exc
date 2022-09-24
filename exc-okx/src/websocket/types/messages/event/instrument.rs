@@ -1,7 +1,7 @@
 use exc_core::types::instrument::InstrumentMeta;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
+use serde_with::{serde_as, DisplayFromStr, NoneAsEmptyString};
 use std::collections::HashSet;
 use time::OffsetDateTime;
 
@@ -171,6 +171,7 @@ pub struct OptionMeta {
 }
 
 /// Spot Meta.
+#[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SpotMeta {
@@ -188,7 +189,7 @@ pub struct SpotMeta {
 
     /// Leverage
     /// Not applicable to `SPOT`, used to distinguish between `MARGIN` and `SPOT`.
-    #[serde(deserialize_with = "serde_with::rust::string_empty_as_none::deserialize")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub lever: Option<Decimal>,
 }
 

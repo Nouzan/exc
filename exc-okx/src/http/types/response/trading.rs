@@ -1,7 +1,9 @@
 use rust_decimal::Decimal;
 use serde::Deserialize;
+use serde_with::{serde_as, NoneAsEmptyString};
 
 /// Order detail.
+#[serde_as]
 #[derive(Debug, Clone, Deserialize)]
 pub struct OrderDetail {
     /// Inst type.
@@ -11,18 +13,21 @@ pub struct OrderDetail {
     #[serde(rename = "instId")]
     pub instrument: String,
     /// Currency.
-    #[serde(rename = "ccy", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "ccy")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub currency: Option<String>,
     /// Order id.
     #[serde(rename = "ordId")]
     pub order_id: String,
     /// Client id.
-    #[serde(rename = "clOrdId", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "clOrdId")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub client_id: Option<String>,
     /// Tag.
     pub tag: String,
     /// Price.
-    #[serde(rename = "px", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "px")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub price: Option<Decimal>,
     /// Size.
     #[serde(rename = "sz")]
@@ -44,57 +49,61 @@ pub struct OrderDetail {
     #[serde(rename = "accFillSz")]
     pub filled_size: Decimal,
     /// Filled price.
-    #[serde(rename = "fillPx", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "fillPx")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub fill_price: Option<Decimal>,
     /// Trade id.
-    #[serde(rename = "tradeId", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "tradeId")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub trade_id: Option<String>,
     /// Last filled size.
     #[serde(rename = "fillSz")]
     pub fill_size: Decimal,
-    #[serde(rename = "fillTime", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "fillTime")]
+    #[serde_as(as = "NoneAsEmptyString")]
     /// Last filled time.
     pub fill_time: Option<Decimal>,
     /// State.
     pub state: String,
     /// Average price.
-    #[serde(rename = "avgPx", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "avgPx")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub avg_price: Option<Decimal>,
     /// Leverage.
-    #[serde(with = "serde_with::rust::string_empty_as_none")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub lever: Option<Decimal>,
     /// Spt.
-    #[serde(
-        rename = "tpTriggerPx",
-        with = "serde_with::rust::string_empty_as_none"
-    )]
+    #[serde(rename = "tpTriggerPx")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub stop_profit_trigger: Option<Decimal>,
     /// Spl.
-    #[serde(rename = "tpOrdPx", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "tpOrdPx")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub stop_profit_limit: Option<Decimal>,
     /// Slt.
-    #[serde(
-        rename = "slTriggerPx",
-        with = "serde_with::rust::string_empty_as_none"
-    )]
+    #[serde(rename = "slTriggerPx")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub stop_loss_trigger: Option<Decimal>,
     /// Sll.
-    #[serde(rename = "slOrdPx", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "slOrdPx")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub stop_loss_limit: Option<Decimal>,
-    #[serde(rename = "feeCcy", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "feeCcy")]
+    #[serde_as(as = "NoneAsEmptyString")]
     /// Fee currency.
     pub fee_currency: Option<String>,
     /// Fee.
-    #[serde(with = "serde_with::rust::string_empty_as_none")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub fee: Option<Decimal>,
     /// Rebate currency
-    #[serde(rename = "rebateCcy", with = "serde_with::rust::string_empty_as_none")]
+    #[serde(rename = "rebateCcy")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub rebate_currency: Option<String>,
     /// Rebate
-    #[serde(with = "serde_with::rust::string_empty_as_none")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub rebate: Option<Decimal>,
     /// Category.
-    #[serde(with = "serde_with::rust::string_empty_as_none")]
+    #[serde_as(as = "NoneAsEmptyString")]
     pub category: Option<String>,
     /// Updated.
     #[serde(rename = "uTime")]
