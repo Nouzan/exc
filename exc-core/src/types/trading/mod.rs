@@ -52,6 +52,17 @@ impl PlaceOrderOptions {
         self
     }
 
+    /// Insert an exchange-defined custom option.
+    pub fn insert<K, V>(&mut self, key: K, value: V) -> &mut Self
+    where
+        K: AsRef<str>,
+        V: AsRef<str>,
+    {
+        self.custom
+            .insert(key.as_ref().to_string(), value.as_ref().to_string());
+        self
+    }
+
     /// Get the instrument name to trade.
     pub fn instrument(&self) -> &str {
         &self.instrument
