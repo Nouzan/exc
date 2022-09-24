@@ -8,7 +8,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.9"
+version = "0.5.0"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
@@ -17,3 +17,9 @@ keywords = ["exchange", "tower"]
 readme = "README.md"
 description = "Abstractions of exchanges."
 rust-version = "1.64"
+
+[workspace.dependencies]
+exc-core = { version = "0.5", path = "./exc-core" }
+exc-binance = { version = "0.5", path = "./exc-binance" }
+exc-okx = { version = "0.5", path = "./exc-okx" }
+exc = { version = "0.5", path = "./exc" }
