@@ -36,6 +36,7 @@ pub type Candles = Vec<Candle>;
 pub type Unknown = serde_json::Value;
 
 /// Binance rest api response data.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Data {
