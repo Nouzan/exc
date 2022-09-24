@@ -1,7 +1,7 @@
 use std::time::Duration;
 
+use exc::okx::websocket::{Endpoint, Request};
 use exc::{ExcLayer, SubscribeInstrumentsService};
-use exc_okx::websocket::{Endpoint, Request};
 use futures::StreamExt;
 use tower::ServiceBuilder;
 

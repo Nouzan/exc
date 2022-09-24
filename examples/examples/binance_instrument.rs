@@ -1,5 +1,5 @@
+use exc::binance::Binance;
 use exc::{FetchInstrumentsService, IntoExc};
-use exc_binance::Binance;
 use futures::StreamExt;
 
 #[tokio::main]

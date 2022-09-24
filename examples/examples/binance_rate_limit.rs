@@ -1,7 +1,7 @@
 use std::time::Duration;
 
+use exc::binance::Binance;
 use exc::{types::Period, FetchCandlesService, FetchFirstCandlesService, IntoExc};
-use exc_binance::Binance;
 use futures::StreamExt;
 use time::{macros::datetime, UtcOffset};
 
