@@ -5,7 +5,7 @@ use crate::{
 };
 use async_stream::stream;
 use exc_core::{
-    types::{ticker::SubscribeTickers, trading::Place},
+    types::{ticker::SubscribeTickers, PlaceOrder},
     ExchangeError,
 };
 use futures::stream::{BoxStream, StreamExt};
@@ -65,12 +65,12 @@ impl Request {
     }
 
     /// Order request.
-    pub fn order(inst: &str, place: &Place) -> Self {
+    pub fn order(req: &PlaceOrder) -> Self {
         let (cb, _rx) = Callback::new();
-        let inst = inst.to_string();
-        let place = *place;
+        let opts = req.opts.clone();
+        let place = req.place;
         let stream = stream! {
-            yield ClientFrame { stream_id: 0, inner: WsRequest::order(&inst, &place) };
+            yield ClientFrame { stream_id: 0, inner: WsRequest::order(&place, &opts) };
             // let _ = rx.await;
         };
 
