@@ -98,14 +98,14 @@ impl<'a> TryFrom<&'a types::PlaceOrder> for PlaceOrder {
             }
         };
         Ok(Self {
-            symbol: req.instrument.to_uppercase(),
+            symbol: req.opts.instrument.to_uppercase(),
             side,
             position_side: PositionSide::Both,
             order_type,
             reduce_only: None,
             quantity: Some(place.size.abs()),
             price,
-            new_client_order_id: req.client_id.clone(),
+            new_client_order_id: req.opts.client_id.clone(),
             stop_price: None,
             close_position: None,
             activation_price: None,

@@ -1,4 +1,4 @@
-use super::{order::TimeInForce, OrderKind};
+use super::{order::TimeInForce, OrderKind, PlaceOrder, PlaceOrderOptions};
 use rust_decimal::Decimal;
 
 /// A [`Place`] describes how exchange build an order, i.e. the order builder.
@@ -36,5 +36,10 @@ impl Place {
     pub fn post_only(mut self, price: Decimal) -> Self {
         self.kind = OrderKind::PostOnly(price);
         self
+    }
+
+    /// Build the [`PlaceOrder`] request.
+    pub fn into_request(self, opts: &PlaceOrderOptions) -> PlaceOrder {
+        PlaceOrder::new(self, opts)
     }
 }

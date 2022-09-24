@@ -4,7 +4,7 @@ pub mod place;
 /// Order.
 pub mod order;
 
-use std::fmt;
+use std::{fmt, sync::Arc};
 
 use futures::{future::BoxFuture, stream::BoxStream};
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, OrderTrade, TimeInForce};
@@ -13,15 +13,48 @@ use time::OffsetDateTime;
 
 use crate::{ExchangeError, Request};
 
+/// Options for order placement.
+#[derive(Debug, Clone)]
+pub struct PlaceOrderOptions {
+    /// Instrument.
+    pub instrument: String,
+    /// Client id.
+    pub client_id: Option<String>,
+}
+
+impl PlaceOrderOptions {
+    /// Create a new options with the given instrument.
+    pub fn new(inst: &str) -> Self {
+        Self {
+            instrument: inst.to_string(),
+            client_id: None,
+        }
+    }
+
+    /// Set the client id to place.
+    pub fn with_client_id(&mut self, id: Option<&str>) -> &mut Self {
+        self.client_id = id.map(|s| s.to_string());
+        self
+    }
+}
+
 /// Place order.
 #[derive(Debug, Clone)]
 pub struct PlaceOrder {
-    /// Instrument.
-    pub instrument: String,
     /// Place.
     pub place: Place,
-    /// Client id.
-    pub client_id: Option<String>,
+    /// Options.
+    pub opts: Arc<PlaceOrderOptions>,
+}
+
+impl PlaceOrder {
+    /// Create a new request to place order.
+    pub fn new(place: Place, opts: &PlaceOrderOptions) -> Self {
+        Self {
+            place,
+            opts: Arc::new(opts.clone()),
+        }
+    }
 }
 
 /// Place order response.

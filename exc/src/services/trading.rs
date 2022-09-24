@@ -1,5 +1,5 @@
 use exc_core::{
-    types::{Cancelled, OrderUpdate, Placed, SubscribeOrders},
+    types::{trading::PlaceOrderOptions, Cancelled, OrderUpdate, Placed, SubscribeOrders},
     ExcMut,
 };
 use futures::{future::BoxFuture, FutureExt};
@@ -14,6 +14,21 @@ use crate::ExcService;
 
 /// Trading service.
 pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
+    /// Place an order with options.
+    fn place_with_opts(
+        &mut self,
+        place: &Place,
+        opts: &PlaceOrderOptions,
+    ) -> BoxFuture<'_, Result<Placed, ExchangeError>>
+    where
+        Self: Sized + Send,
+        <Self as Service<PlaceOrder>>::Future: Send,
+    {
+        let req = (*place).into_request(opts);
+        let resp =
+            ServiceExt::<PlaceOrder>::oneshot(ExcService::<PlaceOrder>::as_service_mut(self), req);
+        async move { resp.await?.await }.boxed()
+    }
     /// Place an order.
     fn place(
         &mut self,
@@ -25,15 +40,10 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
         Self: Sized + Send,
         <Self as Service<PlaceOrder>>::Future: Send,
     {
-        let resp = ServiceExt::<PlaceOrder>::oneshot(
-            ExcService::<PlaceOrder>::as_service_mut(self),
-            PlaceOrder {
-                client_id: client_id.map(|s| s.to_string()),
-                instrument: inst.to_string(),
-                place: *place,
-            },
-        );
-        async move { resp.await?.await }.boxed()
+        self.place_with_opts(
+            place,
+            PlaceOrderOptions::new(inst).with_client_id(client_id),
+        )
     }
 
     /// Cancel an order.
