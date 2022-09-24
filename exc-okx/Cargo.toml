@@ -11,26 +11,26 @@ description = "OKX exchange services"
 keywords = ["exchange", "tower", "okx"]
 
 [dependencies]
-anyhow = "1"
-either = "1.6.1"
-http = "0.2.6"
-thiserror = "1.0.30"
-tracing = "0.1.34"
-futures = "0.3.21"
-serde_qs = "0.9"
-serde_json = "1.0.79"
-serde_with = "1.11"
-pin-project-lite = "0.2.8"
-tokio-tower = "0.6.0"
-async-stream = "0.3.3"
-rust_decimal = "1.23"
+anyhow = { workspace = true }
+either = { workspace = true }
+http = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+futures = { workspace = true }
+serde_with = { workspace = true }
+pin-project-lite = { workspace = true }
+tokio-tower = { workspace = true }
+async-stream = { workspace = true }
+rust_decimal = { workspace = true }
+serde_json = { workspace = true }
+hmac = { workspace = true }
+sha2 = { workspace = true }
+base64 = "0.13.0"
 atomic-waker = "1.0.0"
-hmac = "0.12.0"
-sha2 = "0.10.0"
-base64 = "0.13"
+serde_qs = "0.9"
 
 [dependencies.serde]
-version = "1.0.136"
+workspace = true
 features = ["derive"]
 
 [dependencies.exc-core]
@@ -38,31 +38,31 @@ workspace = true
 features = ["websocket", "driven", "http", "retry"]
 
 [dependencies.tower]
-version = "0.4.12"
+workspace = true
 features = ["util", "reconnect", "buffer", "timeout", "retry"]
 
 [dependencies.tokio-tungstenite]
-version = "0.17.1"
+workspace = true
 features = ["native-tls"]
 
 [dependencies.tokio]
-version = "1.17.0"
+workspace = true
 features = ["sync", "rt-multi-thread", "time", "macros"]
 
 [dependencies.tokio-stream]
-version = "0.1.8"
+workspace = true
 features = ["time"]
 
 [dependencies.time]
-version = "0.3.9"
+workspace = true
 features = ["serde-human-readable", "macros"]
 
 [dependencies.hyper]
-version = "0.14"
+workspace = true
 features = ["client", "http1"]
 
 [dependencies.uuid]
-version = "1"
+workspace = true
 features = ["v4"]
 
 [package.metadata.docs.rs]

@@ -1,2 +1,2 @@
-# Examples for using exc
+# Examples for using `exc`
 *TODO*

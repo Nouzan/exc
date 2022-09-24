@@ -22,46 +22,46 @@ http = ["hyper/client", "hyper/http1", "hyper-tls", "dep:http"]
 retry = ["tower/retry", "tokio/time", "humantime"]
 
 [dependencies]
-anyhow = "1"
-thiserror = "1.0.30"
-tracing = "0.1.34"
-tower = { version = "0.4.12", features = ["util", "buffer", "limit", "ready-cache"] }
-futures = "0.3.21"
-serde = { version = "1.0.136", features = ["derive"] }
-time = { version = "0.3.9", features = ["serde-well-known", "macros"] }
-rust_decimal = "1.23.1"
-indicator = "0.2"
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tower = { workspace = true, features = ["util", "buffer", "limit", "ready-cache"] }
+futures = { workspace = true }
+serde = { workspace = true }
+time = { workspace = true, features = ["serde-well-known", "macros"] }
+rust_decimal = { workspace = true }
+indicator = { workspace = true }
+async-stream = { workspace = true }
+num-traits = { workspace = true }
+positions = { workspace = true }
+either = { workspace = true }
+tokio-stream = { workspace = true }
+humantime = { workspace = true, optional = true }
 derive_more = "0.99"
-async-stream = "0.3"
-num-traits = "0.2.15"
-positions = "0.1"
-either = "1"
-tokio-stream = "0.1.9"
-humantime = { version = "2.1.0", optional = true }
 
 [dependencies.tokio-tungstenite]
-version = "0.17.1"
+workspace = true
 features = ["native-tls"]
 optional = true
 
 [dependencies.http]
-version = "0.2.6"
+workspace = true
 optional = true
 
 [dependencies.tokio]
-version = "1.17.0"
+workspace = true
 optional = true
 
 [dependencies.pin-project-lite]
-version = "0.2.7"
+workspace = true
 optional = true
 
 [dependencies.hyper]
-version = "0.14"
+workspace = true
 optional = true
 
 [dependencies.hyper-tls]
-version = "0.5"
+workspace = true
 optional = true
 
 # dev
