@@ -79,7 +79,7 @@ impl Adaptor<PlaceOrder> for Request {
     where
         Self: Sized,
     {
-        Ok(Self::order(&req.instrument, &req.place))
+        Ok(Self::order(&req))
     }
 
     fn into_response(

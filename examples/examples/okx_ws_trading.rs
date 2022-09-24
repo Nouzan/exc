@@ -1,6 +1,6 @@
 use exc::{
     transport::http::endpoint::Endpoint as HttpEndpoint,
-    types::trading::Place,
+    types::trading::{Place, PlaceOrderOptions},
     ExcLayer, {CheckOrderService, TradingService},
 };
 use exc_okx::{
@@ -44,7 +44,10 @@ async fn main() -> anyhow::Result<()> {
 
     let inst = "DOGE-USDT";
     let id = ws
-        .place(inst, &Place::with_size(dec!(10)).limit(dec!(0.01)), None)
+        .place_with_opts(
+            &Place::with_size(dec!(10)).limit(dec!(0.01)),
+            &PlaceOrderOptions::new(inst),
+        )
         .await?
         .id;
     tracing::info!("id={id:?}");

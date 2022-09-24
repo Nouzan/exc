@@ -1,7 +1,7 @@
 use exc_core::{
     types::{
         trading::{GetOrder, Order as ExcOrder, OrderId, OrderState, OrderStatus, Place},
-        OrderUpdate,
+        OrderUpdate, TimeInForce,
     },
     Adaptor, ExchangeError,
 };
@@ -57,6 +57,33 @@ impl Adaptor<GetOrder> for HttpRequest {
                             } else {
                                 return Err(ExchangeError::Other(anyhow::anyhow!(
                                     "limit without price"
+                                )));
+                            }
+                        }
+                        "fok" => {
+                            if let Some(price) = order.price {
+                                target.limit_with_tif(price, TimeInForce::FillOrKill)
+                            } else {
+                                return Err(ExchangeError::Other(anyhow::anyhow!(
+                                    "fok without price"
+                                )));
+                            }
+                        }
+                        "ioc" => {
+                            if let Some(price) = order.price {
+                                target.limit_with_tif(price, TimeInForce::ImmediateOrCancel)
+                            } else {
+                                return Err(ExchangeError::Other(anyhow::anyhow!(
+                                    "ioc without price"
+                                )));
+                            }
+                        }
+                        "post_only" => {
+                            if let Some(price) = order.price {
+                                target.post_only(price)
+                            } else {
+                                return Err(ExchangeError::Other(anyhow::anyhow!(
+                                    "post_only without price"
                                 )));
                             }
                         }

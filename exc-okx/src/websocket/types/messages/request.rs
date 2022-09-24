@@ -1,7 +1,8 @@
 use super::Args;
 use crate::error::OkxError;
 use crate::key::{Key, Signature};
-use exc_core::types::trading::{OrderKind, Place};
+use exc_core::types::trading::{OrderKind, Place, PlaceOrderOptions};
+use exc_core::types::TimeInForce;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
@@ -109,7 +110,9 @@ impl WsRequest {
     }
 
     /// Order request.
-    pub(crate) fn order(inst: &str, place: &Place) -> Self {
+    pub(crate) fn order(place: &Place, opts: &PlaceOrderOptions) -> Self {
+        let inst = opts.instrument();
+        let custom = opts.custom();
         let size = place.size.abs();
         let side = if place.size.is_sign_negative() {
             "sell"
@@ -118,11 +121,21 @@ impl WsRequest {
         };
         let mut map = BTreeMap::from([
             ("instId".to_string(), inst.to_string()),
-            ("tdMode".to_string(), "cross".to_string()),
+            (
+                "tdMode".to_string(),
+                custom
+                    .get("tdMode")
+                    .map(|s| s.as_str())
+                    .unwrap_or("cross")
+                    .to_string(),
+            ),
             ("side".to_string(), side.to_string()),
             ("posSide".to_string(), "net".to_string()),
             ("sz".to_string(), size.to_string()),
         ]);
+        if let Some(margin) = opts.margin() {
+            map.insert("ccy".to_string(), margin.to_string());
+        }
         match place.kind {
             OrderKind::Market => {
                 map.insert("ordType".to_string(), "market".to_string());
@@ -131,13 +144,18 @@ impl WsRequest {
                     map.insert("tgtCcy".to_string(), "base_ccy".to_string());
                 }
             }
-            OrderKind::Limit(price, _tif) => {
-                map.insert("ordType".to_string(), "limit".to_string());
+            OrderKind::Limit(price, tif) => {
                 map.insert("px".to_string(), price.to_string());
-                // TODO: add support to time-in-force option.
+                let t = match tif {
+                    TimeInForce::GoodTilCancelled => "limit",
+                    TimeInForce::FillOrKill => "fok",
+                    TimeInForce::ImmediateOrCancel => "ioc",
+                };
+                map.insert("ordType".to_string(), t.to_string());
             }
-            _ => {
-                // TODO: add support to post-only order.
+            OrderKind::PostOnly(price) => {
+                map.insert("px".to_string(), price.to_string());
+                map.insert("ordType".to_string(), "post_only".to_string());
             }
         }
         Self::Order(format!("{:x}", uuid::Uuid::new_v4().as_u128()), Args(map))

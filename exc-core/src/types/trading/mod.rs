@@ -4,7 +4,7 @@ pub mod place;
 /// Order.
 pub mod order;
 
-use std::fmt;
+use std::{collections::BTreeMap, fmt, sync::Arc};
 
 use futures::{future::BoxFuture, stream::BoxStream};
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, OrderTrade, TimeInForce};
@@ -13,15 +13,94 @@ use time::OffsetDateTime;
 
 use crate::{ExchangeError, Request};
 
+/// Options for order placement.
+#[derive(Debug, Clone)]
+pub struct PlaceOrderOptions {
+    /// Instrument.
+    instrument: String,
+    /// Client id.
+    client_id: Option<String>,
+    /// Margin currency perferred to use.
+    margin: Option<String>,
+    /// Exchange-defined options.
+    custom: BTreeMap<String, String>,
+}
+
+impl PlaceOrderOptions {
+    /// Create a new options with the given instrument.
+    pub fn new(inst: &str) -> Self {
+        Self {
+            instrument: inst.to_string(),
+            client_id: None,
+            margin: None,
+            custom: BTreeMap::default(),
+        }
+    }
+
+    /// Set the client id to place.
+    pub fn with_client_id(&mut self, id: Option<&str>) -> &mut Self {
+        self.client_id = id.map(|s| s.to_string());
+        self
+    }
+
+    /// Set the margin currency preffered to use.
+    /// # Warning
+    /// It is up to the exchange to decide if this option applies,
+    /// so please check the documents of the exchange you use.
+    pub fn with_margin(&mut self, currency: &str) -> &mut Self {
+        self.margin = Some(currency.to_string());
+        self
+    }
+
+    /// Insert an exchange-defined custom option.
+    pub fn insert<K, V>(&mut self, key: K, value: V) -> &mut Self
+    where
+        K: AsRef<str>,
+        V: AsRef<str>,
+    {
+        self.custom
+            .insert(key.as_ref().to_string(), value.as_ref().to_string());
+        self
+    }
+
+    /// Get the instrument name to trade.
+    pub fn instrument(&self) -> &str {
+        &self.instrument
+    }
+
+    /// Get the client id to use.
+    pub fn client_id(&self) -> Option<&str> {
+        self.client_id.as_deref()
+    }
+
+    /// Get the margin currency perferred to use.
+    pub fn margin(&self) -> Option<&str> {
+        self.margin.as_deref()
+    }
+
+    /// Get the exchange-defined custom options.
+    pub fn custom(&self) -> &BTreeMap<String, String> {
+        &self.custom
+    }
+}
+
 /// Place order.
 #[derive(Debug, Clone)]
 pub struct PlaceOrder {
-    /// Instrument.
-    pub instrument: String,
     /// Place.
     pub place: Place,
-    /// Client id.
-    pub client_id: Option<String>,
+    /// Options.
+    pub opts: Arc<PlaceOrderOptions>,
+}
+
+impl PlaceOrder {
+    /// Create a new request to place order.
+    pub fn new(place: Place, opts: &PlaceOrderOptions) -> Self {
+        Self {
+            place,
+            opts: Arc::new(opts.clone()),
+        }
+    }
 }
 
 /// Place order response.
