@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
     let id = ws
         .place_with_opts(
             &Place::with_size(dec!(10)).post_only(dec!(0.01)),
-            &PlaceOrderOptions::new(inst),
+            PlaceOrderOptions::new(inst).insert("tdMode", "cash"),
         )
         .await?
         .id;

@@ -112,6 +112,7 @@ impl WsRequest {
     /// Order request.
     pub(crate) fn order(place: &Place, opts: &PlaceOrderOptions) -> Self {
         let inst = opts.instrument();
+        let custom = opts.custom();
         let size = place.size.abs();
         let side = if place.size.is_sign_negative() {
             "sell"
@@ -120,7 +121,14 @@ impl WsRequest {
         };
         let mut map = BTreeMap::from([
             ("instId".to_string(), inst.to_string()),
-            ("tdMode".to_string(), "cross".to_string()),
+            (
+                "tdMode".to_string(),
+                custom
+                    .get("tdMode")
+                    .map(|s| s.as_str())
+                    .unwrap_or("cross")
+                    .to_string(),
+            ),
             ("side".to_string(), side.to_string()),
             ("posSide".to_string(), "net".to_string()),
             ("sz".to_string(), size.to_string()),
