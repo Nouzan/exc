@@ -1,11 +1,11 @@
 use std::ops::Bound;
 
+use exc::okx::http::layer::OkxHttpApiLayer;
 use exc::{
     transport::http::endpoint::Endpoint,
     types::candle::{Period, QueryCandles},
     ExcLayer, ExchangeError, FetchCandlesBackwardLayer,
 };
-use exc_okx::http::layer::OkxHttpApiLayer;
 use futures::StreamExt;
 use time::macros::{datetime, offset};
 use tower::{ServiceBuilder, ServiceExt};

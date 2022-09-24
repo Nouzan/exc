@@ -1,9 +1,9 @@
 use clap::Parser;
+use exc::binance::Binance;
 use exc::{
     types::SubscribeOrders, ExcService, IntoExc, SubscribeOrdersService, SubscribeTickersService,
     TradeBidAskService,
 };
-use exc_binance::Binance;
 use futures::StreamExt;
 use std::time::Duration;
 

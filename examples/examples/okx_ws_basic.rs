@@ -1,5 +1,5 @@
+use exc::okx::websocket::{types::request::Request, Endpoint};
 use exc::Exc;
-use exc_okx::websocket::{types::request::Request, Endpoint};
 use futures::StreamExt;
 
 #[tokio::main]

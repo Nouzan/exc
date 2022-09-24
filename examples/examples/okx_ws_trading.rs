@@ -1,12 +1,12 @@
 use exc::{
+    okx::{
+        http::{layer::OkxHttpApiLayer, types::request::HttpRequest},
+        key::Key,
+        websocket::Endpoint,
+    },
     transport::http::endpoint::Endpoint as HttpEndpoint,
-    types::trading::{Place, PlaceOrderOptions},
+    types::{Place, PlaceOrderOptions},
     ExcLayer, {CheckOrderService, TradingService},
-};
-use exc_okx::{
-    http::{layer::OkxHttpApiLayer, types::request::HttpRequest},
-    key::Key,
-    websocket::Endpoint,
 };
 use rust_decimal_macros::dec;
 use std::env::var;

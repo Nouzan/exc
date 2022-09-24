@@ -1,4 +1,4 @@
-use exc_okx::{
+use exc::okx::{
     key::Key,
     websocket::{Endpoint, Request},
 };

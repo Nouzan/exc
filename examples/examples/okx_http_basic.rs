@@ -1,8 +1,8 @@
-use exc::transport::http::endpoint::Endpoint;
-use exc_okx::http::{
+use exc::okx::http::{
     layer::OkxHttpApiLayer,
     types::request::{history_candles::HistoryCandles, Get, HttpRequest},
 };
+use exc::transport::http::endpoint::Endpoint;
 use tower::{ServiceBuilder, ServiceExt};
 
 #[tokio::main]

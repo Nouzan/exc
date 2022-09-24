@@ -1,5 +1,5 @@
+use exc::okx::websocket::Endpoint;
 use exc::{ExcLayer, SubscribeTickersService};
-use exc_okx::websocket::Endpoint;
 use futures::StreamExt;
 use tower::ServiceBuilder;
 use tracing_subscriber::prelude::*;
