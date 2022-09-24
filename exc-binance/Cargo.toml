@@ -1,12 +1,13 @@
 [package]
 name = "exc-binance"
-version = "0.4.9"
-edition = "2021"
-authors = ["Nouzan <clobraindie@outlook.com>"]
-license = "MIT"
-readme = "README.md"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+rust-version.workspace = true
 description = "Binance exchange services"
-repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower", "binance"]
 
 [dependencies]

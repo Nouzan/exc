@@ -1,13 +1,14 @@
 [package]
 name = "exc"
-version = "0.4.9"
-edition = "2021"
-authors = ["Nouzan <clobraindie@outlook.com>"]
-license = "MIT"
-readme = "README.md"
-description = "Abstractions of exchanges."
-repository = "https://github.com/Nouzan/exc"
-keywords = ["exchange", "tower"]
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+readme.workspace = true
+description.workspace = true
+rust-version.workspace = true
 
 [features]
 okx = ["exc-okx"]

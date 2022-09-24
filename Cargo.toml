@@ -6,3 +6,14 @@ members = [
     "exc-binance",
     "examples",
 ]
+
+[workspace.package]
+version = "0.4.9"
+edition = "2021"
+authors = ["Nouzan <clobraindie@outlook.com>"]
+license = "MIT"
+repository = "https://github.com/Nouzan/exc"
+keywords = ["exchange", "tower"]
+readme = "README.md"
+description = "Abstractions of exchanges."
+rust-version = "1.64"
