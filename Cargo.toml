@@ -24,7 +24,7 @@ exc-binance = { version = "0.5", path = "./exc-binance" }
 exc-okx = { version = "0.5", path = "./exc-okx" }
 exc = { version = "0.5", path = "./exc" }
 
-indicator = "0.3.0-alpha.6"
+indicator = "0.3.0-alpha.7"
 positions = "0.1"
 tracing = "0.1.36"
 anyhow = "1"
