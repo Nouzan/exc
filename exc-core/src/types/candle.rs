@@ -1,6 +1,7 @@
 use derive_more::Display;
 use futures::stream::BoxStream;
 pub use indicator::{window::mode::tumbling::period::PeriodKind, Period};
+use indicator::{Tick, TickValue, Tickable};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -236,4 +237,20 @@ pub struct Candle {
     /// The volume.
     #[serde(default)]
     pub volume: Decimal,
+}
+
+impl Tickable for Candle {
+    type Value = Self;
+
+    fn tick(&self) -> Tick {
+        Tick::new(self.ts)
+    }
+
+    fn value(&self) -> &Self::Value {
+        self
+    }
+
+    fn into_tick_value(self) -> TickValue<Self::Value> {
+        TickValue::new(self.ts, self)
+    }
 }

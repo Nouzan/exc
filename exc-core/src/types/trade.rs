@@ -1,5 +1,6 @@
 use derive_more::Display;
 use futures::stream::BoxStream;
+use indicator::{Tick, TickValue, Tickable};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -33,4 +34,20 @@ pub struct SubscribeTrades {
 
 impl Request for SubscribeTrades {
     type Response = TradeStream;
+}
+
+impl Tickable for Trade {
+    type Value = Self;
+
+    fn tick(&self) -> Tick {
+        Tick::new(self.ts)
+    }
+
+    fn value(&self) -> &Self::Value {
+        self
+    }
+
+    fn into_tick_value(self) -> TickValue<Self::Value> {
+        TickValue::new(self.ts, self)
+    }
 }

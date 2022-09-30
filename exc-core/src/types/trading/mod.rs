@@ -7,6 +7,7 @@ pub mod order;
 use std::{collections::BTreeMap, fmt, sync::Arc};
 
 use futures::{future::BoxFuture, stream::BoxStream};
+use indicator::{Tick, TickValue, Tickable};
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, OrderTrade, TimeInForce};
 pub use place::Place;
 use time::OffsetDateTime;
@@ -183,6 +184,22 @@ impl fmt::Debug for OrderUpdate {
             .field("ts", &self.ts.to_string())
             .field("order", &self.order)
             .finish()
+    }
+}
+
+impl Tickable for OrderUpdate {
+    type Value = Order;
+
+    fn tick(&self) -> Tick {
+        Tick::new(self.ts)
+    }
+
+    fn value(&self) -> &Self::Value {
+        &self.order
+    }
+
+    fn into_tick_value(self) -> TickValue<Self::Value> {
+        TickValue::new(self.ts, self.order)
     }
 }
 

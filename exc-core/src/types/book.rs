@@ -1,6 +1,7 @@
 use std::fmt;
 
 use futures::stream::BoxStream;
+use indicator::{Tick, TickValue, Tickable};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -38,6 +39,22 @@ impl fmt::Display for BidAsk {
             }
             _ => write!(f, "ts={}, bid=null, ask=null", self.ts),
         }
+    }
+}
+
+impl Tickable for BidAsk {
+    type Value = Self;
+
+    fn tick(&self) -> Tick {
+        Tick::new(self.ts)
+    }
+
+    fn value(&self) -> &Self::Value {
+        self
+    }
+
+    fn into_tick_value(self) -> TickValue<Self::Value> {
+        TickValue::new(self.ts, self)
     }
 }
 
