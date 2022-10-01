@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc_core::transport::http::endpoint::Endpoint as HttpEndpoint;
+use exc_core::{transport::http::endpoint::Endpoint as HttpEndpoint, Exc, IntoExc};
 use tower::{buffer::Buffer, ready_cache::ReadyCache, util::Either, ServiceBuilder};
 
 use crate::{
@@ -11,6 +11,7 @@ use crate::{
     service::{Binance, BinanceInner, HTTP_KEY, WS_KEY},
     types::key::BinanceKey,
     websocket::{endpoint::WsEndpoint, BinanceWebsocketApi},
+    Request,
 };
 
 const CAP: usize = 512;
@@ -92,7 +93,12 @@ impl Endpoint {
         self
     }
 
-    /// Connect to binance service.
+    /// Connect and convert into an exc service.
+    pub fn connect_exc(&self) -> Exc<Binance, Request> {
+        self.connect().into_exc()
+    }
+
+    /// Connect to the binance service.
     pub fn connect(&self) -> Binance {
         let mut layer = BinanceRestApiLayer::new(self.http.0);
         if let Some(key) = self.key.as_ref() {

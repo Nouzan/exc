@@ -1,7 +1,9 @@
 use std::time::Duration;
 
-use crate::{http::layer::OkxHttpApiLayer, key::OkxKey, websocket::Endpoint as WsEndpoint};
-use exc_core::{transport::http, ExchangeError};
+use crate::{
+    http::layer::OkxHttpApiLayer, key::OkxKey, websocket::Endpoint as WsEndpoint, OkxRequest,
+};
+use exc_core::{transport::http, Exc, ExchangeError, IntoExc};
 use tower::ServiceBuilder;
 
 use super::Okx;
@@ -26,11 +28,9 @@ impl Default for Endpoint {
 }
 
 impl Endpoint {
-    /// Private mode (enable trading).
-    pub fn private(&mut self, key: OkxKey) -> &mut Self {
-        self.ws.private(key.clone());
-        self.http.private(key);
-        self
+    /// Connect and convert into an exc service.
+    pub fn connect_exc(&self) -> Exc<Okx, OkxRequest> {
+        self.connect().into_exc()
     }
 
     /// Connect.
@@ -57,6 +57,13 @@ impl Endpoint {
     /// Set request timeout for the websocket channel.
     pub fn ws_request_timeout(&mut self, timeout: Duration) -> &mut Self {
         self.ws.request_timeout(timeout);
+        self
+    }
+
+    /// Private mode (enable trading).
+    pub fn private(&mut self, key: OkxKey) -> &mut Self {
+        self.ws.private(key.clone());
+        self.http.private(key);
         self
     }
 

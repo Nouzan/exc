@@ -31,3 +31,9 @@ pub mod okx {
 pub mod binance {
     pub use exc_binance::*;
 }
+
+#[cfg(feature = "okx")]
+pub use crate::okx::Okx;
+
+#[cfg(feature = "binance")]
+pub use crate::binance::Binance;
