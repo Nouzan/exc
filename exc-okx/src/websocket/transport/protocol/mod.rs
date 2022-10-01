@@ -4,7 +4,10 @@ use crate::websocket::types::{
 };
 use atomic_waker::AtomicWaker;
 use exc_core::transport::websocket::WsStream;
-use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, StreamExt, TryStreamExt};
+use futures::{
+    future::{ready, BoxFuture},
+    FutureExt, Sink, SinkExt, Stream, StreamExt, TryStreamExt,
+};
 use pin_project_lite::pin_project;
 use std::{pin::Pin, sync::Arc};
 use std::{
@@ -42,6 +45,9 @@ pub enum ProtocolError {
     // /// Subsribed.
     // #[error("subscribed: {0}")]
     // Subscribed(Args),
+    /// Reconnect.
+    #[error("reconnect")]
+    Reconnect,
 }
 
 /// Okx websocket transport stream.
@@ -156,6 +162,7 @@ impl From<tokio_tower::Error<Transport, Req>> for ProtocolError {
 pub struct Protocol {
     waker: Arc<AtomicWaker>,
     inner: Client<Transport, ProtocolError, Req>,
+    reconnect: bool,
 }
 
 impl Protocol {
@@ -181,6 +188,7 @@ impl Protocol {
             inner: Client::with_error_handler(transport, |e| {
                 tracing::error!("protocol error: {e}");
             }),
+            reconnect: false,
         })
     }
 }
@@ -191,30 +199,39 @@ impl Service<Request> for Protocol {
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        // wake up when the transport is dead.
-        self.waker.register(cx.waker());
-        self.inner.poll_ready(cx)
+        if self.reconnect {
+            Poll::Ready(Err(ProtocolError::Reconnect))
+        } else {
+            // wake up when the transport is dead.
+            self.waker.register(cx.waker());
+            self.inner.poll_ready(cx)
+        }
     }
 
     fn call(&mut self, req: Request) -> Self::Future {
-        let resp = self.inner.call(req.into_client_stream());
-        async move {
-            let resp = resp.await?;
-            let resp = match resp {
-                Ok(stream) => {
-                    let mut stream = Box::pin(stream.peekable());
-                    if let Some(frame) = stream.as_mut().peek().await {
-                        trace!("wait header; peeked {frame:?}");
-                        Response::Streaming(stream)
-                    } else {
-                        trace!("wait header; no header");
-                        Response::Error(StatusKind::EmptyResponse)
+        if req.reconnect {
+            self.reconnect = true;
+            ready(Ok(Response::Reconnected)).boxed()
+        } else {
+            let resp = self.inner.call(req.into_client_stream());
+            async move {
+                let resp = resp.await?;
+                let resp = match resp {
+                    Ok(stream) => {
+                        let mut stream = Box::pin(stream.peekable());
+                        if let Some(frame) = stream.as_mut().peek().await {
+                            trace!("wait header; peeked {frame:?}");
+                            Response::Streaming(stream)
+                        } else {
+                            trace!("wait header; no header");
+                            Response::Error(StatusKind::EmptyResponse)
+                        }
                     }
-                }
-                Err(err) => Response::Error(err.kind),
-            };
-            Ok(resp)
+                    Err(err) => Response::Error(err.kind),
+                };
+                Ok(resp)
+            }
+            .boxed()
         }
-        .boxed()
     }
 }

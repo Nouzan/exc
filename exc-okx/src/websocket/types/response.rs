@@ -69,6 +69,8 @@ pub enum Response {
     Streaming(BoxStream<'static, Result<ServerFrame, OkxError>>),
     /// Error.
     Error(StatusKind),
+    /// Reconnected.
+    Reconnected,
 }
 
 impl Response {
@@ -79,6 +81,7 @@ impl Response {
         match self {
             Self::Streaming(stream) => Ok(stream),
             Self::Error(status) => Err(status),
+            Self::Reconnected => Err(StatusKind::Other(anyhow::anyhow!("invalid response kind"))),
         }
     }
 
@@ -120,6 +123,9 @@ impl TryFrom<Response> for BoxStream<'static, Result<Ticker, ExchangeError>> {
                 Ok(stream)
             }
             Response::Error(status) => Err(OkxError::Api(status).into()),
+            Response::Reconnected => Err(ExchangeError::Other(anyhow::anyhow!(
+                "invalid response kind"
+            ))),
         }
     }
 }
