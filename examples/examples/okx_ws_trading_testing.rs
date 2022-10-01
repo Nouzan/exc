@@ -1,7 +1,7 @@
 use exc::{
     okx::{
         http::{layer::OkxHttpApiLayer, types::request::HttpRequest},
-        key::Key,
+        key::OkxKey,
         websocket::Endpoint,
     },
     transport::http::endpoint::Endpoint as HttpEndpoint,
@@ -22,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let key = Key {
+    let key = OkxKey {
         apikey: var("OKX_APIKEY")?,
         secretkey: var("OKX_SECRETKEY")?,
         passphrase: var("OKX_PASSPHRASE")?,

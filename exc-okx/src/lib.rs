@@ -2,6 +2,9 @@
 
 #![deny(missing_docs)]
 
+/// The OKX service of both ws and rest APIs.
+pub mod service;
+
 /// Websocket API.
 pub mod websocket;
 
@@ -14,8 +17,10 @@ pub mod error;
 /// Key.
 pub mod key;
 
-/// Util
-pub mod util;
+/// Utils
+pub mod utils;
+
+pub use service::{Okx, OkxRequest, OkxResponse};
 
 #[macro_use]
 extern crate tracing;

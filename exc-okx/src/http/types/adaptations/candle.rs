@@ -6,8 +6,8 @@ use std::ops::RangeBounds;
 use crate::http::types::request::history_candles::HistoryCandles;
 use crate::http::types::request::Get;
 use crate::http::types::response::ResponseData;
-use crate::util::timestamp::millis_to_ts;
-use crate::util::{
+use crate::utils::timestamp::millis_to_ts;
+use crate::utils::{
     period::period_to_bar,
     timestamp::{end_bound_to_millis, start_bound_to_millis},
 };

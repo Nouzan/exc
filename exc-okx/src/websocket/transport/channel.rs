@@ -16,7 +16,7 @@ impl Channel {
         &mut self,
         request: Request,
     ) -> Result<<Self as Service<Request>>::Future, ExchangeError> {
-        self.ready().await?;
+        ServiceExt::<Request>::ready(self).await?;
         let fut = self.call(request);
         Ok(fut)
     }

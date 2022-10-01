@@ -1,4 +1,4 @@
-use crate::key::Key;
+use crate::key::OkxKey as Key;
 
 use super::types::{
     request::HttpRequest,
@@ -23,13 +23,13 @@ pub struct OkxHttpApiLayer<'a, F> {
 
 impl<'a, F> OkxHttpApiLayer<'a, F> {
     /// Set key.
-    pub fn private(mut self, key: Key) -> Self {
+    pub fn private(&mut self, key: Key) -> &mut Self {
         self.key = Some(key);
         self
     }
 
     /// Set whether to use the testing environment.
-    pub fn testing(mut self, enable: bool) -> Self {
+    pub fn testing(&mut self, enable: bool) -> &mut Self {
         self.testing = enable;
         self
     }

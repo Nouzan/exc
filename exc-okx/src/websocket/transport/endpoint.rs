@@ -1,5 +1,5 @@
 use super::{channel::Channel, connection::Connection};
-use crate::{error::OkxError, key::Key};
+use crate::{error::OkxError, key::OkxKey as Key};
 use http::Uri;
 use std::time::Duration;
 use tower::{buffer::Buffer, timeout::Timeout, ServiceExt};
@@ -21,43 +21,43 @@ pub struct Endpoint {
 
 impl Endpoint {
     /// Set request timeout. Default to `None`.
-    pub fn request_timeout(mut self, duration: Duration) -> Self {
+    pub fn request_timeout(&mut self, duration: Duration) -> &mut Self {
         self.request_timeout = Some(duration);
         self
     }
 
     /// Set request timeout. Default to `None`.
-    pub fn connection_timeout(mut self, duration: Duration) -> Self {
+    pub fn connection_timeout(&mut self, duration: Duration) -> &mut Self {
         self.connection_timeout = Some(duration);
         self
     }
 
     /// Set buffer size. Default to `DEFAULT_BUFFER_SIZE`.
-    pub fn buffer_size(mut self, buffer_size: usize) -> Self {
+    pub fn buffer_size(&mut self, buffer_size: usize) -> &mut Self {
         self.buffer_size = Some(buffer_size);
         self
     }
 
     /// Set ping timeout. Default to `DEFAULT_PING_TIMEOUT`.
-    pub fn ping_timeout(mut self, duration: Duration) -> Self {
+    pub fn ping_timeout(&mut self, duration: Duration) -> &mut Self {
         self.ping_timeout = duration;
         self
     }
 
     /// Switch to testing environment.
-    pub fn testing(mut self, enable: bool) -> Self {
+    pub fn testing(&mut self, enable: bool) -> &mut Self {
         self.testing = enable;
         self
     }
 
     /// Switch to AWS endpoint.
-    pub fn aws(mut self, enable: bool) -> Self {
+    pub fn aws(&mut self, enable: bool) -> &mut Self {
         self.aws = enable;
         self
     }
 
     /// Switch to private channel.
-    pub fn private(mut self, key: Key) -> Self {
+    pub fn private(&mut self, key: Key) -> &mut Self {
         self.login = Some(key);
         self
     }

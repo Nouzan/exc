@@ -1,6 +1,6 @@
 use super::{callback::Callback, frames::client::ClientFrame, messages::Args};
 use crate::{
-    key::{Key, SignError},
+    key::{OkxKey as Key, SignError},
     websocket::types::messages::request::WsRequest,
 };
 use async_stream::stream;

@@ -161,12 +161,12 @@ pub struct OptionMeta {
 
     /// Listing time.
     /// Only applicable to `FUTURES`/`SWAP`/`OPTION`.
-    #[serde(with = "crate::util::timestamp_serde")]
+    #[serde(with = "crate::utils::timestamp_serde")]
     pub list_time: OffsetDateTime,
 
     /// Expiry time.
     /// Only applicable to `FUTURES`/`OPTION`.
-    #[serde(with = "crate::util::timestamp_serde")]
+    #[serde(with = "crate::utils::timestamp_serde")]
     pub exp_time: OffsetDateTime,
 }
 
@@ -215,7 +215,7 @@ pub struct SwapMeta {
 
     /// Listing time.
     /// Only applicable to `FUTURES`/`SWAP`/`OPTION`.
-    #[serde(with = "crate::util::timestamp_serde")]
+    #[serde(with = "crate::utils::timestamp_serde")]
     pub list_time: OffsetDateTime,
 
     /// Leverage
@@ -249,12 +249,12 @@ pub struct FuturesMeta {
 
     /// Listing time.
     /// Only applicable to `FUTURES`/`SWAP`/`OPTION`.
-    #[serde(with = "crate::util::timestamp_serde")]
+    #[serde(with = "crate::utils::timestamp_serde")]
     pub list_time: OffsetDateTime,
 
     /// Expiry time.
     /// Only applicable to `FUTURES`/`OPTION`.
-    #[serde(with = "crate::util::timestamp_serde")]
+    #[serde(with = "crate::utils::timestamp_serde")]
     pub exp_time: OffsetDateTime,
 
     /// Leverage
