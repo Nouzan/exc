@@ -8,7 +8,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.5.0"
+version = "0.5.0-beta.1"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
@@ -19,10 +19,10 @@ description = "The abstraction layer of exchanges."
 rust-version = "1.64"
 
 [workspace.dependencies]
-exc-core = { version = "0.5", path = "./exc-core" }
-exc-binance = { version = "0.5", path = "./exc-binance" }
-exc-okx = { version = "0.5", path = "./exc-okx" }
-exc = { version = "0.5", path = "./exc" }
+exc-core = { version = "0.5.0-beta.1", path = "./exc-core" }
+exc-binance = { version = "0.5.0-beta.1", path = "./exc-binance" }
+exc-okx = { version = "0.5.0-beta.1", path = "./exc-okx" }
+exc = { version = "0.5.0-beta.1", path = "./exc" }
 
 indicator = "0.3.0-beta.1"
 positions = "0.1"
