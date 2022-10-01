@@ -1,7 +1,5 @@
 use exc::binance::Binance;
-use exc::{
-    IntoExc, {SubscribeTickersService, TradeBidAskService},
-};
+use exc::{SubscribeTickersService, TradeBidAskService};
 use futures::StreamExt;
 use std::time::Duration;
 
@@ -24,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
         _ => anyhow::bail!("unsupported"),
     };
 
-    let mut binance = endpoint.connect().into_exc().into_subscribe_tickers();
+    let mut binance = endpoint.connect_exc().into_subscribe_tickers();
 
     let mut revision = 0;
     loop {

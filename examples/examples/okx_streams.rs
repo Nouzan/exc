@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use exc::okx::Okx;
-use exc::{IntoExc, SubscribeTickersService};
+use exc::SubscribeTickersService;
 use futures::StreamExt;
 use tracing_subscriber::prelude::*;
 
@@ -10,20 +10,14 @@ async fn main() -> anyhow::Result<()> {
     let fmt = tracing_subscriber::fmt::layer()
         .with_writer(std::io::stderr)
         .with_filter(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "exc_okx=debug,okx_two_streams=debug".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "exc_okx=debug,okx_streams=debug".into()),
         ));
-    let console = console_subscriber::spawn();
-    tracing_subscriber::registry()
-        .with(console)
-        .with(fmt)
-        .init();
+    tracing_subscriber::registry().with(fmt).init();
 
     let exchange = Okx::endpoint()
         .ws_ping_timeout(Duration::from_secs(5))
         .ws_connection_timeout(Duration::from_secs(5))
-        .connect()
-        .into_exc();
+        .connect_exc();
 
     let handles = ["BTC-USDT", "ETH-USDT", "LTC-USDT", "DOGE-USDT"]
         .into_iter()

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use exc::binance::Binance;
-use exc::{types::Period, FetchCandlesService, FetchFirstCandlesService, IntoExc};
+use exc::{types::Period, FetchCandlesService, FetchFirstCandlesService};
 use futures::StreamExt;
 use time::{macros::datetime, UtcOffset};
 
@@ -23,8 +23,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let mut binance = endpoint
-        .connect()
-        .into_exc()
+        .connect_exc()
         .into_rate_limited(200, Duration::from_secs(60))
         .into_fetch_candles_forward(1000);
     let mut stream = binance

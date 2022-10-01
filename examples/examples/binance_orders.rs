@@ -1,7 +1,7 @@
 use clap::Parser;
 use exc::binance::Binance;
 use exc::{
-    types::SubscribeOrders, ExcService, IntoExc, SubscribeOrdersService, SubscribeTickersService,
+    types::SubscribeOrders, ExcService, SubscribeOrdersService, SubscribeTickersService,
     TradeBidAskService,
 };
 use futures::StreamExt;
@@ -40,8 +40,7 @@ async fn main() -> anyhow::Result<()> {
     let binance = endpoint
         .private(key)
         .ws_listen_key_stop_refreshing_after(args.reconnect.into())
-        .connect()
-        .into_exc();
+        .connect_exc();
 
     let inst = args.inst.clone();
     let mut market = binance

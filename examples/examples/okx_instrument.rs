@@ -1,9 +1,7 @@
 use std::time::Duration;
 
-use exc::okx::websocket::{Endpoint, Request};
-use exc::{ExcLayer, SubscribeInstrumentsService};
+use exc::SubscribeInstrumentsService;
 use futures::StreamExt;
-use tower::ServiceBuilder;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -13,14 +11,10 @@ async fn main() -> anyhow::Result<()> {
             std::env::var("RUST_LOG").unwrap_or_else(|_| "tower=trace,info".into()),
         ))
         .init();
-    let svc = ServiceBuilder::default()
-        .layer(ExcLayer::<Request>::default())
-        .service(
-            Endpoint::default()
-                .request_timeout(Duration::from_secs(5))
-                .connection_timeout(Duration::from_secs(5))
-                .connect(),
-        );
+    let svc = exc::Okx::endpoint()
+        .ws_request_timeout(Duration::from_secs(5))
+        .ws_connection_timeout(Duration::from_secs(5))
+        .connect_exc();
     let handles = ["SPOT", "FUTURES", "SWAP"]
         .iter()
         .map(|tag| {

@@ -1,5 +1,5 @@
 use exc::binance::Binance;
-use exc::{FetchInstrumentsService, IntoExc};
+use exc::FetchInstrumentsService;
 use futures::StreamExt;
 
 #[tokio::main]
@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
         _ => anyhow::bail!("unsupported"),
     };
 
-    let mut binance = endpoint.connect().into_exc();
+    let mut binance = endpoint.connect_exc();
     let mut stream = binance.fetch_instruments("").await?;
     while let Some(meta) = stream.next().await {
         let meta = meta?;

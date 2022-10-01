@@ -1,7 +1,7 @@
 use exc::{
     okx::{key::OkxKey, Okx},
     types::{Place, PlaceOrderOptions},
-    IntoExc, {CheckOrderService, TradingService},
+    {CheckOrderService, TradingService},
 };
 use rust_decimal_macros::dec;
 use std::{env::var, time::Duration};
@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "info,okx_ws_trading=debug,exc_okx=trace".into()),
+                .unwrap_or_else(|_| "info,okx_trading=debug,exc_okx=trace".into()),
         ))
         .init();
 
@@ -25,8 +25,7 @@ async fn main() -> anyhow::Result<()> {
     let mut okx = Okx::endpoint()
         .private(key)
         .ws_request_timeout(Duration::from_secs(5))
-        .connect()
-        .into_exc();
+        .connect_exc();
 
     let inst = "DOGE-USDT";
     let id = okx

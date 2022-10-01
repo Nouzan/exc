@@ -7,7 +7,7 @@ use std::{
 use clap::{clap_derive::ArgEnum, Parser};
 use exc::{
     types::{OrderId, Place},
-    CheckOrderService, IntoExc, SubscribeOrdersService, TradingService,
+    CheckOrderService, SubscribeOrdersService, TradingService,
 };
 use exc_binance::{Binance, SpotOptions};
 use futures::StreamExt;
@@ -115,10 +115,7 @@ async fn main() -> anyhow::Result<()> {
     let mut exc = match args.exchange.as_str() {
         "binance-u" => {
             let key = serde_json::from_str(&args.key)?;
-            Binance::usd_margin_futures()
-                .private(key)
-                .connect()
-                .into_exc()
+            Binance::usd_margin_futures().private(key).connect_exc()
         }
         "binance-s" => {
             let key = serde_json::from_str(&args.key)?;
@@ -130,8 +127,7 @@ async fn main() -> anyhow::Result<()> {
             };
             Binance::spot_with_options(options)
                 .private(key)
-                .connect()
-                .into_exc()
+                .connect_exc()
         }
         exchange => {
             anyhow::bail!("unsupported exchange: {exchange}");

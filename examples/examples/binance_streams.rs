@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::{binance::Binance, ExcService, IntoExc, SubscribeTickersService, TradeBidAskService};
+use exc::{binance::Binance, ExcService, SubscribeTickersService, TradeBidAskService};
 use futures::StreamExt;
 
 #[tokio::main]
@@ -20,8 +20,7 @@ async fn main() -> anyhow::Result<()> {
     };
     let exc = endpoint
         .ws_rate_limit(2, Duration::from_secs(1))
-        .connect()
-        .into_exc();
+        .connect_exc();
 
     let handles = [
         "btcbusd", "ethbusd", "bnbusdt", "ltcusdt", "btcusdt", "ethusdt", "bnbbusd", "ltcbusd",

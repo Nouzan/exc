@@ -1,6 +1,6 @@
 use clap::Parser;
 use exc::binance::Binance;
-use exc::{types::Place, CheckOrderService, IntoExc, TradingService};
+use exc::{types::Place, CheckOrderService, TradingService};
 use rust_decimal_macros::dec;
 
 #[derive(Parser)]
@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
         _ => anyhow::bail!("unsupported"),
     };
 
-    let mut binance = endpoint.private(key).connect().into_exc();
+    let mut binance = endpoint.private(key).connect_exc();
 
     let place = Place::with_size(dec!(200)).post_only(dec!(0.05));
     let placed = binance.place(&args.inst, &place, Some("test")).await?;
