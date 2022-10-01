@@ -6,10 +6,24 @@ use super::protocol::{
 };
 use async_stream::stream;
 
+pub(crate) enum RequestKind {
+    Multiplex(MultiplexRequest),
+    Reconnect,
+}
+
+impl RequestKind {
+    fn timeout(self, duration: Duration) -> Self {
+        match self {
+            Self::Multiplex(req) => Self::Multiplex(req.timeout(duration)),
+            Self::Reconnect => Self::Reconnect,
+        }
+    }
+}
+
 /// Binance websocket request.
 pub struct WsRequest {
     pub(crate) stream: bool,
-    pub(crate) inner: MultiplexRequest,
+    pub(crate) inner: RequestKind,
 }
 
 impl WsRequest {
@@ -17,13 +31,13 @@ impl WsRequest {
     pub fn subscribe(stream: Name) -> Self {
         Self {
             stream: true,
-            inner: MultiplexRequest::new(|token| {
+            inner: RequestKind::Multiplex(MultiplexRequest::new(|token| {
                 stream! {
                     yield RequestFrame::subscribe(0, stream.clone());
                     let _ = token.await;
                     yield RequestFrame::unsubscribe(0, stream);
                 }
-            }),
+            })),
         }
     }
 
@@ -37,13 +51,21 @@ impl WsRequest {
     pub fn main_stream(stream: Name) -> Self {
         Self {
             stream: true,
-            inner: MultiplexRequest::main_stream(stream),
+            inner: RequestKind::Multiplex(MultiplexRequest::main_stream(stream)),
+        }
+    }
+
+    /// Reconnect.
+    pub fn reconnect() -> Self {
+        Self {
+            stream: false,
+            inner: RequestKind::Reconnect,
         }
     }
 }
 
-impl From<WsRequest> for MultiplexRequest {
-    fn from(req: WsRequest) -> Self {
-        req.inner
-    }
-}
+// impl From<WsRequest> for MultiplexRequest {
+//     fn from(req: WsRequest) -> Self {
+//         req.inner
+//     }
+// }

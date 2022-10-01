@@ -19,6 +19,9 @@ pub mod key;
 /// Trading.
 pub mod trading;
 
+/// Utils.
+pub mod utils;
+
 pub use book::{BidAsk, BidAskStream, SubscribeBidAsk};
 pub use candle::{
     Candle, CandleStream, Period, PeriodKind, QueryCandles, QueryFirstCandles, QueryLastCandles,

@@ -23,6 +23,7 @@ exc-core = { workspace = true }
 tracing = { workspace = true }
 tower = { workspace = true }
 futures = { workspace = true }
+futures-util = { workspace = true }
 async-stream = { workspace = true }
 time = { workspace = true, features = ["serde-well-known", "macros"] }
 tokio-stream = { workspace = true }
