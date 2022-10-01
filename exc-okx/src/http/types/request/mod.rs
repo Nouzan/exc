@@ -3,7 +3,7 @@ use http::Request;
 use hyper::Body;
 use serde::Serialize;
 
-use crate::key::Key;
+use crate::key::OkxKey as Key;
 
 use self::history_candles::HistoryCandles;
 use self::trading::Order;

@@ -14,7 +14,7 @@ use crate::{
         request::{trading::Order, HttpRequest, PrivateGet},
         response::ResponseData,
     },
-    util::timestamp::millis_to_ts,
+    utils::timestamp::millis_to_ts,
 };
 
 fn decimal_to_ts(ts: Decimal) -> Option<OffsetDateTime> {

@@ -1,5 +1,5 @@
 use exc::okx::{
-    key::Key,
+    key::OkxKey,
     websocket::{Endpoint, Request},
 };
 use std::env::var;
@@ -15,7 +15,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let key = Key {
+    let key = OkxKey {
         apikey: var("OKX_APIKEY")?,
         secretkey: var("OKX_SECRETKEY")?,
         passphrase: var("OKX_PASSPHRASE")?,

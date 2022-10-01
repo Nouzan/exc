@@ -3,7 +3,7 @@ use std::time::Duration;
 use super::endpoint::Endpoint;
 use super::protocol::Protocol;
 use crate::error::OkxError;
-use crate::key::Key;
+use crate::key::OkxKey as Key;
 use crate::websocket::types::messages::event::ResponseKind;
 use crate::websocket::types::response::StatusKind;
 use crate::websocket::types::{request::Request, response::Response};

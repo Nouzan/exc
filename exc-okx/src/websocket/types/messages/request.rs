@@ -1,6 +1,6 @@
 use super::Args;
 use crate::error::OkxError;
-use crate::key::{Key, Signature};
+use crate::key::{OkxKey as Key, Signature};
 use exc_core::types::trading::{OrderKind, Place, PlaceOrderOptions};
 use exc_core::types::TimeInForce;
 use serde::{Deserialize, Serialize};

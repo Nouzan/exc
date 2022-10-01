@@ -70,4 +70,12 @@ impl ExchangeError {
             err => err,
         }
     }
+
+    /// Flatten layered error.
+    pub fn layer(err: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        match err.downcast::<Self>() {
+            Ok(err) => (*err).flatten(),
+            Err(err) => Self::Other(anyhow::anyhow!("{err}")),
+        }
+    }
 }

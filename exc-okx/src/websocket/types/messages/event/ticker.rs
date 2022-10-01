@@ -21,7 +21,7 @@ pub(super) struct OkxTicker {
     pub(super) vol_24h: Decimal,
     pub(super) sod_utc_0: Decimal,
     pub(super) sod_utc_8: Decimal,
-    #[serde(with = "crate::util::timestamp_serde")]
+    #[serde(with = "crate::utils::timestamp_serde")]
     pub(super) ts: OffsetDateTime,
 }
 

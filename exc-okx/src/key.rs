@@ -22,9 +22,9 @@ pub enum SignError {
     SecretKeyLength,
 }
 
-/// Key.
+/// The APIKey definition of OKX.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Key {
+pub struct OkxKey {
     /// APIKey.
     pub apikey: String,
     /// SecretKey.
@@ -44,7 +44,7 @@ pub struct Signature {
     pub timestamp: String,
 }
 
-impl Key {
+impl OkxKey {
     /// Create a new [`Key`].
     pub fn new(apikey: &str, secretkey: &str, passphrase: &str) -> Self {
         Self {
