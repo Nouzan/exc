@@ -1,6 +1,6 @@
 # Exc
 
-Abstractions for exchanges.
+The abstraction layer of exchanges.
 
 [![Crates.io][crates-badge]][crates-url]
 [![MIT licensed][mit-badge]][mit-url]

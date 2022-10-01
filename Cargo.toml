@@ -15,7 +15,7 @@ license = "MIT"
 repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower"]
 readme = "README.md"
-description = "Abstractions of exchanges."
+description = "The abstraction layer of exchanges."
 rust-version = "1.64"
 
 [workspace.dependencies]
