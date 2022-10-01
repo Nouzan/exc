@@ -8,7 +8,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::fmt()
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "tower=trace,info".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
         ))
         .init();
     let svc = exc::Okx::endpoint()
