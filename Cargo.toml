@@ -45,7 +45,8 @@ num-traits = "0.2.15"
 
 # async
 tower = "0.4.12"
-futures = "0.3.21"
+futures = "0.3.24"
+futures-util = "0.3.24"
 pin-project-lite = "0.2.9"
 async-stream = "0.3"
 tokio = "1.21.1"

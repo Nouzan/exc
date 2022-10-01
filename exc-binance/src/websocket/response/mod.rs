@@ -15,6 +15,8 @@ pub enum WsResponse {
     Raw(MultiplexResponse),
     /// Stream.
     Stream(BoxStream<'static, Result<StreamFrame, WsError>>),
+    /// Reconnected.
+    Reconnected,
 }
 
 impl fmt::Debug for WsResponse {
@@ -22,6 +24,7 @@ impl fmt::Debug for WsResponse {
         match self {
             Self::Raw(resp) => write!(f, "Raw({resp:?})"),
             Self::Stream(_) => write!(f, "Stream(_)"),
+            Self::Reconnected => write!(f, "Reconneced"),
         }
     }
 }
@@ -33,7 +36,7 @@ impl WsResponse {
         T: TryFrom<StreamFrame, Error = WsError>,
     {
         match self {
-            Self::Raw(_) => None,
+            Self::Raw(_) | Self::Reconnected => None,
             Self::Stream(stream) => {
                 Some(stream.and_then(|frame| async move { T::try_from(frame) }))
             }
@@ -70,6 +73,7 @@ impl WsResponse {
                 }
             }
             Self::Stream(stream) => Ok(Self::Stream(stream)),
+            Self::Reconnected => Err(WsError::NoResponse),
         }
     }
 }

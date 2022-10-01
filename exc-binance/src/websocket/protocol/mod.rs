@@ -11,9 +11,9 @@ use self::{
     stream::{MultiplexRequest, MultiplexResponse},
 };
 
-use super::error::WsError;
 use super::request::WsRequest;
 use super::response::WsResponse;
+use super::{error::WsError, request::RequestKind};
 use exc_core::transport::websocket::WsStream;
 use futures::{future::BoxFuture, FutureExt, Sink, SinkExt, Stream, TryFutureExt, TryStreamExt};
 use tokio_tower::multiplex::{Client as Multiplex, TagStore};
@@ -142,6 +142,7 @@ impl From<tokio_tower::Error<Protocol, Req>> for WsError {
 pub struct WsClient {
     state: Arc<stream::Shared>,
     svc: Multiplex<Protocol, WsError, Req>,
+    reconnect: bool,
 }
 
 impl WsClient {
@@ -165,7 +166,11 @@ impl WsClient {
             shared.waker.wake();
             tracing::error!("protocol error: {err}");
         });
-        Ok(Self { svc, state })
+        Ok(Self {
+            svc,
+            state,
+            reconnect: false,
+        })
     }
 }
 
@@ -175,22 +180,33 @@ impl Service<WsRequest> for WsClient {
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.state.waker.register(cx.waker());
-        self.svc.poll_ready(cx)
+        if self.reconnect {
+            Poll::Ready(Err(WsError::TransportIsBoken))
+        } else {
+            self.state.waker.register(cx.waker());
+            self.svc.poll_ready(cx)
+        }
     }
 
     fn call(&mut self, req: WsRequest) -> Self::Future {
         let is_stream = req.stream;
-        self.svc
-            .call(req.into())
-            .and_then(move |resp| {
-                let resp: WsResponse = resp.into();
-                if is_stream {
-                    resp.stream().left_future()
-                } else {
-                    futures::future::ready(Ok(resp)).right_future()
-                }
-            })
-            .boxed()
+        match req.inner {
+            RequestKind::Multiplex(req) => self
+                .svc
+                .call(req)
+                .and_then(move |resp| {
+                    let resp: WsResponse = resp.into();
+                    if is_stream {
+                        resp.stream().left_future()
+                    } else {
+                        futures::future::ready(Ok(resp)).right_future()
+                    }
+                })
+                .boxed(),
+            RequestKind::Reconnect => {
+                self.reconnect = true;
+                futures::future::ready(Ok(WsResponse::Reconnected)).boxed()
+            }
+        }
     }
 }

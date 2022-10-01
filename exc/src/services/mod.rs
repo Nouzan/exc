@@ -15,3 +15,6 @@ pub mod fetch_candles;
 
 /// Trading service.
 pub mod trading;
+
+/// Utils.
+pub mod utils;
