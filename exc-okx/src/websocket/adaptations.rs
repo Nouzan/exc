@@ -41,6 +41,9 @@ impl Adaptor<SubscribeInstruments> for Request {
     ) -> Result<<SubscribeInstruments as exc_core::Request>::Response, ExchangeError> {
         match resp {
             Response::Error(err) => Err(ExchangeError::Other(anyhow::anyhow!("status: {err}"))),
+            Response::Reconnected => Err(ExchangeError::Other(anyhow::anyhow!(
+                "invalid response kind"
+            ))),
             Response::Streaming(stream) => {
                 let stream = stream
                     .skip(1)

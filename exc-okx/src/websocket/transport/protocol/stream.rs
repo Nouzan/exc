@@ -16,6 +16,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use thiserror::Error;
+use tokio::sync::oneshot;
 
 #[derive(Debug, Clone, Copy)]
 enum StreamState {
@@ -224,27 +225,37 @@ where
         }
         Result::<(), _>::Err(StreamingError::BlokenStreamingLayer)
     };
+    let (_cancel, cancel) = oneshot::channel();
     tokio::spawn(async move {
-        if let Err(err) = worker.await {
-            error!("streaming worker: {err}");
-            let _ = last_server_stream_tx.send(Err(err)).await;
-            trace!("streaming worker finished");
+        tokio::select! {
+            res = worker => {
+                if let Err(err) = res {
+                    error!("streaming worker: {err}");
+                    let _ = last_server_stream_tx.send(Err(err)).await;
+                    trace!("streaming worker finished");
+                }
+            },
+            _ = cancel => {
+                tracing::trace!("streaming worker cancelled");
+            }
         }
     });
     Streaming {
         waker,
         sender,
         receiver,
+        _cancel,
     }
 }
 
 pin_project! {
     struct Streaming<E> {
-    waker: Arc<AtomicWaker>,
+        waker: Arc<AtomicWaker>,
         #[pin]
         sender: UnboundedSender<ClientStream>,
         #[pin]
         receiver: UnboundedReceiver<Result<Result<ServerStream, Status>, StreamingError<E>>>,
+        _cancel: oneshot::Sender<()>,
     }
 }
 

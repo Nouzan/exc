@@ -8,13 +8,14 @@ use exc_core::{
     types::{ticker::SubscribeTickers, PlaceOrder},
     ExchangeError,
 };
-use futures::stream::{BoxStream, StreamExt};
+use futures::stream::{empty, BoxStream, StreamExt};
 use std::collections::BTreeMap;
 
 /// Okx websocket api request.
 pub struct Request {
     cb: Callback,
     inner: BoxStream<'static, ClientFrame>,
+    pub(crate) reconnect: bool,
 }
 
 impl Request {
@@ -46,6 +47,7 @@ impl Request {
         Self {
             cb,
             inner: stream.boxed(),
+            reconnect: false,
         }
     }
 
@@ -61,6 +63,7 @@ impl Request {
         Ok(Self {
             cb,
             inner: stream.boxed(),
+            reconnect: false,
         })
     }
 
@@ -77,6 +80,7 @@ impl Request {
         Self {
             cb,
             inner: stream.boxed(),
+            reconnect: false,
         }
     }
 
@@ -93,6 +97,17 @@ impl Request {
         Self {
             cb,
             inner: stream.boxed(),
+            reconnect: false,
+        }
+    }
+
+    /// Reconnect.
+    pub fn reconnect() -> Self {
+        let (cb, _rx) = Callback::new();
+        Self {
+            cb,
+            inner: empty().boxed(),
+            reconnect: true,
         }
     }
 }
