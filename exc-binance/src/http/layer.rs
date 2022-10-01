@@ -78,8 +78,8 @@ where
     type Error = RestError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
-    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Poll::Ready(Ok(()))
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.http.poll_ready(cx).map_err(RestError::from)
     }
 
     fn call(&mut self, req: RestRequest<R>) -> Self::Future {
