@@ -60,6 +60,12 @@ impl Endpoint {
         self
     }
 
+    /// Set the buffer capacity.
+    pub fn buffer(&mut self, capacity: usize) -> &mut Self {
+        self.buffer = capacity;
+        self
+    }
+
     /// Private mode (enable trading).
     pub fn private(&mut self, key: OkxKey) -> &mut Self {
         self.ws.private(key.clone());
