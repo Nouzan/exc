@@ -1,16 +1,10 @@
 use exc::{
-    okx::{
-        http::{layer::OkxHttpApiLayer, types::request::HttpRequest},
-        key::OkxKey,
-        websocket::Endpoint,
-    },
-    transport::http::endpoint::Endpoint as HttpEndpoint,
+    okx::{key::OkxKey, Okx},
     types::{Place, PlaceOrderOptions},
-    ExcLayer, {CheckOrderService, TradingService},
+    IntoExc, {CheckOrderService, TradingService},
 };
 use rust_decimal_macros::dec;
-use std::env::var;
-use tower::ServiceBuilder;
+use std::{env::var, time::Duration};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -28,23 +22,30 @@ async fn main() -> anyhow::Result<()> {
         passphrase: var("OKX_PASSPHRASE")?,
     };
 
-    let channel = Endpoint::default()
-        .testing(true)
-        .request_timeout(std::time::Duration::from_secs(5))
-        .private(key.clone())
-        .connect();
-    let mut ws = ServiceBuilder::default()
-        .layer(ExcLayer::default())
-        .service(channel);
+    // let channel = Endpoint::default()
+    //     .testing(true)
+    //     .request_timeout(std::time::Duration::from_secs(5))
+    //     .private(key.clone())
+    //     .connect();
+    // let mut ws = ServiceBuilder::default()
+    //     .layer(ExcLayer::default())
+    //     .service(channel);
 
-    let mut http = ServiceBuilder::default()
-        .rate_limit(59, std::time::Duration::from_secs(2))
-        .layer(ExcLayer::<HttpRequest>::default())
-        .layer(OkxHttpApiLayer::default().private(key).testing(true))
-        .service(HttpEndpoint::default().connect_https());
+    // let mut http = ServiceBuilder::default()
+    //     .rate_limit(59, std::time::Duration::from_secs(2))
+    //     .layer(ExcLayer::<HttpRequest>::default())
+    //     .layer(OkxHttpApiLayer::default().private(key).testing(true))
+    //     .service(HttpEndpoint::default().connect_https());
+
+    let mut okx = Okx::endpoint()
+        .private(key)
+        .ws_request_timeout(Duration::from_secs(5))
+        .testing(true)
+        .connect()
+        .into_exc();
 
     let inst = "DOGE-USDT";
-    let id = ws
+    let id = okx
         .place_with_opts(
             &Place::with_size(dec!(10)).post_only(dec!(0.01)),
             PlaceOrderOptions::new(inst).insert("tdMode", "cash"),
@@ -52,11 +53,11 @@ async fn main() -> anyhow::Result<()> {
         .await?
         .id;
     tracing::info!("id={id:?}");
-    let order = http.check(inst, &id).await?;
+    let order = okx.check(inst, &id).await?;
     tracing::info!("order={order:?}");
-    ws.cancel(inst, &id).await?;
+    okx.cancel(inst, &id).await?;
     tracing::info!("cancelled");
-    let order = http.check(inst, &id).await?;
+    let order = okx.check(inst, &id).await?;
     tracing::info!("order={order:?}");
     Ok(())
 }
