@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{http::layer::OkxHttpApiLayer, key::OkxKey, websocket::Endpoint as WsEndpoint};
 use exc_core::{transport::http, ExchangeError};
 use tower::ServiceBuilder;
@@ -38,5 +40,30 @@ impl Endpoint {
             .layer(&self.http)
             .service(http::endpoint::Endpoint::default().connect_https());
         Okx::new(ws, http, self.buffer)
+    }
+
+    /// Set ping timeout for the websocket channel.
+    pub fn ws_ping_timeout(&mut self, timeout: Duration) -> &mut Self {
+        self.ws.ping_timeout(timeout);
+        self
+    }
+
+    /// Set connection timeout for the websocket channel.
+    pub fn ws_connection_timeout(&mut self, timeout: Duration) -> &mut Self {
+        self.ws.connection_timeout(timeout);
+        self
+    }
+
+    /// Set request timeout for the websocket channel.
+    pub fn ws_request_timeout(&mut self, timeout: Duration) -> &mut Self {
+        self.ws.request_timeout(timeout);
+        self
+    }
+
+    /// Set whether to use the testing endpoint.
+    pub fn testing(&mut self, enable: bool) -> &mut Self {
+        self.ws.testing(enable);
+        self.http.testing(enable);
+        self
     }
 }

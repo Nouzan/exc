@@ -1,8 +1,6 @@
-use exc::okx::{
-    key::OkxKey,
-    websocket::{Endpoint, Request},
-};
-use std::env::var;
+use exc::okx::{key::OkxKey, websocket::Request, Okx};
+use exc_okx::OkxRequest;
+use std::{env::var, time::Duration};
 use tower::{Service, ServiceExt};
 
 #[tokio::main]
@@ -20,14 +18,13 @@ async fn main() -> anyhow::Result<()> {
         secretkey: var("OKX_SECRETKEY")?,
         passphrase: var("OKX_PASSPHRASE")?,
     };
-
-    let mut channel = Endpoint::default()
-        .request_timeout(std::time::Duration::from_secs(5))
+    let mut okx = Okx::endpoint()
         .private(key)
+        .ws_request_timeout(Duration::from_secs(5))
         .connect();
-    channel.ready().await?;
+    okx.ready().await?;
     let req = Request::subscribe_tickers("ETH-USDT");
-    channel.call(req).await?;
+    okx.call(OkxRequest::Ws(req)).await?;
     tokio::time::sleep(std::time::Duration::from_secs(30)).await;
     Ok(())
 }

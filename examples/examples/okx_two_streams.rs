@@ -1,7 +1,8 @@
-use exc::okx::{websocket::Endpoint, Okx};
-use exc::{ExcLayer, IntoExc, SubscribeTickersService};
+use std::time::Duration;
+
+use exc::okx::Okx;
+use exc::{IntoExc, SubscribeTickersService};
 use futures::StreamExt;
-use tower::ServiceBuilder;
 use tracing_subscriber::prelude::*;
 
 #[tokio::main]
@@ -18,15 +19,11 @@ async fn main() -> anyhow::Result<()> {
         .with(fmt)
         .init();
 
-    // let endpoint = Endpoint::default()
-    //     .ping_timeout(std::time::Duration::from_secs(5))
-    //     .connection_timeout(std::time::Duration::from_secs(5));
-    // let exchange = ServiceBuilder::new()
-    //     .layer(ExcLayer::default())
-    //     .timeout(std::time::Duration::from_secs(5))
-    //     .service(endpoint.connect());
-
-    let exchange = Okx::endpoint().connect().into_exc();
+    let exchange = Okx::endpoint()
+        .ws_ping_timeout(Duration::from_secs(5))
+        .ws_connection_timeout(Duration::from_secs(5))
+        .connect()
+        .into_exc();
 
     let handles = ["BTC-USDT", "ETH-USDT", "LTC-USDT", "DOGE-USDT"]
         .into_iter()
