@@ -6,7 +6,7 @@ use std::{
 
 use clap::{clap_derive::ArgEnum, Parser};
 use exc::{
-    types::{OrderId, Place},
+    types::{OrderId, Place, SubscribeOrders},
     CheckOrderService, SubscribeOrdersService, TradingService,
 };
 use exc_binance::{Binance, SpotOptions};
@@ -14,6 +14,7 @@ use futures::StreamExt;
 use humantime::{format_duration, FormattedDuration};
 use rust_decimal::Decimal;
 use serde::Deserialize;
+use tower::Service;
 
 #[derive(Clone, Copy, ArgEnum)]
 enum MarginOp {
@@ -30,10 +31,17 @@ impl From<MarginOp> for exc_binance::MarginOp {
     }
 }
 
+#[derive(Clone, Copy, ArgEnum)]
+enum Exchange {
+    BinanceU,
+    BinanceS,
+    Okx,
+}
+
 #[derive(Parser)]
 struct Args {
-    #[clap(long, env)]
-    exchange: String,
+    #[clap(long, env, arg_enum)]
+    exchange: Exchange,
     #[clap(long, env)]
     key: String,
     inst: String,
@@ -84,56 +92,11 @@ fn rtt(begin: Instant) -> FormattedDuration {
     format_duration(Instant::now().duration_since(begin))
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::fmt()
-        .with_writer(std::io::stderr)
-        .with_env_filter(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "error,exc_trading=debug".into()),
-        ))
-        .init();
-
-    let args = Args::from_args();
-    let mut execs = Vec::default();
-    if let Some(ops) = args.exec {
-        for op in ops {
-            let exec = toml::from_str(&op)?;
-            execs.push(exec);
-        }
-    } else if let Some(path) = args.script {
-        let f = std::fs::OpenOptions::new().read(true).open(path)?;
-        let mut r = std::io::BufReader::new(f);
-        let mut buf = Vec::default();
-        r.read_to_end(&mut buf)?;
-        execs = toml::from_slice::<Script>(&buf)?.exec;
-    } else {
-        anyhow::bail!("must provide one of `--exec` and `--script`");
-    }
-
-    let inst = args.inst;
-
-    let mut exc = match args.exchange.as_str() {
-        "binance-u" => {
-            let key = serde_json::from_str(&args.key)?;
-            Binance::usd_margin_futures().private(key).connect_exc()
-        }
-        "binance-s" => {
-            let key = serde_json::from_str(&args.key)?;
-            let options = match (args.buy_margin, args.sell_margin) {
-                (None, None) => SpotOptions::default(),
-                (buy, sell) => {
-                    SpotOptions::with_margin(buy.map(|o| o.into()), sell.map(|o| o.into()))
-                }
-            };
-            Binance::spot_with_options(options)
-                .private(key)
-                .connect_exc()
-        }
-        exchange => {
-            anyhow::bail!("unsupported exchange: {exchange}");
-        }
-    };
-
+async fn execute<S>(mut exc: S, inst: String, execs: Vec<Op>) -> anyhow::Result<()>
+where
+    S: SubscribeOrdersService + TradingService + CheckOrderService + Clone + Send + 'static,
+    <S as Service<SubscribeOrders>>::Future: Send,
+{
     let mut orders_provider = exc.clone();
     let shared_inst = inst.clone();
     tokio::spawn(async move {
@@ -209,6 +172,63 @@ async fn main() -> anyhow::Result<()> {
                     Err(err) => tracing::error!("[{idx}] post-only(rtt={}): {err}", rtt(begin)),
                 };
             }
+        }
+    }
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::fmt()
+        .with_writer(std::io::stderr)
+        .with_env_filter(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "error,exc_trading=debug".into()),
+        ))
+        .init();
+
+    let args = Args::from_args();
+    let mut execs = Vec::default();
+    if let Some(ops) = args.exec {
+        for op in ops {
+            let exec = toml::from_str(&op)?;
+            execs.push(exec);
+        }
+    } else if let Some(path) = args.script {
+        let f = std::fs::OpenOptions::new().read(true).open(path)?;
+        let mut r = std::io::BufReader::new(f);
+        let mut buf = Vec::default();
+        r.read_to_end(&mut buf)?;
+        execs = toml::from_slice::<Script>(&buf)?.exec;
+    } else {
+        anyhow::bail!("must provide one of `--exec` and `--script`");
+    }
+
+    let inst = args.inst;
+
+    match args.exchange {
+        Exchange::BinanceU => {
+            let key = serde_json::from_str(&args.key)?;
+            let exc = Binance::usd_margin_futures().private(key).connect_exc();
+            execute(exc, inst, execs).await?;
+        }
+        Exchange::BinanceS => {
+            let key = serde_json::from_str(&args.key)?;
+            let options = match (args.buy_margin, args.sell_margin) {
+                (None, None) => SpotOptions::default(),
+                (buy, sell) => {
+                    SpotOptions::with_margin(buy.map(|o| o.into()), sell.map(|o| o.into()))
+                }
+            };
+            let exc = Binance::spot_with_options(options)
+                .private(key)
+                .connect_exc();
+            execute(exc, inst, execs).await?;
+        }
+        Exchange::Okx => {
+            // let key = serde_json::from_str(&args.key)?;
+            // let exc = Okx::endpoint().private(key).connect_exc();
+            // execute(exc, inst, execs).await?;
+            anyhow::bail!("`Okx` is not supported for now");
         }
     }
     Ok(())

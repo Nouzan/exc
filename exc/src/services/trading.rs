@@ -1,33 +1,27 @@
 use exc_core::{
-    types::{trading::PlaceOrderOptions, Cancelled, OrderUpdate, Placed, SubscribeOrders},
-    ExcMut,
+    types::{trading::PlaceOrderOptions, SubscribeOrders},
+    ExcMut, Request,
 };
-use futures::{future::BoxFuture, FutureExt};
-use tower::{util::Oneshot, Service, ServiceExt};
+use futures::{future::TryFlatten, TryFutureExt};
+use tower::{util::Oneshot, ServiceExt};
 
-use crate::{
-    types::trading::{CancelOrder, GetOrder, OrderId, Place, PlaceOrder},
-    ExchangeError,
-};
+use crate::types::trading::{CancelOrder, GetOrder, OrderId, Place, PlaceOrder};
 
 use crate::ExcService;
 
+type Fut<'a, S, R> = TryFlatten<Oneshot<ExcMut<'a, S>, R>, <R as Request>::Response>;
+
 /// Trading service.
-pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
+pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> + Sized {
     /// Place an order with options.
     fn place_with_opts(
         &mut self,
         place: &Place,
         opts: &PlaceOrderOptions,
-    ) -> BoxFuture<'_, Result<Placed, ExchangeError>>
-    where
-        Self: Sized + Send,
-        <Self as Service<PlaceOrder>>::Future: Send,
-    {
+    ) -> Fut<'_, Self, PlaceOrder> {
         let req = (*place).into_request(opts);
-        let resp =
-            ServiceExt::<PlaceOrder>::oneshot(ExcService::<PlaceOrder>::as_service_mut(self), req);
-        async move { resp.await?.await }.boxed()
+        ServiceExt::<PlaceOrder>::oneshot(ExcService::<PlaceOrder>::as_service_mut(self), req)
+            .try_flatten()
     }
     /// Place an order.
     fn place(
@@ -35,11 +29,7 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
         inst: &str,
         place: &Place,
         client_id: Option<&str>,
-    ) -> BoxFuture<'_, Result<Placed, ExchangeError>>
-    where
-        Self: Sized + Send,
-        <Self as Service<PlaceOrder>>::Future: Send,
-    {
+    ) -> Fut<'_, Self, PlaceOrder> {
         self.place_with_opts(
             place,
             PlaceOrderOptions::new(inst).with_client_id(client_id),
@@ -47,60 +37,41 @@ pub trait TradingService: ExcService<PlaceOrder> + ExcService<CancelOrder> {
     }
 
     /// Cancel an order.
-    fn cancel(
-        &mut self,
-        inst: &str,
-        id: &OrderId,
-    ) -> BoxFuture<'_, Result<Cancelled, ExchangeError>>
-    where
-        Self: Sized + Send,
-        <Self as Service<CancelOrder>>::Future: Send,
-    {
-        let resp = ServiceExt::<CancelOrder>::oneshot(
+    fn cancel(&mut self, inst: &str, id: &OrderId) -> Fut<'_, Self, CancelOrder> {
+        ServiceExt::<CancelOrder>::oneshot(
             ExcService::<CancelOrder>::as_service_mut(self),
             CancelOrder {
                 instrument: inst.to_string(),
                 id: id.clone(),
             },
-        );
-        async move { resp.await?.await }.boxed()
+        )
+        .try_flatten()
     }
 }
 
 impl<S> TradingService for S where S: ExcService<PlaceOrder> + ExcService<CancelOrder> {}
 
 /// Check order service.
-pub trait CheckOrderService: ExcService<GetOrder> {
+pub trait CheckOrderService: ExcService<GetOrder> + Sized {
     /// Check the current status of an order.
-    fn check(
-        &mut self,
-        inst: &str,
-        id: &OrderId,
-    ) -> BoxFuture<'_, Result<OrderUpdate, ExchangeError>>
-    where
-        Self: Sized + Send,
-        Self::Future: Send,
-    {
-        let resp = ServiceExt::oneshot(
+    fn check(&mut self, inst: &str, id: &OrderId) -> Fut<'_, Self, GetOrder> {
+        ServiceExt::oneshot(
             ExcService::<GetOrder>::as_service_mut(self),
             GetOrder {
                 instrument: inst.to_string(),
                 id: id.clone(),
             },
-        );
-        async move { resp.await?.await }.boxed()
+        )
+        .try_flatten()
     }
 }
 
 impl<S> CheckOrderService for S where S: ExcService<GetOrder> {}
 
 /// Subscribe orders service.
-pub trait SubscribeOrdersService: ExcService<SubscribeOrders> {
+pub trait SubscribeOrdersService: ExcService<SubscribeOrders> + Sized {
     /// Subscribe orders.
-    fn subscribe_orders(&mut self, inst: &str) -> Oneshot<ExcMut<'_, Self>, SubscribeOrders>
-    where
-        Self: Sized,
-    {
+    fn subscribe_orders(&mut self, inst: &str) -> Oneshot<ExcMut<'_, Self>, SubscribeOrders> {
         ServiceExt::<SubscribeOrders>::oneshot(
             self.as_service_mut(),
             SubscribeOrders {
