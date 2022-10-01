@@ -6,9 +6,9 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 keywords.workspace = true
-readme.workspace = true
 description.workspace = true
 rust-version.workspace = true
+readme = "./README.md"
 
 [features]
 default = ["websocket", "http", "retry"]
