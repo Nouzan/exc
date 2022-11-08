@@ -24,7 +24,7 @@ pub mod trading;
 pub mod account;
 
 pub use self::{
-    account::{SubAccountBalances, SubAccounts},
+    account::{SubAccountBalances, SubAccountMargin, SubAccounts},
     candle::Candle,
     error_message::ErrorMessage,
     instrument::{ExchangeInfo, SpotExchangeInfo, UFExchangeInfo},
@@ -55,8 +55,10 @@ pub enum Data {
     Order(Order),
     /// Sub-accounts.
     SubAccounts(SubAccounts),
-    /// Sub-account Balances.
+    /// Sub-account balances.
     SubAccountBalances(SubAccountBalances),
+    /// Sub-account margin.
+    SubAccountMargin(SubAccountMargin),
     /// Unknwon.
     Unknwon(Unknown),
 }

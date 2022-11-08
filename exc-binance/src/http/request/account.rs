@@ -53,7 +53,7 @@ impl Rest for ListSubAccounts {
     }
 }
 
-/// Assets of a sub-account.
+/// Assets of a sub-account (in the spot account).
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetSubAccountAssets {
@@ -72,6 +72,45 @@ impl Rest for GetSubAccountAssets {
                 "`GetSubAccountAssets` only available on `binance-s`"
             ))),
             RestEndpoint::Spot(_options) => Ok("/sapi/v3/sub-account/assets".to_string()),
+        }
+    }
+
+    fn need_apikey(&self) -> bool {
+        true
+    }
+
+    fn need_sign(&self) -> bool {
+        true
+    }
+
+    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
+        Ok(serde_json::to_value(self)?)
+    }
+
+    fn to_payload(&self) -> super::Payload {
+        super::Payload::new(self.clone())
+    }
+}
+
+/// Get details of margin account of a sub-account.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSubAccountMargin {
+    /// Email.
+    pub email: String,
+}
+
+impl Rest for GetSubAccountMargin {
+    fn method(&self, _endpoint: &RestEndpoint) -> Result<http::Method, RestError> {
+        Ok(http::Method::GET)
+    }
+
+    fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
+        match endpoint {
+            RestEndpoint::UsdMarginFutures => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
+                "`GetSubAccountMargin` only available on `binance-s`"
+            ))),
+            RestEndpoint::Spot(_options) => Ok("/sapi/v1/sub-account/margin/account".to_string()),
         }
     }
 
