@@ -21,7 +21,7 @@ serde_with = { workspace = true }
 async-stream = { workspace = true }
 tokio-tower = { workspace = true }
 pin-project-lite = { workspace = true }
-rust_decimal = { workspace = true }
+rust_decimal = { workspace = true, features = ["serde-with-float"]}
 
 # sign
 hmac = { workspace = true }
