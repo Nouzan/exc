@@ -21,7 +21,11 @@ pub mod listen_key;
 /// Trading.
 pub mod trading;
 
+/// Account.
+pub mod account;
+
 pub use self::{
+    account::ListSubAccounts,
     candle::{Interval, QueryCandles},
     instrument::ExchangeInfo,
     listen_key::{CurrentListenKey, DeleteListenKey},
@@ -310,6 +314,17 @@ mod test {
         Ok(())
     }
 
+    async fn do_test_list_sub_accounts(api: Binance) -> anyhow::Result<()> {
+        let sub_accounts = api
+            .oneshot(Request::with_rest_payload(
+                request::ListSubAccounts::default(),
+            ))
+            .await?
+            .into_response::<response::SubAccounts>()?;
+        println!("{sub_accounts:?}");
+        Ok(())
+    }
+
     #[tokio::test]
     async fn test_exchange_info() -> anyhow::Result<()> {
         let apis = [
@@ -372,6 +387,16 @@ mod test {
                 };
                 do_test_delete_listen_key(api, listen_key).await?;
             }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_list_sub_accounts() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_MAIN") {
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let api = Binance::spot().private(key).connect();
+            do_test_list_sub_accounts(api).await?;
         }
         Ok(())
     }
