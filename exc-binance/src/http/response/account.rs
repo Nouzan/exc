@@ -123,7 +123,7 @@ pub struct SubAccountMargin {
     pub total_net_asset_of_btc: Decimal,
     /// Margin trade coeff.
     pub margin_trade_coeff_vo: SubAccountMarginTradeCoeff,
-    /// assets.
+    /// Assets.
     pub margin_user_asset_vo_list: Vec<SubAccountMarginBalance>,
 }
 
@@ -147,6 +147,91 @@ impl TryFrom<Data> for SubAccountMargin {
                     Err(RestError::Api(err.code, err.message))
                 }
             }
+            _ => Err(RestError::UnexpectedResponseType(anyhow::anyhow!(
+                "{value:?}"
+            ))),
+        }
+    }
+}
+
+/// Balance of an asset of the sub-account's  futures account.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubAccountFuturesBalance {
+    /// Asset.
+    pub asset: String,
+    /// Initial margin.
+    pub initial_margin: Decimal,
+    /// Maintenance margin.
+    pub maintenance_margin: Decimal,
+    /// Margin Balance.
+    pub margin_balance: Decimal,
+    /// Max withdraw amount.
+    pub max_withdraw_amount: Decimal,
+    /// Open order initial margin.
+    pub open_order_initial_margin: Decimal,
+    /// Position initial margin.
+    pub position_initial_margin: Decimal,
+    /// Unrealized profit.
+    pub unrealized_profit: Decimal,
+    /// Wallet balance.
+    pub wallet_balance: Decimal,
+}
+
+/// Details of sub-account in futures account.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubAccountFuturesInner {
+    /// Email.
+    pub email: String,
+    /// Assets.
+    pub assets: Vec<SubAccountFuturesBalance>,
+    /// Can deposit?
+    pub can_deposit: bool,
+    /// Can trade?
+    pub can_trade: bool,
+    /// Can withdraw?
+    pub can_withdraw: bool,
+    /// Fee Tier.
+    pub fee_tier: usize,
+    /// Max withdraw amount.
+    pub max_withdraw_amount: Option<Decimal>,
+    /// Total initial margin.
+    pub total_initial_margin: Option<Decimal>,
+    /// Total maintenance margin.
+    pub total_maintenance_margin: Option<Decimal>,
+    /// Total margin balance.
+    pub total_margin_balance: Option<Decimal>,
+    /// Total open order initial margin.
+    pub total_open_order_initial_margin: Option<Decimal>,
+    /// Total position initial margin.
+    pub total_position_initial_margin: Option<Decimal>,
+    /// Total unrealized profit.
+    pub total_unrealized_profit: Option<Decimal>,
+    /// Total wallet balance.
+    pub total_wallet_balance: Option<Decimal>,
+    /// Update time.
+    pub update_time: i64,
+}
+
+/// Details of sub-account in futures account.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SubAccountFutures {
+    /// USD-Margin Futures.
+    #[serde(rename = "futureAccountResp")]
+    Usd(SubAccountFuturesInner),
+    /// Coin-Margin Futures.
+    #[serde(rename = "deliveryAccountResp")]
+    Coin(SubAccountFuturesInner),
+}
+
+impl TryFrom<Data> for SubAccountFutures {
+    type Error = RestError;
+
+    fn try_from(value: Data) -> Result<Self, Self::Error> {
+        match value {
+            Data::SubAccountFutures(data) => Ok(data),
             _ => Err(RestError::UnexpectedResponseType(anyhow::anyhow!(
                 "{value:?}"
             ))),
