@@ -238,3 +238,78 @@ impl TryFrom<Data> for SubAccountFutures {
         }
     }
 }
+
+/// Position of USD-Margin futures in a sub-account .
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubAccountUsdMarginFuturesPosition {
+    /// Entry Price.
+    pub entry_price: Decimal,
+    /// Leverage.
+    pub leverage: Decimal,
+    /// Max Notional.
+    pub max_notional: Decimal,
+    /// Liquidation price.
+    pub liquidation_price: Decimal,
+    /// Mark price.
+    pub mark_price: Decimal,
+    /// Position amount.
+    pub position_amount: Decimal,
+    /// Symbol.
+    pub symbol: String,
+    /// Unrealized profit.
+    pub unrealized_profit: Decimal,
+}
+
+/// Position of Coin-Margin futures in a sub-account .
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubAccountCoinMarginFuturesPosition {
+    /// Entry Price.
+    pub entry_price: Decimal,
+    /// Leverage.
+    pub leverage: Decimal,
+    /// Isolated.
+    pub isolated: String,
+    /// Isolated wallet.
+    pub isolated_wallet: Decimal,
+    /// Isolated margin.
+    pub isolated_margin: Decimal,
+    /// Is Auto-Add Margin.
+    pub is_auto_add_margin: String,
+    /// Position side.
+    pub position_side: String,
+    /// Mark price.
+    pub mark_price: Decimal,
+    /// Position amount.
+    pub position_amount: Decimal,
+    /// Symbol.
+    pub symbol: String,
+    /// Unrealized profit.
+    pub unrealized_profit: Decimal,
+}
+
+/// Details of sub-account in futures account.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SubAccountFuturesPositions {
+    /// USD-Margin Futures.
+    #[serde(rename = "futurePositionRiskVOS")]
+    Usd(Vec<SubAccountUsdMarginFuturesPosition>),
+    /// Coin-Margin Futures.
+    #[serde(rename = "deliveryPositionRiskVOS")]
+    Coin(Vec<SubAccountCoinMarginFuturesPosition>),
+}
+
+impl TryFrom<Data> for SubAccountFuturesPositions {
+    type Error = RestError;
+
+    fn try_from(value: Data) -> Result<Self, Self::Error> {
+        match value {
+            Data::SubAccountFuturesPositions(data) => Ok(data),
+            _ => Err(RestError::UnexpectedResponseType(anyhow::anyhow!(
+                "{value:?}"
+            ))),
+        }
+    }
+}
