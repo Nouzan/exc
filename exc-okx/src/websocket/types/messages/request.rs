@@ -84,6 +84,11 @@ impl fmt::Display for WsRequest {
 
 impl WsRequest {
     /// Subscribe tickers.
+    #[deprecated(
+        since = "0.5.1",
+        note = "we won't create `WsRequest` for subscription directly.
+    If you want the `Args` of tickers subscription,use `Args::subscribe_tickers` instread."
+    )]
     pub fn subscribe_tickers(inst: &str) -> Self {
         Self::Subscribe(Args(BTreeMap::from([
             ("channel".to_string(), "tickers".to_string()),
@@ -92,6 +97,11 @@ impl WsRequest {
     }
 
     /// Unsubscribe tickers.
+    #[deprecated(
+        since = "0.5.1",
+        note = "we won't create `WsRequest` for unsubscription directly.
+    If you want the `Args` of tickers subscription,use `Args::subscribe_tickers` instread."
+    )]
     pub fn unsubscribe_tickers(inst: &str) -> Self {
         Self::Unsubscribe(Args(BTreeMap::from([
             ("channel".to_string(), "tickers".to_string()),

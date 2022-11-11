@@ -16,6 +16,25 @@ use std::hash::Hash;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Args(pub BTreeMap<String, String>);
 
+impl Args {
+    /// Args for tickers subscription.
+    pub fn subscribe_tickers(inst: &str) -> Self {
+        Args(BTreeMap::from([
+            ("channel".to_string(), "tickers".to_string()),
+            ("instId".to_string(), inst.to_string()),
+        ]))
+    }
+
+    /// Args for orders subscription.
+    pub fn subscribe_orders(inst: &str) -> Self {
+        Args(BTreeMap::from([
+            ("channel".to_string(), "orders".to_string()),
+            ("instType".to_string(), "ANY".to_string()),
+            ("instId".to_string(), inst.to_string()),
+        ]))
+    }
+}
+
 impl fmt::Display for Args {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", serde_json::to_string(self).unwrap())
