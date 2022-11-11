@@ -20,13 +20,19 @@ pub mod error_message;
 /// Trading.
 pub mod trading;
 
-use self::trading::Order;
+/// Account.
+pub mod account;
 
 pub use self::{
+    account::{
+        SubAccountBalances, SubAccountFutures, SubAccountFuturesPositions, SubAccountMargin,
+        SubAccounts,
+    },
     candle::Candle,
     error_message::ErrorMessage,
     instrument::{ExchangeInfo, SpotExchangeInfo, UFExchangeInfo},
     listen_key::ListenKey,
+    trading::Order,
 };
 
 /// Candles.
@@ -50,6 +56,16 @@ pub enum Data {
     Error(ErrorMessage),
     /// Order.
     Order(Order),
+    /// Sub-accounts.
+    SubAccounts(SubAccounts),
+    /// Sub-account balances.
+    SubAccountBalances(SubAccountBalances),
+    /// Sub-account margin.
+    SubAccountMargin(SubAccountMargin),
+    /// Sub-account futures.
+    SubAccountFutures(SubAccountFutures),
+    /// Sub-account futures postions.
+    SubAccountFuturesPositions(SubAccountFuturesPositions),
     /// Unknwon.
     Unknwon(Unknown),
 }

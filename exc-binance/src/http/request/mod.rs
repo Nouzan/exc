@@ -21,7 +21,14 @@ pub mod listen_key;
 /// Trading.
 pub mod trading;
 
+/// Account.
+pub mod account;
+
 pub use self::{
+    account::{
+        GetSubAccountAssets, GetSubAccountFutures, GetSubAccountFuturesPositions,
+        GetSubAccountMargin, ListSubAccounts,
+    },
     candle::{Interval, QueryCandles},
     instrument::ExchangeInfo,
     listen_key::{CurrentListenKey, DeleteListenKey},
@@ -310,6 +317,73 @@ mod test {
         Ok(())
     }
 
+    async fn do_test_list_sub_accounts(api: Binance) -> anyhow::Result<response::SubAccounts> {
+        let sub_accounts = api
+            .oneshot(Request::with_rest_payload(
+                request::ListSubAccounts::default(),
+            ))
+            .await?
+            .into_response::<response::SubAccounts>()?;
+        println!("{sub_accounts:?}");
+        Ok(sub_accounts)
+    }
+
+    async fn do_test_get_sub_account_assets(api: Binance, email: &str) -> anyhow::Result<()> {
+        let assets = api
+            .oneshot(Request::with_rest_payload(request::GetSubAccountAssets {
+                email: email.to_string(),
+            }))
+            .await?
+            .into_response::<response::SubAccountBalances>()?;
+        println!("{assets:?}");
+        Ok(())
+    }
+
+    async fn do_test_get_sub_account_margin(api: Binance, email: &str) -> anyhow::Result<()> {
+        let assets = api
+            .oneshot(Request::with_rest_payload(request::GetSubAccountMargin {
+                email: email.to_string(),
+            }))
+            .await?
+            .into_response::<response::SubAccountMargin>()?;
+        println!("{assets:?}");
+        Ok(())
+    }
+
+    async fn do_test_get_sub_account_futures(
+        api: Binance,
+        email: &str,
+        usd: bool,
+    ) -> anyhow::Result<()> {
+        let assets = api
+            .oneshot(Request::with_rest_payload(if usd {
+                request::GetSubAccountFutures::usd(email)
+            } else {
+                request::GetSubAccountFutures::coin(email)
+            }))
+            .await?
+            .into_response::<response::SubAccountFutures>()?;
+        println!("{assets:?}");
+        Ok(())
+    }
+
+    async fn do_test_get_sub_account_futures_positions(
+        api: Binance,
+        email: &str,
+        usd: bool,
+    ) -> anyhow::Result<()> {
+        let positions = api
+            .oneshot(Request::with_rest_payload(if usd {
+                request::GetSubAccountFuturesPositions::usd(email)
+            } else {
+                request::GetSubAccountFuturesPositions::coin(email)
+            }))
+            .await?
+            .into_response::<response::SubAccountFuturesPositions>()?;
+        println!("{positions:?}");
+        Ok(())
+    }
+
     #[tokio::test]
     async fn test_exchange_info() -> anyhow::Result<()> {
         let apis = [
@@ -371,6 +445,72 @@ mod test {
                     None
                 };
                 do_test_delete_listen_key(api, listen_key).await?;
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_list_sub_accounts() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_MAIN") {
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let api = Binance::spot().private(key).connect();
+            do_test_list_sub_accounts(api).await?;
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_sub_account_assets() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_MAIN") {
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let api = Binance::spot().private(key).connect();
+            let sub_accounts = do_test_list_sub_accounts(api.clone()).await?;
+            for account in sub_accounts.sub_accounts {
+                do_test_get_sub_account_assets(api.clone(), &account.email).await?;
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_sub_account_margin() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_MAIN") {
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let api = Binance::spot().private(key).connect();
+            let sub_accounts = do_test_list_sub_accounts(api.clone()).await?;
+            for account in sub_accounts.sub_accounts {
+                do_test_get_sub_account_margin(api.clone(), &account.email).await?;
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_sub_account_futures() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_MAIN") {
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let api = Binance::spot().private(key).connect();
+            let sub_accounts = do_test_list_sub_accounts(api.clone()).await?;
+            for account in sub_accounts.sub_accounts {
+                do_test_get_sub_account_futures(api.clone(), &account.email, true).await?;
+                do_test_get_sub_account_futures(api.clone(), &account.email, false).await?;
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_sub_account_futures_positions() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_MAIN") {
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let api = Binance::spot().private(key).connect();
+            let sub_accounts = do_test_list_sub_accounts(api.clone()).await?;
+            for account in sub_accounts.sub_accounts {
+                do_test_get_sub_account_futures_positions(api.clone(), &account.email, true)
+                    .await?;
+                do_test_get_sub_account_futures_positions(api.clone(), &account.email, false)
+                    .await?;
             }
         }
         Ok(())
