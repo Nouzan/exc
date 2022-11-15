@@ -16,49 +16,63 @@ pub struct OkxOrder {
     /// Instrument name.
     pub inst_id: String,
     /// Margin currency.
-    pub ccy: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub ccy: Option<String>,
     /// Order id.
     pub ord_id: String,
     /// Client id.
-    pub cl_ord_id: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub cl_ord_id: Option<String>,
     /// Tag.
-    pub tag: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub tag: Option<String>,
     /// Price.
-    pub px: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub px: Option<Decimal>,
     /// Size.
     pub sz: Decimal,
     /// Notional usd.
-    pub notional_usd: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub notional_usd: Option<Decimal>,
     /// Order type.
     pub ord_type: String,
     /// Side.
     pub side: String,
     /// Position side.
-    pub pos_side: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub pos_side: Option<String>,
     /// Trade mode.
     pub td_mode: String,
     /// "Tgt" currency.
-    pub tgt_ccy: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub tgt_ccy: Option<String>,
     /// Fill price.
-    pub fill_px: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub fill_px: Option<Decimal>,
     /// Trade id.
-    pub trade_id: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub trade_id: Option<String>,
     /// Fill size.
-    pub fill_sz: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub fill_sz: Option<Decimal>,
     /// Fill time.
-    #[serde(with = "crate::utils::timestamp_serde")]
+    #[serde(with = "crate::utils::timestamp_serde_option")]
     #[serde(rename = "fillTime")]
-    pub fill_ts: OffsetDateTime,
+    pub fill_ts: Option<OffsetDateTime>,
     /// Fill fee.
-    pub fill_fee: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub fill_fee: Option<Decimal>,
     /// Fill fee currency.
-    pub fill_fee_ccy: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub fill_fee_ccy: Option<String>,
     /// Execute type.
-    pub exec_type: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub exec_type: Option<String>,
     /// Total filled size.
     pub acc_fill_sz: Decimal,
     /// Filled usd.
-    pub fill_notional_usd: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub fill_notional_usd: Option<Decimal>,
     /// Average price.
     pub avg_px: Decimal,
     /// State.
@@ -68,22 +82,28 @@ pub struct OkxOrder {
     pub lever: Option<Decimal>,
     /// Take-profit trigger price.
     #[serde(rename = "tpTriggerPx")]
-    pub take_profit_trigger_price: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub take_profit_trigger_price: Option<Decimal>,
     /// Take-profit trigger type.
     #[serde(rename = "tpTriggerPxType")]
-    pub take_profit_trigger_type: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub take_profit_trigger_type: Option<String>,
     /// Take-profit price.
     #[serde(rename = "tpOrdPx")]
-    pub take_profit_price: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub take_profit_price: Option<Decimal>,
     /// Stop-loss trigger price.
     #[serde(rename = "slTriggerPx")]
-    pub stop_loss_trigger_price: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub stop_loss_trigger_price: Option<Decimal>,
     /// Stop-loss trigger type.
     #[serde(rename = "slTriggerPxType")]
-    pub stop_loss_trigger_type: String,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub stop_loss_trigger_type: Option<String>,
     /// Stop-loss price.
     #[serde(rename = "slOrdPx")]
-    pub stop_loss_price: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub stop_loss_price: Option<Decimal>,
     /// Fee currency.
     #[serde_as(as = "NoneAsEmptyString")]
     pub fee_ccy: Option<String>,
@@ -97,11 +117,11 @@ pub struct OkxOrder {
     /// Profit and loss.
     pub pnl: Decimal,
     /// Source.
-    #[serde_as(as = "DisplayFromStr")]
-    pub source: i64,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub source: Option<i64>,
     /// Cancel source.
-    #[serde_as(as = "DisplayFromStr")]
-    pub cancel_source: i64,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub cancel_source: Option<i64>,
     /// Category.
     pub category: String,
     /// Update time.
@@ -116,7 +136,8 @@ pub struct OkxOrder {
     #[serde_as(as = "NoneAsEmptyString")]
     pub req_id: Option<String>,
     /// Amend result.
-    pub amend_result: Decimal,
+    #[serde_as(as = "NoneAsEmptyString")]
+    pub amend_result: Option<i64>,
     /// Reduce only.
     pub reduce_only: String,
     /// Code.

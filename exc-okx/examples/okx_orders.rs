@@ -1,5 +1,5 @@
 use clap::Parser;
-use exc_okx::{Okx, OkxRequest};
+use exc_okx::{websocket::types::messages::event::order::OkxOrder, Okx, OkxRequest};
 use futures::StreamExt;
 use tower::{Service, ServiceExt};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter, Registry};
@@ -28,9 +28,13 @@ async fn main() -> anyhow::Result<()> {
         .call(OkxRequest::subscribe_orders("DOGE-USDT"))
         .await?
         .ws()?
-        .into_result()?;
+        .into_result()?
+        .skip(1);
     while let Some(frame) = stream.next().await.transpose()? {
-        tracing::debug!("{frame:?}");
+        for data in frame.into_deserialized_changes::<OkxOrder>().unwrap() {
+            let order = data?;
+            tracing::debug!("{order:?}");
+        }
     }
     Ok(())
 }
