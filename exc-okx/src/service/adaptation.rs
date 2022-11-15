@@ -1,7 +1,7 @@
 use exc_core::{
     types::{
         instrument::SubscribeInstruments, utils::Reconnect, CancelOrder, GetOrder, PlaceOrder,
-        QueryLastCandles, SubscribeTickers,
+        QueryLastCandles, SubscribeOrders, SubscribeTickers,
     },
     Adaptor, ExchangeError, Request,
 };
@@ -104,5 +104,22 @@ impl Adaptor<Reconnect> for OkxRequest {
         _resp: Self::Response,
     ) -> Result<<Reconnect as Request>::Response, ExchangeError> {
         Ok(())
+    }
+}
+
+impl Adaptor<SubscribeOrders> for OkxRequest {
+    fn from_request(req: SubscribeOrders) -> Result<Self, exc_core::ExchangeError>
+    where
+        Self: Sized,
+    {
+        let req = WsRequest::from_request(req)?;
+        Ok(Self::Ws(req))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeOrders as exc_core::Request>::Response, ExchangeError> {
+        let res = resp.ws()?;
+        <WsRequest as Adaptor<SubscribeOrders>>::into_response(res)
     }
 }

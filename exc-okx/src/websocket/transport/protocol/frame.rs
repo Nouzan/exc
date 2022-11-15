@@ -24,9 +24,7 @@ pub enum FrameError<E> {
 
 fn client_message_to_tag(msg: &WsRequest) -> String {
     match msg {
-        WsRequest::Subscribe(args) | WsRequest::Unsubscribe(args) => {
-            format!("sub:{args}")
-        }
+        WsRequest::Subscribe(args) | WsRequest::Unsubscribe(args) => args.to_tag(),
         WsRequest::Login(_) => LOGIN_TAG.to_string(),
         WsRequest::Order(id, _) | WsRequest::CancelOrder(id, _) => id.clone(),
     }
@@ -34,10 +32,10 @@ fn client_message_to_tag(msg: &WsRequest) -> String {
 
 fn server_message_to_tag(msg: &Event) -> Option<String> {
     match msg {
-        Event::Change(change) => Some(format!("sub:{}", change.arg)),
+        Event::Change(change) => Some(change.arg.to_tag()),
         Event::Response(resp) => match resp {
             ResponseKind::Subscribe { arg } | ResponseKind::Unsubscribe { arg } => {
-                Some(format!("sub:{arg}"))
+                Some(arg.to_tag())
             }
             ResponseKind::Login(_) => Some(LOGIN_TAG.to_string()),
             ResponseKind::Error(err) => match err.code.as_str() {
@@ -95,7 +93,9 @@ where
         let this = self.project();
         let msg = item.inner;
         let id = item.stream_id;
-        this.translate.insert(client_message_to_tag(&msg), id);
+        let tag = client_message_to_tag(&msg);
+        tracing::trace!(stream_id=%id, tag=%tag, "tagging client frame");
+        this.translate.insert(tag, id);
         this.inner.start_send(msg)
     }
 
@@ -121,7 +121,9 @@ where
                 Some(msg) => match msg {
                     Ok(msg) => {
                         if let Some(tag) = server_message_to_tag(&msg) {
+                            tracing::trace!(tag=%tag, "matching server frame");
                             if let Some(id) = this.translate.get(&tag) {
+                                tracing::trace!(stream_id=%id, tag=%tag, "matched server frame");
                                 return Poll::Ready(Some(Ok(ServerFrame {
                                     stream_id: *id,
                                     inner: msg,

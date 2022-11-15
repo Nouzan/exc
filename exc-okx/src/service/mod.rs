@@ -29,6 +29,13 @@ pub enum OkxRequest {
     Ws(WsRequest),
 }
 
+impl OkxRequest {
+    /// Subscribe to orders channel.
+    pub fn subscribe_orders(inst: &str) -> Self {
+        Self::Ws(WsRequest::subscribe_orders(inst))
+    }
+}
+
 /// Okx response.
 pub enum OkxResponse {
     /// Response from HTTP API.

@@ -9,7 +9,6 @@ use exc_core::{
     ExchangeError,
 };
 use futures::stream::{empty, BoxStream, StreamExt};
-use std::collections::BTreeMap;
 
 /// Okx websocket api request.
 pub struct Request {
@@ -29,10 +28,12 @@ impl Request {
 
     /// Subscribe tickers.
     pub fn subscribe_tickers(inst: &str) -> Self {
-        Self::subscribe(Args(BTreeMap::from([
-            ("channel".to_string(), "tickers".to_string()),
-            ("instId".to_string(), inst.to_string()),
-        ])))
+        Self::subscribe(Args::subscribe_tickers(inst))
+    }
+
+    /// Subscribe orders.
+    pub fn subscribe_orders(inst: &str) -> Self {
+        Self::subscribe(Args::subscribe_orders(inst))
     }
 
     /// Subscribe to the given channel.
@@ -41,7 +42,7 @@ impl Request {
         let stream = stream! {
             yield ClientFrame { stream_id: 0, inner: WsRequest::Subscribe(args.clone()) };
             let _ = rx.await;
-            yield ClientFrame { stream_id: 0, inner: WsRequest::Unsubscribe(args.clone()) };
+            yield ClientFrame { stream_id: 0, inner: WsRequest::Unsubscribe(args) };
         };
 
         Self {
