@@ -33,6 +33,19 @@ impl Args {
             ("instId".to_string(), inst.to_string()),
         ]))
     }
+
+    pub(crate) fn to_tag(&self) -> String {
+        const IGNORE_KEYS: [&str; 1] = ["uid"];
+        let mut tag = String::from("sub");
+        for (key, value) in self.0.iter() {
+            if IGNORE_KEYS.contains(&key.as_str()) {
+                continue;
+            }
+            tag.push(':');
+            tag.push_str(value.as_str());
+        }
+        tag
+    }
 }
 
 impl fmt::Display for Args {

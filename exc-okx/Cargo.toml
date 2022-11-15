@@ -68,3 +68,7 @@ features = ["v4"]
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[dev-dependencies]
+clap = { version = "4.0.24", features = ["derive", "env"] }
+tracing-subscriber = { version = "0.3.16", features = ["env-filter", "json"] }
