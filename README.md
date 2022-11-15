@@ -13,4 +13,4 @@ The abstraction layer of exchanges.
 [actions-badge]: https://github.com/Nouzan/exc/workflows/CI/badge.svg
 [actions-url]: https://github.com/Nouzan/exc/actions?query=workflow%3ACI+branch%3Amain
 
-[API Docs](https://docs.rs/exc/latest/exc)
+[Examples](https://github.com/Nouzan/exc/tree/main/examples) | [API Docs](https://docs.rs/exc/latest/exc)

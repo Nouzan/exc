@@ -1,8 +1,0 @@
-exec = [
-  { op = "wait", millis = 1000 },
-  { op = "limit", name = "foo", price = "0.10", size = "-10" },
-  { op = "wait", millis = 1000 },
-  { op = "check", name = "foo" },
-  { op = "cancel", name = "foo" },
-  { op = "wait", millis = 1000 },
-]
