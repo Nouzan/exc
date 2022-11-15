@@ -232,16 +232,20 @@ impl TryFrom<OkxOrder> for OrderUpdate {
         if let (rebate, Some(rebate_asset)) = (order.rebate, order.rebate_ccy) {
             fees.insert(rebate_asset, rebate);
         }
-        let trade = 'trade: {
-            let (Some(price), Some(size), Some(fee), Some(fee_asset)) = (order.fill_px, order.fill_sz, order.fill_fee, order.fill_fee_ccy) else {
-                break 'trade None;
-            };
+        let trade = if let (Some(price), Some(size), Some(fee), Some(fee_asset)) = (
+            order.fill_px,
+            order.fill_sz,
+            order.fill_fee,
+            order.fill_fee_ccy,
+        ) {
             Some(types::OrderTrade {
                 price,
                 size,
                 fee,
                 fee_asset: Some(fee_asset),
             })
+        } else {
+            None
         };
         Ok(Self {
             ts: order.update_ts,
