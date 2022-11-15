@@ -2,6 +2,7 @@ use crate::{error::OkxError, websocket::types::messages::event::Change};
 
 use super::super::messages::event::{Event, ResponseKind};
 use exc_core::types::ticker::Ticker;
+use serde::Deserialize;
 
 /// Server Frame.
 #[derive(Debug, Clone)]
@@ -37,12 +38,15 @@ impl ServerFrame {
         }
     }
 
-    // pub(crate) fn into_trade_response(self) -> Option<TradeResponse> {
-    //     match self.inner {
-    //         Event::TradeResponse(resp) => Some(resp),
-    //         _ => None,
-    //     }
-    // }
+    /// Deserialize change.
+    pub fn into_deserialized_changes<T>(
+        self,
+    ) -> Option<impl Iterator<Item = Result<T, serde_json::Error>>>
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        Some(self.into_change()?.deserialize_data())
+    }
 }
 
 impl TryFrom<ServerFrame> for Vec<Result<Ticker, OkxError>> {

@@ -4,6 +4,7 @@ use self::ticker::OkxTicker;
 
 use super::Args;
 use exc_core::types::ticker::Ticker;
+pub use instrument::OkxInstrumentMeta;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
@@ -11,7 +12,8 @@ use std::fmt;
 mod instrument;
 mod ticker;
 
-pub use instrument::OkxInstrumentMeta;
+/// Order.
+pub mod order;
 
 /// Message with code.
 #[derive(Debug, Clone, Serialize, Deserialize)]

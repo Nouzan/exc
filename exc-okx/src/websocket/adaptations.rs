@@ -4,7 +4,7 @@ use exc_core::{
     types::{
         instrument::{InstrumentMeta, SubscribeInstruments},
         trading::{CancelOrder, OrderId, PlaceOrder},
-        Cancelled, Placed,
+        Cancelled, OrderUpdate, Placed, SubscribeOrders,
     },
     Adaptor, ExchangeError,
 };
@@ -16,7 +16,7 @@ use crate::error::OkxError;
 use super::{
     types::{
         messages::{
-            event::{Event, OkxInstrumentMeta, TradeResponse},
+            event::{order::OkxOrder, Event, OkxInstrumentMeta, TradeResponse},
             Args,
         },
         response::StatusKind,
@@ -60,6 +60,57 @@ impl Adaptor<SubscribeInstruments> for Request {
                                 Err(err) => {
                                     error!("deserialize instrument meta error: {err}, skipped.");
                                     ready(None)
+                                }
+                            })
+                            .left_stream(),
+                        Err(err) => {
+                            futures::stream::once(
+                                async move { Err(ExchangeError::Other(err.into())) },
+                            )
+                            .right_stream()
+                        }
+                    })
+                    .boxed();
+                Ok(stream)
+            }
+        }
+    }
+}
+
+impl Adaptor<SubscribeOrders> for Request {
+    fn from_request(req: SubscribeOrders) -> Result<Self, exc_core::ExchangeError>
+    where
+        Self: Sized,
+    {
+        Ok(Self::subscribe(Args::subscribe_orders(&req.instrument)))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeOrders as exc_core::Request>::Response, ExchangeError> {
+        match resp {
+            Response::Error(err) => Err(ExchangeError::Other(anyhow::anyhow!("status: {err}"))),
+            Response::Reconnected => Err(ExchangeError::Other(anyhow::anyhow!(
+                "invalid response kind"
+            ))),
+            Response::Streaming(stream) => {
+                let stream = stream
+                    .skip(1)
+                    .filter_map(|frame| {
+                        ready(match frame {
+                            Ok(frame) => frame.into_change().map(Ok),
+                            Err(err) => Some(Err(err)),
+                        })
+                    })
+                    .flat_map(|change| match change {
+                        Ok(change) => iter(change.deserialize_data::<OkxOrder>())
+                            .filter_map(|m| {
+                                match m.map_err(OkxError::from).and_then(OrderUpdate::try_from) {
+                                    Ok(m) => ready(Some(Ok(m))),
+                                    Err(err) => {
+                                        error!(%err, "deserialize order error, skipped.");
+                                        ready(None)
+                                    }
                                 }
                             })
                             .left_stream(),
