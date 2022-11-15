@@ -33,7 +33,7 @@ async fn main() -> anyhow::Result<()> {
     while let Some(frame) = stream.next().await.transpose()? {
         for data in frame.into_deserialized_changes::<OkxOrder>().unwrap() {
             let order = data?;
-            tracing::debug!("{order:?}");
+            tracing::debug!("{order:#?}");
         }
     }
     Ok(())

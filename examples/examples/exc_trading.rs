@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     io::Read,
     path::PathBuf,
     time::{Duration, Instant},
@@ -7,7 +8,7 @@ use std::{
 use clap::{clap_derive::ArgEnum, Parser};
 use exc::{
     types::{OrderId, Place, SubscribeOrders},
-    CheckOrderService, SubscribeOrdersService, TradingService,
+    CheckOrderService, Okx, SubscribeOrdersService, TradingService,
 };
 use exc_binance::{Binance, SpotOptions};
 use futures::StreamExt;
@@ -92,89 +93,109 @@ fn rtt(begin: Instant) -> FormattedDuration {
     format_duration(Instant::now().duration_since(begin))
 }
 
-async fn execute<S>(mut exc: S, inst: String, execs: Vec<Op>) -> anyhow::Result<()>
-where
-    S: SubscribeOrdersService + TradingService + CheckOrderService + Clone + Send + 'static,
-    <S as Service<SubscribeOrders>>::Future: Send,
-{
-    let mut orders_provider = exc.clone();
-    let shared_inst = inst.clone();
-    tokio::spawn(async move {
-        let mut revision = 0;
-        loop {
-            revision += 1;
-            match orders_provider.subscribe_orders(&shared_inst).await {
-                Ok(mut orders) => {
-                    while let Some(t) = orders.next().await {
-                        match t {
-                            Ok(t) => {
-                                tracing::info!("[*] watch: {t:#?}");
-                            }
-                            Err(err) => {
-                                tracing::error!("stream error: {err}[{revision}]");
-                                break;
+#[derive(Default)]
+struct Env {
+    order_ids: HashMap<String, OrderId>,
+}
+
+impl Env {
+    fn order_id(&self, name: &str) -> anyhow::Result<&OrderId> {
+        self.order_ids
+            .get(name)
+            .ok_or_else(|| anyhow::anyhow!("the id for `{name}` not found"))
+    }
+
+    async fn execute<S>(&mut self, mut exc: S, inst: String, execs: Vec<Op>) -> anyhow::Result<()>
+    where
+        S: SubscribeOrdersService + TradingService + CheckOrderService + Clone + Send + 'static,
+        <S as Service<SubscribeOrders>>::Future: Send,
+    {
+        let mut orders_provider = exc.clone();
+        let shared_inst = inst.clone();
+        tokio::spawn(async move {
+            let mut revision = 0;
+            loop {
+                revision += 1;
+                match orders_provider.subscribe_orders(&shared_inst).await {
+                    Ok(mut orders) => {
+                        while let Some(t) = orders.next().await {
+                            match t {
+                                Ok(t) => {
+                                    tracing::info!("[*] watch: {t:#?}");
+                                }
+                                Err(err) => {
+                                    tracing::error!("stream error: {err}[{revision}]");
+                                    break;
+                                }
                             }
                         }
                     }
+                    Err(err) => {
+                        tracing::error!("request error: {err}[{revision}]");
+                    }
                 }
-                Err(err) => {
-                    tracing::error!("request error: {err}[{revision}]");
-                }
+                tokio::time::sleep(Duration::from_secs(1)).await;
             }
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
-    });
+        });
 
-    for (idx, op) in execs.into_iter().enumerate() {
-        let begin = Instant::now();
-        match op {
-            Op::Wait { millis } => {
-                tracing::info!("[{idx}] wait for {millis}ms");
-                tokio::time::sleep(Duration::from_millis(millis)).await;
-            }
-            Op::Check { name } => match exc.check(&inst, &OrderId::from(name)).await {
-                Ok(update) => {
-                    tracing::info!("[{idx}] check(rtt={}): {update:#?}", rtt(begin))
+        for (idx, op) in execs.into_iter().enumerate() {
+            let begin = Instant::now();
+            match op {
+                Op::Wait { millis } => {
+                    tracing::info!("[{idx}] wait for {millis}ms");
+                    tokio::time::sleep(Duration::from_millis(millis)).await;
                 }
-                Err(err) => tracing::error!("[{idx}] check(rtt={}): {err}", rtt(begin)),
-            },
-            Op::Cancel { name } => {
-                match exc.cancel(&inst, &OrderId::from(name)).await {
-                    Ok(cancelled) => {
-                        tracing::info!("[{idx}] cancel(rtt={}): {cancelled:#?}", rtt(begin))
+                Op::Check { name } => match exc.check(&inst, self.order_id(&name)?).await {
+                    Ok(update) => {
+                        tracing::info!("[{idx}] check(rtt={}): {update:#?}", rtt(begin))
                     }
-                    Err(err) => tracing::error!("[{idx}] cancel(rtt={}): {err}", rtt(begin)),
-                };
-            }
-            Op::Market { name, size } => {
-                match exc.place(&inst, &Place::with_size(size), Some(&name)).await {
-                    Ok(placed) => tracing::info!("[{idx}] market(rtt={}): {placed:#?}", rtt(begin)),
-                    Err(err) => tracing::error!("[{idx}] market(rtt={}): {err}", rtt(begin)),
+                    Err(err) => tracing::error!("[{idx}] check(rtt={}): {err}", rtt(begin)),
+                },
+                Op::Cancel { name } => {
+                    match exc.cancel(&inst, self.order_id(&name)?).await {
+                        Ok(cancelled) => {
+                            tracing::info!("[{idx}] cancel(rtt={}): {cancelled:#?}", rtt(begin))
+                        }
+                        Err(err) => tracing::error!("[{idx}] cancel(rtt={}): {err}", rtt(begin)),
+                    };
                 }
-            }
-            Op::Limit { name, price, size } => {
-                match exc
-                    .place(&inst, &Place::with_size(size).limit(price), Some(&name))
-                    .await
-                {
-                    Ok(placed) => tracing::info!("[{idx}] limit(rtt={}): {placed:#?}", rtt(begin)),
-                    Err(err) => tracing::error!("[{idx}] limit(rtt={}): {err}", rtt(begin)),
-                }
-            }
-            Op::PostOnly { name, price, size } => {
-                match exc
-                    .place(&inst, &Place::with_size(size).post_only(price), Some(&name))
-                    .await
-                {
-                    Ok(placed) => {
-                        tracing::info!("[{idx}] post-only(rtt={}): {placed:#?}", rtt(begin))
+                Op::Market { name, size } => {
+                    match exc.place(&inst, &Place::with_size(size), Some(&name)).await {
+                        Ok(placed) => {
+                            self.order_ids.insert(name.clone(), placed.id.clone());
+                            tracing::info!("[{idx}] market(rtt={}): {placed:#?}", rtt(begin))
+                        }
+                        Err(err) => tracing::error!("[{idx}] market(rtt={}): {err}", rtt(begin)),
                     }
-                    Err(err) => tracing::error!("[{idx}] post-only(rtt={}): {err}", rtt(begin)),
-                };
+                }
+                Op::Limit { name, price, size } => {
+                    match exc
+                        .place(&inst, &Place::with_size(size).limit(price), Some(&name))
+                        .await
+                    {
+                        Ok(placed) => {
+                            self.order_ids.insert(name.clone(), placed.id.clone());
+                            tracing::info!("[{idx}] limit(rtt={}): {placed:#?}", rtt(begin))
+                        }
+                        Err(err) => tracing::error!("[{idx}] limit(rtt={}): {err}", rtt(begin)),
+                    }
+                }
+                Op::PostOnly { name, price, size } => {
+                    match exc
+                        .place(&inst, &Place::with_size(size).post_only(price), Some(&name))
+                        .await
+                    {
+                        Ok(placed) => {
+                            self.order_ids.insert(name.clone(), placed.id.clone());
+                            tracing::info!("[{idx}] post-only(rtt={}): {placed:#?}", rtt(begin))
+                        }
+                        Err(err) => tracing::error!("[{idx}] post-only(rtt={}): {err}", rtt(begin)),
+                    };
+                }
             }
         }
+        Ok(())
     }
-    Ok(())
 }
 
 #[tokio::main]
@@ -204,12 +225,12 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let inst = args.inst;
-
+    let mut env = Env::default();
     match args.exchange {
         Exchange::BinanceU => {
             let key = serde_json::from_str(&args.key)?;
             let exc = Binance::usd_margin_futures().private(key).connect_exc();
-            execute(exc, inst, execs).await?;
+            env.execute(exc, inst, execs).await?;
         }
         Exchange::BinanceS => {
             let key = serde_json::from_str(&args.key)?;
@@ -222,13 +243,12 @@ async fn main() -> anyhow::Result<()> {
             let exc = Binance::spot_with_options(options)
                 .private(key)
                 .connect_exc();
-            execute(exc, inst, execs).await?;
+            env.execute(exc, inst, execs).await?;
         }
         Exchange::Okx => {
-            // let key = serde_json::from_str(&args.key)?;
-            // let exc = Okx::endpoint().private(key).connect_exc();
-            // execute(exc, inst, execs).await?;
-            anyhow::bail!("`Okx` is not supported for now");
+            let key = serde_json::from_str(&args.key)?;
+            let exc = Okx::endpoint().private(key).connect_exc();
+            env.execute(exc, inst, execs).await?;
         }
     }
     Ok(())

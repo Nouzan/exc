@@ -1,0 +1,6 @@
+exec = [
+  { op = "limit", name = "foo", price = "0.01", size = "10" },
+  { op = "wait", millis = 1000 },
+  { op = "check", name = "foo" },
+  { op = "cancel", name = "foo" },
+]

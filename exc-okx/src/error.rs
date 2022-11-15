@@ -75,6 +75,16 @@ pub enum OkxError {
     /// Login error.
     #[error("login error: {0}")]
     LoginError(anyhow::Error),
+    /// Parsing order error.
+    #[error("parsing order: {0}")]
+    ParsingOrder(String),
+}
+
+impl OkxError {
+    /// Parsing order error.
+    pub fn parsing_order(msg: impl ToString) -> Self {
+        Self::ParsingOrder(msg.to_string())
+    }
 }
 
 impl From<OkxError> for ExchangeError {

@@ -1,10 +1,54 @@
-use exc_core::types::OrderUpdate;
+use std::collections::HashMap;
+
+use exc_core::types::{self, Order, OrderUpdate};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr, NoneAsEmptyString};
 use time::OffsetDateTime;
 
 use crate::error::OkxError;
+
+/// Okx Order State.
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum State {
+    /// Cancelled.
+    Canceled,
+    /// Live.
+    Live,
+    /// Partially filled.
+    PartiallyFilled,
+    /// Filled.
+    Filled,
+}
+
+/// Okx Order Type.
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum OrderType {
+    /// Market.
+    Market,
+    /// Limit.
+    Limit,
+    /// Post only.
+    PostOnly,
+    /// Fill-or-kill.
+    Fok,
+    /// Immediate-or-cancel.
+    Ioc,
+    /// Optimal-limit-ioc
+    OptimalLimitIoc,
+}
+
+/// Okx Order Side.
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum OrderSide {
+    /// Buy.
+    Buy,
+    /// Sell.
+    Sell,
+}
 
 /// Okx Order message from websocket channel.
 #[serde_as]
@@ -35,9 +79,9 @@ pub struct OkxOrder {
     #[serde_as(as = "NoneAsEmptyString")]
     pub notional_usd: Option<Decimal>,
     /// Order type.
-    pub ord_type: String,
+    pub ord_type: OrderType,
     /// Side.
-    pub side: String,
+    pub side: OrderSide,
     /// Position side.
     #[serde_as(as = "NoneAsEmptyString")]
     pub pos_side: Option<String>,
@@ -76,7 +120,7 @@ pub struct OkxOrder {
     /// Average price.
     pub avg_px: Decimal,
     /// State.
-    pub state: String,
+    pub state: State,
     /// Leverage.
     #[serde_as(as = "NoneAsEmptyString")]
     pub lever: Option<Decimal>,
@@ -151,6 +195,82 @@ impl TryFrom<OkxOrder> for OrderUpdate {
     type Error = OkxError;
 
     fn try_from(order: OkxOrder) -> Result<Self, Self::Error> {
-        todo!()
+        let kind = match order.ord_type {
+            OrderType::Market => types::OrderKind::Market,
+            OrderType::PostOnly => types::OrderKind::PostOnly(
+                order
+                    .px
+                    .ok_or_else(|| OkxError::parsing_order("missing `px` for post-only order"))?,
+            ),
+            OrderType::Limit => types::OrderKind::Limit(
+                order
+                    .px
+                    .ok_or_else(|| OkxError::parsing_order("missing `px` for limit order"))?,
+                types::TimeInForce::GoodTilCancelled,
+            ),
+            OrderType::Fok => types::OrderKind::Limit(
+                order
+                    .px
+                    .ok_or_else(|| OkxError::parsing_order("missing `px` for limit order"))?,
+                types::TimeInForce::FillOrKill,
+            ),
+            OrderType::Ioc | OrderType::OptimalLimitIoc => types::OrderKind::Limit(
+                order
+                    .px
+                    .ok_or_else(|| OkxError::parsing_order("missing `px` for limit order"))?,
+                types::TimeInForce::ImmediateOrCancel,
+            ),
+        };
+        let status = match order.state {
+            State::Canceled | State::Filled => types::OrderStatus::Finished,
+            State::Live | State::PartiallyFilled => types::OrderStatus::Pending,
+        };
+        let mut fees = HashMap::default();
+        if let (fee, Some(fee_asset)) = (order.fee, order.fee_ccy) {
+            fees.insert(fee_asset, fee);
+        }
+        if let (rebate, Some(rebate_asset)) = (order.rebate, order.rebate_ccy) {
+            fees.insert(rebate_asset, rebate);
+        }
+        let trade = 'trade: {
+            let (Some(price), Some(size), Some(fee), Some(fee_asset)) = (order.fill_px, order.fill_sz, order.fill_fee, order.fill_fee_ccy) else {
+                break 'trade None;
+            };
+            Some(types::OrderTrade {
+                price,
+                size,
+                fee,
+                fee_asset: Some(fee_asset),
+            })
+        };
+        Ok(Self {
+            ts: order.update_ts,
+            order: Order {
+                id: types::OrderId::from(order.ord_id),
+                target: types::Place {
+                    size: if matches!(order.side, OrderSide::Buy) {
+                        order.sz.abs().normalize()
+                    } else {
+                        -(order.sz.abs().normalize())
+                    },
+                    kind,
+                },
+                state: types::OrderState {
+                    filled: if matches!(order.side, OrderSide::Buy) {
+                        order.acc_fill_sz.abs().normalize()
+                    } else {
+                        -(order.acc_fill_sz.abs().normalize())
+                    },
+                    cost: if order.acc_fill_sz.is_zero() {
+                        Decimal::ONE
+                    } else {
+                        order.avg_px
+                    },
+                    status,
+                    fees,
+                },
+                trade,
+            },
+        })
     }
 }
