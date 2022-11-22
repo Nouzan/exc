@@ -25,7 +25,7 @@ exc-okx = { version = "0.6.0", path = "./exc-okx" }
 exc = { path = "./exc" }
 
 indicator = { git = "https://github.com/Nouzan/indicator.git", branch = "main" }
-positions = "0.1"
+positions = "0.2.0-rc.1"
 tracing = "0.1.36"
 anyhow = "1"
 thiserror = "1.0.30"
