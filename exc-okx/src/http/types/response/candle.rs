@@ -13,4 +13,6 @@ pub struct Candle(
     #[serde_as(as = "DisplayFromStr")] pub Decimal,
     #[serde_as(as = "DisplayFromStr")] pub Decimal,
     #[serde_as(as = "DisplayFromStr")] pub Decimal,
+    #[serde_as(as = "DisplayFromStr")] pub Decimal,
+    #[serde_as(as = "DisplayFromStr")] pub Decimal,
 );
