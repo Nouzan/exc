@@ -257,7 +257,7 @@ impl<T: Rest> From<T> for RestRequest<T> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "ci")))]
 mod test {
     use std::env::var;
     use tower::ServiceExt;
