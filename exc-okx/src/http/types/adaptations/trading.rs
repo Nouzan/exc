@@ -26,11 +26,22 @@ impl Adaptor<GetOrder> for HttpRequest {
     where
         Self: Sized,
     {
-        Ok(HttpRequest::PrivateGet(PrivateGet::Order(Order {
-            inst_id: req.instrument,
-            ord_id: Some(req.id.as_str().to_string()),
-            cl_ord_id: None,
-        })))
+        #[cfg(not(feature = "prefer-client-id"))]
+        {
+            Ok(HttpRequest::PrivateGet(PrivateGet::Order(Order {
+                inst_id: req.instrument,
+                ord_id: Some(req.id.as_str().to_string()),
+                cl_ord_id: None,
+            })))
+        }
+        #[cfg(feature = "prefer-client-id")]
+        {
+            Ok(HttpRequest::PrivateGet(PrivateGet::Order(Order {
+                inst_id: req.instrument,
+                ord_id: None,
+                cl_ord_id: Some(req.id.as_str().to_string()),
+            })))
+        }
     }
 
     fn into_response(
@@ -123,6 +134,14 @@ impl Adaptor<GetOrder> for HttpRequest {
                     state.status = status;
                     state.filled = filled;
                     state.cost = cost;
+                    #[cfg(not(feature = "prefer-client-id"))]
+                    let id = OrderId::from(order.order_id);
+                    #[cfg(feature = "prefer-client-id")]
+                    let id = if let Some(id) = order.client_id {
+                        OrderId::from(id)
+                    } else {
+                        return Err(crate::error::OkxError::MissingClientId.into());
+                    };
                     Ok(OrderUpdate {
                         ts: decimal_to_ts(order.updated_at).ok_or_else(|| {
                             ExchangeError::Other(anyhow::anyhow!(
@@ -131,7 +150,7 @@ impl Adaptor<GetOrder> for HttpRequest {
                             ))
                         })?,
                         order: ExcOrder {
-                            id: OrderId::from(order.order_id),
+                            id,
                             target,
                             state,
                             trade: None,

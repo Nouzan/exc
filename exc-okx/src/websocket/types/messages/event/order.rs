@@ -247,10 +247,18 @@ impl TryFrom<OkxOrder> for OrderUpdate {
         } else {
             None
         };
+        #[cfg(not(feature = "prefer-client-id"))]
+        let id = types::OrderId::from(order.ord_id);
+        #[cfg(feature = "prefer-client-id")]
+        let id = if let Some(id) = order.cl_ord_id {
+            types::OrderId::from(id)
+        } else {
+            return Err(OkxError::MissingClientId);
+        };
         Ok(Self {
             ts: order.update_ts,
             order: Order {
-                id: types::OrderId::from(order.ord_id),
+                id,
                 target: types::Place {
                     size: if matches!(order.side, OrderSide::Buy) {
                         order.sz.abs().normalize()

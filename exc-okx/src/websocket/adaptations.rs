@@ -152,7 +152,21 @@ impl Adaptor<PlaceOrder> for Request {
             {
                 if code == "0" {
                     if let Some(data) = data.pop() {
-                        Ok((OffsetDateTime::now_utc(), OrderId::from(data.ord_id)))
+                        #[cfg(not(feature = "prefer-client-id"))]
+                        {
+                            let id = OrderId::from(data.ord_id);
+                            Ok((OffsetDateTime::now_utc(), id))
+                        }
+                        #[cfg(feature = "prefer-client-id")]
+                        if let Some(id) = if data.cl_ord_id.is_empty() {
+                            None
+                        } else {
+                            Some(data.cl_ord_id)
+                        } {
+                            Ok((OffsetDateTime::now_utc(), OrderId::from(id)))
+                        } else {
+                            Err(OkxError::MissingClientId)
+                        }
                     } else {
                         Err(OkxError::Api(StatusKind::EmptyResponse))
                     }
