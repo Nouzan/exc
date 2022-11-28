@@ -47,7 +47,7 @@ impl OkxInstrumentMeta {
     pub fn expire_time(&self) -> Option<OffsetDateTime> {
         match self {
             Self::Futures(FuturesMeta { exp_time, .. })
-            | Self::Option(OptionMeta { exp_time, .. }) => Some(*exp_time),
+            | Self::Option(OptionMeta { exp_time, .. }) => *exp_time,
             _ => None,
         }
     }
@@ -161,13 +161,13 @@ pub struct OptionMeta {
 
     /// Listing time.
     /// Only applicable to `FUTURES`/`SWAP`/`OPTION`.
-    #[serde(with = "crate::utils::timestamp_serde")]
-    pub list_time: OffsetDateTime,
+    #[serde(with = "crate::utils::timestamp_serde_option")]
+    pub list_time: Option<OffsetDateTime>,
 
     /// Expiry time.
     /// Only applicable to `FUTURES`/`OPTION`.
-    #[serde(with = "crate::utils::timestamp_serde")]
-    pub exp_time: OffsetDateTime,
+    #[serde(with = "crate::utils::timestamp_serde_option")]
+    pub exp_time: Option<OffsetDateTime>,
 }
 
 /// Spot Meta.
@@ -215,8 +215,8 @@ pub struct SwapMeta {
 
     /// Listing time.
     /// Only applicable to `FUTURES`/`SWAP`/`OPTION`.
-    #[serde(with = "crate::utils::timestamp_serde")]
-    pub list_time: OffsetDateTime,
+    #[serde(with = "crate::utils::timestamp_serde_option")]
+    pub list_time: Option<OffsetDateTime>,
 
     /// Leverage
     /// Not applicable to `SPOT`, used to distinguish between `MARGIN` and `SPOT`.
@@ -249,13 +249,13 @@ pub struct FuturesMeta {
 
     /// Listing time.
     /// Only applicable to `FUTURES`/`SWAP`/`OPTION`.
-    #[serde(with = "crate::utils::timestamp_serde")]
-    pub list_time: OffsetDateTime,
+    #[serde(with = "crate::utils::timestamp_serde_option")]
+    pub list_time: Option<OffsetDateTime>,
 
     /// Expiry time.
     /// Only applicable to `FUTURES`/`OPTION`.
-    #[serde(with = "crate::utils::timestamp_serde")]
-    pub exp_time: OffsetDateTime,
+    #[serde(with = "crate::utils::timestamp_serde_option")]
+    pub exp_time: Option<OffsetDateTime>,
 
     /// Leverage
     /// Not applicable to `SPOT`, used to distinguish between `MARGIN` and `SPOT`.
