@@ -78,6 +78,10 @@ pub enum OkxError {
     /// Parsing order error.
     #[error("parsing order: {0}")]
     ParsingOrder(String),
+    #[cfg(feature = "prefer-client-id")]
+    /// Missing Client Id (required by the `prefer-client-id` feature ).
+    #[error("missing client id (feature `prefer-client-id` is enabled)")]
+    MissingClientId,
 }
 
 impl OkxError {

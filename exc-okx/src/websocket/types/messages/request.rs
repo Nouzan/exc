@@ -146,6 +146,16 @@ impl WsRequest {
         if let Some(margin) = opts.margin() {
             map.insert("ccy".to_string(), margin.to_string());
         }
+        #[cfg(not(feature = "prefer-client-id"))]
+        if let Some(client_id) = opts.client_id() {
+            map.insert("clOrdId".to_string(), client_id.to_string());
+        }
+        #[cfg(feature = "prefer-client-id")]
+        if let Some(client_id) = opts.client_id() {
+            map.insert("clOrdId".to_string(), client_id.to_string());
+        } else {
+            map.insert("clOrdId".to_string(), uuid::Uuid::new_v4().to_string());
+        }
         match place.kind {
             OrderKind::Market => {
                 map.insert("ordType".to_string(), "market".to_string());
@@ -177,7 +187,10 @@ impl WsRequest {
             format!("{:x}", uuid::Uuid::new_v4().as_u128()),
             Args(BTreeMap::from([
                 ("instId".to_string(), inst.to_string()),
+                #[cfg(not(feature = "prefer-client-id"))]
                 ("ordId".to_string(), id.to_string()),
+                #[cfg(feature = "prefer-client-id")]
+                ("clOrdId".to_string(), id.to_string()),
             ])),
         )
     }
