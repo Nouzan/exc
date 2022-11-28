@@ -171,6 +171,7 @@ where
                             .map_err(|err| ExchangeError::Other(err.into()))
                     })
                     .and_then(|bytes| {
+                        tracing::trace!(?bytes, "http response;");
                         let resp = serde_json::from_slice::<FullHttpResponse>(&bytes)
                             .map_err(|err| ExchangeError::Other(err.into()));
 
