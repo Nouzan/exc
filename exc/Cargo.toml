@@ -12,6 +12,7 @@ rust-version.workspace = true
 
 [features]
 okx = ["exc-okx"]
+okx-prefer-client-id = ["okx", "exc-okx/prefer-client-id"]
 binance = ["exc-binance"]
 websocket = ["exc-core/websocket"]
 driven = ["exc-core/driven"]
