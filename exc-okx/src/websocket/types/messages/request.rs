@@ -148,13 +148,24 @@ impl WsRequest {
         }
         #[cfg(not(feature = "prefer-client-id"))]
         if let Some(client_id) = opts.client_id() {
+            #[cfg(debug_assertions)]
+            if client_id.len() > 32 {
+                tracing::error!(%client_id, "the length of `client_id` cannot be greater than 32");
+            }
             map.insert("clOrdId".to_string(), client_id.to_string());
         }
         #[cfg(feature = "prefer-client-id")]
-        if let Some(client_id) = opts.client_id() {
-            map.insert("clOrdId".to_string(), client_id.to_string());
-        } else {
-            map.insert("clOrdId".to_string(), uuid::Uuid::new_v4().to_string());
+        {
+            let client_id = if let Some(client_id) = opts.client_id() {
+                client_id.to_string()
+            } else {
+                uuid::Uuid::new_v4().simple().to_string()
+            };
+            #[cfg(debug_assertions)]
+            if client_id.len() > 32 {
+                tracing::error!(%client_id, "the length of `client_id` cannot be greater than 32");
+            }
+            map.insert("clOrdId".to_string(), client_id);
         }
         match place.kind {
             OrderKind::Market => {

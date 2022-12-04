@@ -1,5 +1,5 @@
 use exc::{
-    okx::{key::OkxKey, Okx},
+    okx::Okx,
     types::{Place, PlaceOrderOptions},
     {CheckOrderService, TradingService},
 };
@@ -16,11 +16,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let key = OkxKey {
-        apikey: var("OKX_APIKEY")?,
-        secretkey: var("OKX_SECRETKEY")?,
-        passphrase: var("OKX_PASSPHRASE")?,
-    };
+    let key = serde_json::from_str(&var("OKX_KEY")?)?;
 
     let mut okx = Okx::endpoint()
         .private(key)
@@ -32,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     let id = okx
         .place_with_opts(
             &Place::with_size(dec!(10)).post_only(dec!(0.01)),
-            PlaceOrderOptions::new(inst).insert("tdMode", "cash"),
+            PlaceOrderOptions::new(inst).with_client_id(Some("testing1")),
         )
         .await?
         .id;
