@@ -75,6 +75,8 @@ pub enum InstrumentState {
     Expired,
     /// Preopen.
     Preopen,
+    /// Test.
+    Test,
 }
 
 /// Common Meta.
