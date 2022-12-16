@@ -12,6 +12,9 @@ pub enum OkxInstrumentMeta {
     /// Spot.
     Spot(SpotMeta),
 
+    /// Margin.
+    Margin(SpotMeta),
+
     /// Swap.
     Swap(SwapMeta),
 
@@ -27,6 +30,7 @@ impl OkxInstrumentMeta {
     pub fn common(&self) -> &CommonMeta {
         match self {
             Self::Spot(SpotMeta { common, .. })
+            | Self::Margin(SpotMeta { common, .. })
             | Self::Swap(SwapMeta { common, .. })
             | Self::Futures(FuturesMeta { common, .. })
             | Self::Option(OptionMeta { common, .. }) => common,
@@ -37,6 +41,7 @@ impl OkxInstrumentMeta {
     pub fn into_common(self) -> CommonMeta {
         match self {
             Self::Spot(SpotMeta { common, .. })
+            | Self::Margin(SpotMeta { common, .. })
             | Self::Swap(SwapMeta { common, .. })
             | Self::Futures(FuturesMeta { common, .. })
             | Self::Option(OptionMeta { common, .. }) => common,
