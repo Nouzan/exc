@@ -6,10 +6,14 @@ use serde::Serialize;
 use crate::key::OkxKey as Key;
 
 use self::history_candles::HistoryCandles;
+use self::instruments::Instruments;
 use self::trading::Order;
 
 /// History candles.
 pub mod history_candles;
+
+/// Instruments query.
+pub mod instruments;
 
 /// Trading.
 pub mod trading;
@@ -29,12 +33,15 @@ pub enum HttpRequest {
 pub enum Get {
     /// History candles.
     HistoryCandles(HistoryCandles),
+    /// Get instruments.
+    Instruments(Instruments),
 }
 
 impl Get {
     pub(crate) fn uri(&self) -> &'static str {
         match self {
             Self::HistoryCandles(_) => "/api/v5/market/history-candles",
+            Self::Instruments(_) => "/api/v5/public/instruments",
         }
     }
 }

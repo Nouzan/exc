@@ -8,4 +8,5 @@ impl Request for HttpRequest {
 }
 
 mod candle;
+mod instruments;
 mod trading;

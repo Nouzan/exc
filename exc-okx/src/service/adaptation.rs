@@ -1,7 +1,8 @@
 use exc_core::{
     types::{
-        instrument::SubscribeInstruments, utils::Reconnect, CancelOrder, GetOrder, PlaceOrder,
-        QueryLastCandles, SubscribeOrders, SubscribeTickers,
+        instrument::{FetchInstruments, SubscribeInstruments},
+        utils::Reconnect,
+        CancelOrder, GetOrder, PlaceOrder, QueryLastCandles, SubscribeOrders, SubscribeTickers,
     },
     Adaptor, ExchangeError, Request,
 };
@@ -22,6 +23,20 @@ impl Adaptor<SubscribeInstruments> for OkxRequest {
     ) -> Result<<SubscribeInstruments as Request>::Response, ExchangeError> {
         let res = resp.ws()?;
         <WsRequest as Adaptor<SubscribeInstruments>>::into_response(res)
+    }
+}
+
+impl Adaptor<FetchInstruments> for OkxRequest {
+    fn from_request(req: FetchInstruments) -> Result<Self, ExchangeError> {
+        let req = HttpRequest::from_request(req)?;
+        Ok(Self::Http(req))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<FetchInstruments as Request>::Response, ExchangeError> {
+        let res = resp.http()?;
+        <HttpRequest as Adaptor<FetchInstruments>>::into_response(res)
     }
 }
 
