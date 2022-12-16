@@ -11,6 +11,8 @@ pub mod trading;
 pub use candle::Candle;
 pub use trading::OrderDetail;
 
+pub use crate::websocket::types::messages::event::OkxInstrumentMeta;
+
 /// Okx HTTP API Response (with `code` and `msg`).
 #[derive(Debug, Deserialize)]
 pub struct FullHttpResponse {
@@ -53,6 +55,8 @@ impl TryFrom<FullHttpResponse> for HttpResponse {
 pub enum ResponseData {
     /// Candle.
     Candle(Candle),
+    /// Instruments.
+    Instruments(OkxInstrumentMeta),
     /// Order.
     Order(Box<OrderDetail>),
 }
