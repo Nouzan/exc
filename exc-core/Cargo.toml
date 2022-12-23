@@ -12,11 +12,7 @@ readme = "./README.md"
 
 [features]
 default = ["websocket", "http", "retry"]
-websocket = [
-    "tokio-tungstenite",
-    "dep:http",
-    "tokio/net",
-]
+websocket = ["tokio-tungstenite", "dep:http", "tokio/net"]
 driven = ["tokio/sync", "tokio/rt", "pin-project-lite"]
 http = ["hyper/client", "hyper/http1", "hyper-tls", "dep:http"]
 retry = ["tower/retry", "tokio/time", "humantime"]
@@ -25,7 +21,12 @@ retry = ["tower/retry", "tokio/time", "humantime"]
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-tower = { workspace = true, features = ["util", "buffer", "limit", "ready-cache"] }
+tower = { workspace = true, features = [
+    "util",
+    "buffer",
+    "limit",
+    "ready-cache",
+] }
 futures = { workspace = true }
 serde = { workspace = true }
 time = { workspace = true, features = ["serde-well-known", "macros"] }

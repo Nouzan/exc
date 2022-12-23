@@ -1,14 +1,8 @@
 [workspace]
-members = [
-    "exc-core",
-    "exc",
-    "exc-okx",
-    "exc-binance",
-    "examples",
-]
+members = ["exc-core", "exc", "exc-okx", "exc-binance", "examples"]
 
 [workspace.package]
-version = "0.6.0"
+version = "0.6.0-nightly"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
@@ -19,47 +13,47 @@ description = "The abstraction layer of exchanges."
 rust-version = "1.65"
 
 [workspace.dependencies]
-exc-core = { version = "0.6.0", path = "./exc-core" }
-exc-binance = { version = "0.6.0", path = "./exc-binance" }
-exc-okx = { version = "0.6.0", path = "./exc-okx" }
+exc-core = { version = "0.6.0-nightly", path = "./exc-core" }
+exc-binance = { version = "0.6.0-nightly", path = "./exc-binance" }
+exc-okx = { version = "0.6.0-nightly", path = "./exc-okx" }
 exc = { path = "./exc" }
 
-indicator = { git = "https://github.com/Nouzan/indicator.git", branch = "main" }
-positions = { git = "https://github.com/Nouzan/positions.git", branch = "main" }
-tracing = "0.1.36"
-anyhow = "1"
-thiserror = "1.0.30"
+indicator = "0.3.4"
+positions = "0.2.1"
+tracing = "0.1.37"
+anyhow = "1.0.68"
+thiserror = "1.0.38"
 either = "1.8.0"
 
 # serde
-serde = { version = "1.0.136", features = ["derive"] }
-serde_with = "2.0.1"
-serde_json = "1.0.85"
+serde = { version = "1.0.151", features = ["derive"] }
+serde_with = "2.1.0"
+serde_json = "1.0.91"
 
 # data
-time = "0.3.9"
-uuid = "1.1.2"
-rust_decimal = "1.26.1"
-rust_decimal_macros = "1.26.1"
+time = "0.3.17"
+uuid = "1.2.2"
+rust_decimal = "1.27.0"
+rust_decimal_macros = "1.27.0"
 num-traits = "0.2.15"
 
 # async
-tower = "0.4.12"
-futures = "0.3.24"
-futures-util = "0.3.24"
+tower = "0.4.13"
+futures = "0.3.25"
+futures-util = "0.3.25"
 pin-project-lite = "0.2.9"
-async-stream = "0.3"
-tokio = "1.21.1"
-tokio-stream = "0.1.10"
-tokio-tungstenite = "0.17.2"
+async-stream = "0.3.3"
+tokio = "1.23.0"
+tokio-stream = "0.1.11"
+tokio-tungstenite = "0.18.0"
 tokio-tower = "0.6.0"
-hyper = "0.14"
-hyper-tls = "0.5"
+hyper = "0.14.23"
+hyper-tls = "0.5.0"
 http = "0.2.8"
 
 # utils
 humantime = "2.1.0"
 
 # signature
-hmac = "0.12.0"
-sha2 = "0.10.0"
+hmac = "0.12.1"
+sha2 = "0.10.6"
