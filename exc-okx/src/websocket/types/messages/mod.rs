@@ -7,6 +7,7 @@ pub mod request;
 // /// Response.
 // pub mod response;
 
+use exc_core::Str;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
@@ -14,23 +15,23 @@ use std::hash::Hash;
 
 /// Okx arguments.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct Args(pub BTreeMap<String, String>);
+pub struct Args(pub BTreeMap<Str, Str>);
 
 impl Args {
     /// Args for tickers subscription.
     pub fn subscribe_tickers(inst: &str) -> Self {
         Args(BTreeMap::from([
-            ("channel".to_string(), "tickers".to_string()),
-            ("instId".to_string(), inst.to_string()),
+            (Str::new_inline("channel"), Str::new_inline("tickers")),
+            (Str::new_inline("instId"), Str::new(inst)),
         ]))
     }
 
     /// Args for orders subscription.
     pub fn subscribe_orders(inst: &str) -> Self {
         Args(BTreeMap::from([
-            ("channel".to_string(), "orders".to_string()),
-            ("instType".to_string(), "ANY".to_string()),
-            ("instId".to_string(), inst.to_string()),
+            (Str::new_inline("channel"), Str::new_inline("orders")),
+            (Str::new_inline("instType"), Str::new_inline("ANY")),
+            (Str::new_inline("instId"), Str::new(inst)),
         ]))
     }
 

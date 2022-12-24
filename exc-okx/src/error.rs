@@ -82,6 +82,9 @@ pub enum OkxError {
     /// Missing Client Id (required by the `prefer-client-id` feature ).
     #[error("missing client id (feature `prefer-client-id` is enabled)")]
     MissingClientId,
+    /// Parse Instrument Error.
+    #[error("parse symbol error: {0}")]
+    ParseSymbol(#[from] exc_core::ParseSymbolError),
 }
 
 impl OkxError {

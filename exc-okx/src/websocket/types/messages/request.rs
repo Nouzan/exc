@@ -3,6 +3,7 @@ use crate::error::OkxError;
 use crate::key::{OkxKey as Key, Signature};
 use exc_core::types::trading::{OrderKind, Place, PlaceOrderOptions};
 use exc_core::types::TimeInForce;
+use exc_core::Str;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
@@ -83,39 +84,13 @@ impl fmt::Display for WsRequest {
 }
 
 impl WsRequest {
-    /// Subscribe tickers.
-    #[deprecated(
-        since = "0.5.1",
-        note = "we won't create `WsRequest` for subscription directly.
-    If you want the `Args` of tickers subscription, use `Args::subscribe_tickers` instread."
-    )]
-    pub fn subscribe_tickers(inst: &str) -> Self {
-        Self::Subscribe(Args(BTreeMap::from([
-            ("channel".to_string(), "tickers".to_string()),
-            ("instId".to_string(), inst.to_string()),
-        ])))
-    }
-
-    /// Unsubscribe tickers.
-    #[deprecated(
-        since = "0.5.1",
-        note = "we won't create `WsRequest` for unsubscription directly.
-    If you want the `Args` of tickers subscription, use `Args::subscribe_tickers` instread."
-    )]
-    pub fn unsubscribe_tickers(inst: &str) -> Self {
-        Self::Unsubscribe(Args(BTreeMap::from([
-            ("channel".to_string(), "tickers".to_string()),
-            ("instId".to_string(), inst.to_string()),
-        ])))
-    }
-
     /// Login request.
     pub(crate) fn login(key: Key, signature: Signature) -> Self {
         Self::Login(Args(BTreeMap::from([
-            ("apiKey".to_string(), key.apikey),
-            ("passphrase".to_string(), key.passphrase),
-            ("timestamp".to_string(), signature.timestamp),
-            ("sign".to_string(), signature.signature),
+            (Str::new_inline("apiKey"), key.apikey),
+            (Str::new_inline("passphrase"), key.passphrase),
+            (Str::new_inline("timestamp"), signature.timestamp),
+            (Str::new_inline("sign"), signature.signature),
         ])))
     }
 
@@ -130,21 +105,17 @@ impl WsRequest {
             "buy"
         };
         let mut map = BTreeMap::from([
-            ("instId".to_string(), inst.to_string()),
+            (Str::new_inline("instId"), Str::new(inst)),
             (
-                "tdMode".to_string(),
-                custom
-                    .get("tdMode")
-                    .map(|s| s.as_str())
-                    .unwrap_or("cross")
-                    .to_string(),
+                Str::new_inline("tdMode"),
+                Str::new(custom.get("tdMode").map(|s| s.as_str()).unwrap_or("cross")),
             ),
-            ("side".to_string(), side.to_string()),
-            ("posSide".to_string(), "net".to_string()),
-            ("sz".to_string(), size.to_string()),
+            (Str::new_inline("side"), Str::new_inline(side)),
+            (Str::new_inline("posSide"), Str::new_inline("net")),
+            (Str::new_inline("sz"), Str::new(size.to_string())),
         ]);
         if let Some(margin) = opts.margin() {
-            map.insert("ccy".to_string(), margin.to_string());
+            map.insert(Str::new_inline("ccy"), Str::new(margin));
         }
         #[cfg(not(feature = "prefer-client-id"))]
         if let Some(client_id) = opts.client_id() {
@@ -152,41 +123,41 @@ impl WsRequest {
             if client_id.len() > 32 {
                 tracing::error!(%client_id, "the length of `client_id` cannot be greater than 32");
             }
-            map.insert("clOrdId".to_string(), client_id.to_string());
+            map.insert(Str::new_inline("clOrdId"), Str::new(client_id));
         }
         #[cfg(feature = "prefer-client-id")]
         {
             let client_id = if let Some(client_id) = opts.client_id() {
-                client_id.to_string()
+                Str::new(client_id)
             } else {
-                uuid::Uuid::new_v4().simple().to_string()
+                Str::new(uuid::Uuid::new_v4().simple().to_string())
             };
             #[cfg(debug_assertions)]
             if client_id.len() > 32 {
                 tracing::error!(%client_id, "the length of `client_id` cannot be greater than 32");
             }
-            map.insert("clOrdId".to_string(), client_id);
+            map.insert(Str::new_inline("clOrdId"), client_id);
         }
         match place.kind {
             OrderKind::Market => {
-                map.insert("ordType".to_string(), "market".to_string());
+                map.insert(Str::new_inline("ordType"), Str::new_inline("market"));
                 if inst.split('-').count() == 2 {
                     // spot-market
-                    map.insert("tgtCcy".to_string(), "base_ccy".to_string());
+                    map.insert(Str::new_inline("tgtCcy"), Str::new_inline("base_ccy"));
                 }
             }
             OrderKind::Limit(price, tif) => {
-                map.insert("px".to_string(), price.to_string());
+                map.insert(Str::new_inline("px"), Str::new(price.to_string()));
                 let t = match tif {
                     TimeInForce::GoodTilCancelled => "limit",
                     TimeInForce::FillOrKill => "fok",
                     TimeInForce::ImmediateOrCancel => "ioc",
                 };
-                map.insert("ordType".to_string(), t.to_string());
+                map.insert(Str::new_inline("ordType"), Str::new_inline(t));
             }
             OrderKind::PostOnly(price) => {
-                map.insert("px".to_string(), price.to_string());
-                map.insert("ordType".to_string(), "post_only".to_string());
+                map.insert(Str::new_inline("px"), Str::new(price.to_string()));
+                map.insert(Str::new_inline("ordType"), Str::new_inline("post_only"));
             }
         }
         Self::Order(format!("{:x}", uuid::Uuid::new_v4().as_u128()), Args(map))
@@ -197,11 +168,11 @@ impl WsRequest {
         Self::CancelOrder(
             format!("{:x}", uuid::Uuid::new_v4().as_u128()),
             Args(BTreeMap::from([
-                ("instId".to_string(), inst.to_string()),
+                (Str::new_inline("instId"), Str::new(inst)),
                 #[cfg(not(feature = "prefer-client-id"))]
-                ("ordId".to_string(), id.to_string()),
+                (Str::new_inline("ordId"), Str::new(id)),
                 #[cfg(feature = "prefer-client-id")]
-                ("clOrdId".to_string(), id.to_string()),
+                (Str::new_inline("clOrdId"), Str::new(id)),
             ])),
         )
     }

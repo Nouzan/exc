@@ -34,7 +34,7 @@ rust_decimal = { workspace = true }
 indicator = { workspace = true }
 async-stream = { workspace = true }
 num-traits = { workspace = true }
-positions = { workspace = true }
+positions = { workspace = true, features = ["serde"] }
 either = { workspace = true }
 tokio-stream = { workspace = true }
 humantime = { workspace = true, optional = true }

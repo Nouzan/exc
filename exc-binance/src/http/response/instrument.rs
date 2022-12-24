@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use exc_core::{Asset, Instrument, Str};
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
@@ -54,9 +55,9 @@ pub(crate) struct RateLimit {
 pub(crate) struct SpotSymbol {
     pub(crate) symbol: String,
     pub(crate) status: String,
-    pub(crate) base_asset: String,
+    pub(crate) base_asset: Asset,
     pub(crate) base_asset_precision: u32,
-    pub(crate) quote_asset: String,
+    pub(crate) quote_asset: Asset,
     pub(crate) quote_precision: u32,
     pub(crate) order_types: Vec<String>,
     pub(crate) iceberg_allowed: bool,
@@ -70,18 +71,63 @@ pub(crate) struct SpotSymbol {
     pub(crate) permissions: Vec<String>,
 }
 
+impl SpotSymbol {
+    pub(crate) fn to_instrument(&self) -> Result<Instrument, RestError> {
+        Ok(Instrument::spot(&self.base_asset, &self.quote_asset))
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub(crate) enum KnownContractType {
+    Perpetual,
+    CurrentQuarter,
+    NextQuarter,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub(crate) enum ContractType {
+    Known(KnownContractType),
+    Unknwon(String),
+}
+
+impl ContractType {
+    const U_EMPTY: Str = Str::new_inline("U-EMPTY");
+    const U_PERP: Str = Str::new_inline("U-PERP");
+    const U_CURRENT_QUARTER: Str = Str::new_inline("U-QUARTER");
+    const U_NEXT_QUARTER: Str = Str::new_inline("U-NEXT-QUARTER");
+
+    fn to_prefix(&self) -> Str {
+        match self {
+            Self::Known(c) => match c {
+                KnownContractType::Perpetual => Self::U_PERP,
+                KnownContractType::CurrentQuarter => Self::U_CURRENT_QUARTER,
+                KnownContractType::NextQuarter => Self::U_NEXT_QUARTER,
+            },
+            Self::Unknwon(s) => {
+                if s.is_empty() {
+                    Self::U_EMPTY
+                } else {
+                    Str::new(format!("U-{s}"))
+                }
+            }
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UFSymbol {
     pub(crate) symbol: String,
     pub(crate) pair: String,
-    pub(crate) contract_type: String,
+    pub(crate) contract_type: ContractType,
     pub(crate) delivery_date: i64,
     pub(crate) onboard_date: i64,
     pub(crate) status: String,
-    pub(crate) base_asset: String,
-    pub(crate) quote_asset: String,
-    pub(crate) margin_asset: String,
+    pub(crate) base_asset: Asset,
+    pub(crate) quote_asset: Asset,
+    pub(crate) margin_asset: Asset,
     pub(crate) price_precision: u32,
     pub(crate) quantity_precision: u32,
     pub(crate) base_asset_precision: u32,
@@ -94,6 +140,18 @@ pub(crate) struct UFSymbol {
     pub(crate) liquidation_fee: Decimal,
     pub(crate) market_take_bound: Decimal,
     pub(crate) filters: Vec<Filter>,
+}
+
+impl UFSymbol {
+    pub(crate) fn to_instrument(&self) -> Result<Instrument, RestError> {
+        let name = self.symbol.to_lowercase();
+        Ok(Instrument::derivative(
+            &self.contract_type.to_prefix(),
+            &name,
+            &self.base_asset,
+            &self.quote_asset,
+        )?)
+    }
 }
 
 #[derive(Debug, Deserialize)]

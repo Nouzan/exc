@@ -1,5 +1,5 @@
 use exc_core::types::instrument::{FetchInstruments, InstrumentMeta};
-use exc_core::Adaptor;
+use exc_core::{Adaptor, ExchangeError};
 
 use crate::http::types::request::instruments::Instruments;
 use crate::http::types::request::Get;
@@ -28,7 +28,7 @@ impl Adaptor<FetchInstruments> for HttpRequest {
             for data in resp.data {
                 trace!("received a data: {data:?}");
                 if let ResponseData::Instruments(c) = data {
-                    yield Ok(InstrumentMeta::from(c))
+                    yield InstrumentMeta::try_from(c).map_err(ExchangeError::from)
                 }
             }
         };

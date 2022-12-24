@@ -1,3 +1,4 @@
+use exc_core::Str;
 use tower::{util::Oneshot, ServiceExt};
 
 use crate::types::instrument::{FetchInstruments, SubscribeInstruments};
@@ -13,9 +14,7 @@ pub trait SubscribeInstrumentsService: ExcService<SubscribeInstruments> {
     {
         ServiceExt::<SubscribeInstruments>::oneshot(
             self,
-            SubscribeInstruments {
-                tag: tag.to_string(),
-            },
+            SubscribeInstruments { tag: Str::new(tag) },
         )
     }
 }
@@ -29,12 +28,7 @@ pub trait FetchInstrumentsService: ExcService<FetchInstruments> {
     where
         Self: Sized,
     {
-        ServiceExt::<FetchInstruments>::oneshot(
-            self,
-            FetchInstruments {
-                tag: tag.to_string(),
-            },
-        )
+        ServiceExt::<FetchInstruments>::oneshot(self, FetchInstruments { tag: Str::new(tag) })
     }
 }
 

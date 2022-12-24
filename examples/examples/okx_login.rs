@@ -1,4 +1,4 @@
-use exc::okx::{key::OkxKey, websocket::Request, Okx};
+use exc::okx::{websocket::Request, Okx};
 use exc_okx::OkxRequest;
 use std::{env::var, time::Duration};
 use tower::{Service, ServiceExt};
@@ -13,11 +13,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let key = OkxKey {
-        apikey: var("OKX_APIKEY")?,
-        secretkey: var("OKX_SECRETKEY")?,
-        passphrase: var("OKX_PASSPHRASE")?,
-    };
+    let key = serde_json::from_str(&var("OKX_KEY")?)?;
     let mut okx = Okx::endpoint()
         .private(key)
         .ws_request_timeout(Duration::from_secs(5))

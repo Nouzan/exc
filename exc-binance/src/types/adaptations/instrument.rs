@@ -33,8 +33,13 @@ impl Adaptor<FetchInstruments> for Request {
         match info {
             response::ExchangeInfo::UsdMarginFutures(info) => {
                 Ok(stream::iter(info.symbols.into_iter().filter_map(|symbol| {
-                    let name = symbol.symbol.to_lowercase();
-                    let is_reversed = symbol.quote_asset != symbol.margin_asset;
+                    let inst = symbol
+                        .to_instrument()
+                        .map_err(|err| {
+                            tracing::error!(%err, "parse instrument error");
+                            err
+                        })
+                        .ok()?;
                     let mut price_tick = None;
                     let mut size_tick = None;
                     let mut min_size = None;
@@ -59,8 +64,7 @@ impl Adaptor<FetchInstruments> for Request {
                         }
                     }
                     Some(Ok(InstrumentMeta {
-                        name,
-                        is_reversed,
+                        inst,
                         unit: Decimal::ONE,
                         price_tick: price_tick?,
                         size_tick: size_tick?,
@@ -72,8 +76,13 @@ impl Adaptor<FetchInstruments> for Request {
             }
             response::ExchangeInfo::Spot(info) => {
                 Ok(stream::iter(info.symbols.into_iter().filter_map(|symbol| {
-                    let name = symbol.symbol.to_lowercase();
-                    let is_reversed = false;
+                    let inst = symbol
+                        .to_instrument()
+                        .map_err(|err| {
+                            tracing::error!(%err, "parse instrument error");
+                            err
+                        })
+                        .ok()?;
                     let mut price_tick = None;
                     let mut size_tick = None;
                     let mut min_size = None;
@@ -99,8 +108,7 @@ impl Adaptor<FetchInstruments> for Request {
                     }
                     tracing::debug!("{price_tick:?} {size_tick:?} {min_size:?} {min_value:?}");
                     Some(Ok(InstrumentMeta {
-                        name,
-                        is_reversed,
+                        inst,
                         unit: Decimal::ONE,
                         price_tick: price_tick?,
                         size_tick: size_tick?,

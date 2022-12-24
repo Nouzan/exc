@@ -6,7 +6,7 @@ use exc_core::{
         trading::{CancelOrder, OrderId, PlaceOrder},
         Cancelled, OrderUpdate, Placed, SubscribeOrders,
     },
-    Adaptor, ExchangeError,
+    Adaptor, ExchangeError, Str,
 };
 use futures::{future::ready, stream::iter, FutureExt, StreamExt};
 use time::OffsetDateTime;
@@ -31,8 +31,8 @@ impl Adaptor<SubscribeInstruments> for Request {
     {
         let tag = req.tag;
         Ok(Self::subscribe(Args(BTreeMap::from([
-            ("channel".to_string(), "instruments".to_string()),
-            ("instType".to_string(), tag),
+            (Str::new_inline("channel"), Str::new_inline("instruments")),
+            (Str::new_inline("instType"), tag),
         ]))))
     }
 
@@ -56,7 +56,9 @@ impl Adaptor<SubscribeInstruments> for Request {
                     .flat_map(|change| match change {
                         Ok(change) => iter(change.deserialize_data::<OkxInstrumentMeta>())
                             .filter_map(|m| match m {
-                                Ok(m) => ready(Some(Ok(InstrumentMeta::from(m)))),
+                                Ok(m) => ready(Some(
+                                    InstrumentMeta::try_from(m).map_err(ExchangeError::from),
+                                )),
                                 Err(err) => {
                                     error!("deserialize instrument meta error: {err}, skipped.");
                                     ready(None)

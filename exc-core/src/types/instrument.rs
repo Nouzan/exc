@@ -1,10 +1,11 @@
 use derive_more::Display;
 use futures::stream::BoxStream;
+use positions::Instrument;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{ExchangeError, Request};
+use crate::{ExchangeError, Request, Str};
 
 /// Parse Instrument Meta Error.
 #[derive(Debug, Error)]
@@ -22,14 +23,13 @@ pub enum InstrumentMetaError<E> {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Display)]
 #[display(bound = "Num: std::fmt::Display")]
 #[display(
-    fmt = "name={name} r={is_reversed} unit={unit} pt={price_tick} st={size_tick} ms={min_size} mv={min_value}"
+    fmt = "inst={inst} rev={} unit={unit} pt={price_tick} st={size_tick} ms={min_size} mv={min_value}",
+    "inst.is_prefer_reversed()"
 )]
 #[serde(bound = "Num: num_traits::Zero + Serialize + for<'a> Deserialize<'a>")]
 pub struct InstrumentMeta<Num> {
-    /// Name.
-    pub name: String,
-    /// Is reversed price representation.
-    pub is_reversed: bool,
+    /// Instrument.
+    pub inst: Instrument,
     /// Unit.
     pub unit: Num,
     /// Price min tick.
@@ -43,47 +43,6 @@ pub struct InstrumentMeta<Num> {
     pub min_value: Num,
 }
 
-impl<Num: num_traits::Num> InstrumentMeta<Num> {
-    /// Parse from str by split.
-    pub fn from_str_by_split(
-        s: &str,
-        pat: char,
-        reversed_str: &str,
-    ) -> Result<Self, InstrumentMetaError<Num::FromStrRadixErr>> {
-        let mut splited = s.split(pat);
-        let name = splited
-            .next()
-            .ok_or(InstrumentMetaError::MissingFields)?
-            .to_string();
-        let is_reversed = splited.next().ok_or(InstrumentMetaError::MissingFields)? == reversed_str;
-        let unit = Num::from_str_radix(
-            splited.next().ok_or(InstrumentMetaError::MissingFields)?,
-            10,
-        )?;
-        let price_tick = Num::from_str_radix(
-            splited.next().ok_or(InstrumentMetaError::MissingFields)?,
-            10,
-        )?;
-        let size_tick = Num::from_str_radix(
-            splited.next().ok_or(InstrumentMetaError::MissingFields)?,
-            10,
-        )?;
-        let min_size = Num::from_str_radix(
-            splited.next().ok_or(InstrumentMetaError::MissingFields)?,
-            10,
-        )?;
-        Ok(Self {
-            name,
-            is_reversed,
-            unit,
-            price_tick,
-            size_tick,
-            min_size,
-            min_value: Num::zero(),
-        })
-    }
-}
-
 /// Instrument Stream.
 pub type InstrumentStream = BoxStream<'static, Result<InstrumentMeta<Decimal>, ExchangeError>>;
 
@@ -91,14 +50,14 @@ pub type InstrumentStream = BoxStream<'static, Result<InstrumentMeta<Decimal>, E
 #[derive(Debug, Clone)]
 pub struct SubscribeInstruments {
     /// Tag.
-    pub tag: String,
+    pub tag: Str,
 }
 
 /// Fetch instruments.
 #[derive(Debug, Clone)]
 pub struct FetchInstruments {
     /// Tag.
-    pub tag: String,
+    pub tag: Str,
 }
 
 impl Request for SubscribeInstruments {

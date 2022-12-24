@@ -46,6 +46,9 @@ pub enum RestError {
     /// Place Zero size.
     #[error("trying to place an order with zero size")]
     PlaceZeroSize,
+    /// Parse Symbol Error.
+    #[error("parse symbol error: {0}")]
+    ParseSymbol(#[from] exc_core::ParseSymbolError),
 }
 
 impl RestError {

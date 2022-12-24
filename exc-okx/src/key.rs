@@ -1,3 +1,4 @@
+use exc_core::Str;
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
@@ -26,11 +27,11 @@ pub enum SignError {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct OkxKey {
     /// APIKey.
-    pub apikey: String,
+    pub apikey: Str,
     /// SecretKey.
-    pub secretkey: String,
+    pub secretkey: Str,
     /// Passphrase.
-    pub passphrase: String,
+    pub passphrase: Str,
 }
 
 /// Signature
@@ -38,19 +39,19 @@ pub struct OkxKey {
 pub struct Signature {
     /// Signature.
     #[serde(rename = "sign")]
-    pub signature: String,
+    pub signature: Str,
 
     /// Timestamp.
-    pub timestamp: String,
+    pub timestamp: Str,
 }
 
 impl OkxKey {
     /// Create a new [`Key`].
     pub fn new(apikey: &str, secretkey: &str, passphrase: &str) -> Self {
         Self {
-            apikey: apikey.to_string(),
-            secretkey: secretkey.to_string(),
-            passphrase: passphrase.to_string(),
+            apikey: Str::new(apikey),
+            secretkey: Str::new(secretkey),
+            passphrase: Str::new(passphrase),
         }
     }
 
@@ -76,8 +77,8 @@ impl OkxKey {
         mac.update(raw_sign.as_bytes());
 
         Ok(Signature {
-            signature: base64::encode(mac.finalize().into_bytes()),
-            timestamp,
+            signature: Str::new(base64::encode(mac.finalize().into_bytes())),
+            timestamp: Str::new(timestamp),
         })
     }
 

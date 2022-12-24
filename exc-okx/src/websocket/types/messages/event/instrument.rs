@@ -1,9 +1,22 @@
-use exc_core::types::instrument::InstrumentMeta;
+use exc_core::{types::instrument::InstrumentMeta, Asset, Instrument, Str};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr, NoneAsEmptyString};
-use std::collections::HashSet;
 use time::OffsetDateTime;
+
+use crate::error::OkxError;
+
+/// Prefix of margin symbols.
+pub const MARGIN: &str = "MARGIN";
+
+/// Prefix of futures symbols.
+pub const FUTURES: &str = "FUTURES";
+
+/// Prefix of swaps (perpetual contracts) symbols.
+pub const SWAP: &str = "SWAP";
+
+/// Prefix of options symbols.
+pub const OPTIONS: &str = "OPTIONS";
 
 /// Okx Instrument Meta.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -66,6 +79,51 @@ impl OkxInstrumentMeta {
             _ => None,
         }
     }
+
+    /// Convert to an [`Instrument`].
+    pub fn to_instrument(&self) -> Result<Instrument, OkxError> {
+        Ok(match self {
+            Self::Spot(meta) => Instrument::spot(&meta.base_ccy, &meta.quote_ccy),
+            Self::Margin(meta) => Instrument::derivative(
+                MARGIN,
+                &meta.common.inst_id,
+                &meta.base_ccy,
+                &meta.quote_ccy,
+            )?,
+            Self::Futures(FuturesMeta {
+                contract,
+                common,
+                ct_type,
+                ..
+            }) => Instrument::derivative(
+                FUTURES,
+                &common.inst_id,
+                &contract.ct_val_ccy,
+                &contract.settle_ccy,
+            )?
+            .prefer_reversed(matches!(ct_type, ContractType::Inverse)),
+            Self::Swap(SwapMeta {
+                contract,
+                common,
+                ct_type,
+                ..
+            }) => Instrument::derivative(
+                SWAP,
+                &common.inst_id,
+                &contract.ct_val_ccy,
+                &contract.settle_ccy,
+            )?
+            .prefer_reversed(matches!(ct_type, ContractType::Inverse)),
+            Self::Option(OptionMeta {
+                contract, common, ..
+            }) => Instrument::derivative(
+                OPTIONS,
+                &common.inst_id,
+                &contract.ct_val_ccy,
+                &contract.settle_ccy,
+            )?,
+        })
+    }
 }
 
 /// Instrument State.
@@ -90,7 +148,7 @@ pub enum InstrumentState {
 #[serde(rename_all = "camelCase")]
 pub struct CommonMeta {
     /// Instrument ID.
-    pub inst_id: String,
+    pub inst_id: Str,
 
     /// Fee Schedule.
     #[serde_as(as = "DisplayFromStr")]
@@ -124,7 +182,15 @@ pub struct ContractCommonMeta {
     pub ct_mult: Decimal,
 
     /// Contract value currency.
-    pub ct_val_ccy: String,
+    pub ct_val_ccy: Asset,
+
+    /// Underlying, e.g. `BTC-USD`.
+    /// Only applicable to `FUTURES/SWAP/OPTION`.
+    pub uly: Str,
+
+    /// Settlement and margin currency, e.g. `BTC`.
+    /// Only applicable to `FUTURES/SWAP/OPTION`.
+    pub settle_ccy: Asset,
 }
 
 /// Option Type.
@@ -149,14 +215,6 @@ pub struct OptionMeta {
     /// Contract Common meta.
     #[serde(flatten)]
     pub contract: ContractCommonMeta,
-
-    /// Underlying, e.g. `BTC-USD`.
-    /// Only applicable to `FUTURES/SWAP/OPTION`.
-    pub uly: String,
-
-    /// Settlement and margin currency, e.g. `BTC`.
-    /// Only applicable to `FUTURES/SWAP/OPTION`.
-    pub settle_ccy: String,
 
     /// Option type, `C`: Call `P`: Put
     /// Only applicable to `OPTION`.
@@ -188,16 +246,27 @@ pub struct SpotMeta {
 
     /// Base currency, e.g. `BTC` in `BTC-USDT`.
     /// Only applicable to `SPOT`.
-    pub base_ccy: String,
+    pub base_ccy: Asset,
 
     /// Quote currency, e.g. `USDT` in `BTC-USDT`.
     /// Only applicable to `SPOT`.
-    pub quote_ccy: String,
+    pub quote_ccy: Asset,
 
     /// Leverage
     /// Not applicable to `SPOT`, used to distinguish between `MARGIN` and `SPOT`.
     #[serde_as(as = "NoneAsEmptyString")]
     pub lever: Option<Decimal>,
+}
+
+/// Contract Type.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum ContractType {
+    /// Linear.
+    #[serde(rename = "linear")]
+    Linear,
+    /// Inverse.
+    #[serde(rename = "inverse")]
+    Inverse,
 }
 
 /// Swap Meta.
@@ -212,14 +281,6 @@ pub struct SwapMeta {
     #[serde(flatten)]
     pub contract: ContractCommonMeta,
 
-    /// Underlying, e.g. `BTC-USD`.
-    /// Only applicable to `FUTURES/SWAP/OPTION`.
-    pub uly: String,
-
-    /// Settlement and margin currency, e.g. `BTC`.
-    /// Only applicable to `FUTURES/SWAP/OPTION`.
-    pub settle_ccy: String,
-
     /// Listing time.
     /// Only applicable to `FUTURES`/`SWAP`/`OPTION`.
     #[serde(with = "crate::utils::timestamp_serde_option")]
@@ -231,7 +292,7 @@ pub struct SwapMeta {
 
     /// Contract type, `linear`: linear contract `inverse`: inverse contract.
     /// Applicable to `SWAP` and `Futures`.
-    pub ct_type: String,
+    pub ct_type: ContractType,
 }
 
 /// Futures Meta.
@@ -245,14 +306,6 @@ pub struct FuturesMeta {
     /// Contract Common meta.
     #[serde(flatten)]
     pub contract: ContractCommonMeta,
-
-    /// Underlying, e.g. `BTC-USD`.
-    /// Only applicable to `FUTURES/SWAP/OPTION`.
-    pub uly: String,
-
-    /// Settlement and margin currency, e.g. `BTC`.
-    /// Only applicable to `FUTURES/SWAP/OPTION`.
-    pub settle_ccy: String,
 
     /// Listing time.
     /// Only applicable to `FUTURES`/`SWAP`/`OPTION`.
@@ -278,17 +331,13 @@ pub struct FuturesMeta {
 
     /// Contract type, `linear`: linear contract `inverse`: inverse contract.
     /// Applicable to `SWAP` and `Futures`.
-    pub ct_type: String,
+    pub ct_type: ContractType,
 }
 
-impl From<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
-    fn from(meta: OkxInstrumentMeta) -> Self {
-        let is_reversed = meta
-            .common()
-            .inst_id
-            .split('-')
-            .collect::<HashSet<_>>()
-            .contains("USD");
+impl TryFrom<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
+    type Error = OkxError;
+
+    fn try_from(meta: OkxInstrumentMeta) -> Result<Self, Self::Error> {
         let unit = if let Some(contract) = meta.as_contract() {
             contract.ct_val
         } else {
@@ -297,14 +346,13 @@ impl From<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
         let price_tick = meta.common().tick_sz;
         let size_tick = meta.common().lot_sz;
         let min_size = meta.common().min_sz;
-        InstrumentMeta {
-            name: meta.into_common().inst_id,
-            is_reversed,
+        Ok(InstrumentMeta {
+            inst: meta.to_instrument()?,
             unit,
             price_tick,
             size_tick,
             min_size,
             min_value: Decimal::ZERO,
-        }
+        })
     }
 }

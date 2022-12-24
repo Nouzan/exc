@@ -7,8 +7,9 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::fmt()
         .with_writer(std::io::stderr)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "error,binance_instrument=debug,exc_binance=debug".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| {
+                "error,binance_fetch_instruments=debug,exc_binance=debug".into()
+            }),
         ))
         .init();
 

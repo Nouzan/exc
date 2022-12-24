@@ -21,5 +21,6 @@ pub mod retry;
 /// Utils.
 pub mod util;
 
-pub use error::ExchangeError;
-pub use exchange::{Adaptor, Exc, ExcLayer, ExcMut, ExcService, IntoExc, Request};
+pub use self::error::ExchangeError;
+pub use self::exchange::{Adaptor, Exc, ExcLayer, ExcMut, ExcService, IntoExc, Request};
+pub use positions::prelude::{Asset, Instrument, ParseAssetError, ParseSymbolError, Str, Symbol};
