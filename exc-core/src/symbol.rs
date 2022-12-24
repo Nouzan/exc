@@ -1,5 +1,5 @@
 use positions::{prelude::Str, Asset, ParseSymbolError};
-use std::{fmt, str::FromStr};
+use std::{borrow::Borrow, fmt, str::FromStr};
 use thiserror::Error;
 use time::{macros::format_description, parsing::Parsable, Date};
 
@@ -172,6 +172,12 @@ impl FromStr for ExcSymbol {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let symbol = Symbol::from_str(s)?;
         Self::new(&symbol).ok_or(ParseExcSymbolError::InvalidFormat)
+    }
+}
+
+impl Borrow<Symbol> for ExcSymbol {
+    fn borrow(&self) -> &Symbol {
+        &self.0
     }
 }
 
