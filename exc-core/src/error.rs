@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use thiserror::Error;
 
 /// Instrument Errors.
@@ -77,5 +79,11 @@ impl ExchangeError {
             Ok(err) => (*err).flatten(),
             Err(err) => Self::Other(anyhow::anyhow!("{err}")),
         }
+    }
+}
+
+impl From<Infallible> for ExchangeError {
+    fn from(_: Infallible) -> Self {
+        panic!("infallible")
     }
 }

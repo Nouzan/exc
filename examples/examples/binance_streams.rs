@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::{binance::Binance, ExcService, SubscribeTickersService, TradeBidAskService};
+use exc::{binance::Binance, ExcExt, SubscribeTickersService};
 use futures::StreamExt;
 
 #[tokio::main]

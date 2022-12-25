@@ -1,9 +1,6 @@
 use clap::Parser;
 use exc::binance::Binance;
-use exc::{
-    types::SubscribeOrders, ExcService, SubscribeOrdersService, SubscribeTickersService,
-    TradeBidAskService,
-};
+use exc::{types::SubscribeOrders, ExcExt, SubscribeOrdersService, SubscribeTickersService};
 use futures::StreamExt;
 use std::time::Duration;
 
@@ -79,7 +76,9 @@ async fn main() -> anyhow::Result<()> {
     });
 
     let mut revision = 0;
-    let mut orders = ExcService::<SubscribeOrders>::into_retry(binance, Duration::from_secs(30));
+    let mut orders = binance
+        .adapt::<SubscribeOrders>()
+        .into_retry(Duration::from_secs(30));
     loop {
         revision += 1;
         match orders.subscribe_orders(&args.inst).await {

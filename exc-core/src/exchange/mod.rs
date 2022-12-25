@@ -4,7 +4,10 @@ use std::{
     task::{Context, Poll},
     time::Duration,
 };
-use tower::{limit::RateLimit, Service, ServiceBuilder, ServiceExt};
+use tower::{
+    limit::{RateLimit, RateLimitLayer},
+    Layer, Service, ServiceExt,
+};
 
 use crate::ExchangeError;
 
@@ -14,8 +17,13 @@ pub mod layer;
 /// Traits.
 pub mod traits;
 
+/// Adapt.
+pub mod adapt;
+
 pub use layer::ExcLayer;
 pub use traits::{Adaptor, ExcService, IntoExc, Request};
+
+use self::adapt::{AdaptLayer, Adapted};
 
 /// A wrapper that convert a general purpose exchange service
 /// into the specific exc services that are supported.
@@ -30,11 +38,26 @@ where
     C: Clone,
 {
     fn clone(&self) -> Self {
-        Self::new(self.channel.clone())
+        Self {
+            channel: self.channel.clone(),
+            _req: PhantomData,
+        }
     }
 }
 
 impl<C, Req> Exc<C, Req> {
+    /// Into the inner channel.
+    #[inline]
+    pub fn into_inner(self) -> C {
+        self.channel
+    }
+}
+
+impl<C, Req> Exc<C, Req>
+where
+    Req: Request,
+    C: ExcService<Req>,
+{
     /// Create a new exchange client from the given channel.
     pub fn new(channel: C) -> Self {
         Self {
@@ -44,16 +67,53 @@ impl<C, Req> Exc<C, Req> {
     }
 
     /// Make a request using the underlying channel directly.
-    pub async fn request(&mut self, request: Req) -> Result<C::Response, C::Error>
-    where
-        C: Service<Req>,
-    {
+    pub async fn request(&mut self, request: Req) -> Result<C::Response, C::Error> {
         ServiceExt::<Req>::oneshot(&mut self.channel, request).await
     }
 
-    /// Convert into a rate-limited service.
-    pub fn into_rate_limited(self, num: u64, per: Duration) -> RateLimit<Self> {
-        ServiceBuilder::default().rate_limit(num, per).service(self)
+    /// Apply rate-limit layer to the channel.
+    pub fn into_rate_limited(self, num: u64, per: Duration) -> Exc<RateLimit<C>, Req> {
+        self.layer(&RateLimitLayer::new(num, per))
+    }
+
+    #[cfg(feature = "retry")]
+    /// Apply retry layer to the channel.
+    pub fn into_retry(
+        self,
+        max_duration: std::time::Duration,
+    ) -> Exc<tower::retry::Retry<crate::retry::Always, C>, Req>
+    where
+        Req: Clone,
+        C: Clone,
+    {
+        use crate::retry::Always;
+        use tower::retry::RetryLayer;
+
+        self.layer(&RetryLayer::new(Always::with_max_duration(max_duration)))
+    }
+
+    /// Adapt to the given request.
+    pub fn adapt<R>(self) -> Exc<Adapted<C, Req, R>, R>
+    where
+        R: Request,
+        R::Response: Send + 'static,
+        Req: Adaptor<R>,
+        C::Future: Send + 'static,
+    {
+        self.layer(&AdaptLayer::default())
+    }
+
+    /// Apply a layer to the underlying channel.
+    pub fn layer<T, R>(self, layer: &T) -> Exc<T::Service, R>
+    where
+        T: Layer<C>,
+        R: Request,
+        T::Service: ExcService<R>,
+    {
+        Exc {
+            channel: layer.layer(self.channel),
+            _req: PhantomData,
+        }
     }
 }
 
@@ -62,8 +122,7 @@ where
     R: Request,
     R::Response: Send + 'static,
     Req: Adaptor<R>,
-    C: Service<Req, Response = Req::Response>,
-    C::Error: Into<ExchangeError>,
+    C: ExcService<Req>,
     C::Future: Send + 'static,
 {
     type Response = R::Response;
@@ -74,7 +133,7 @@ where
         &mut self,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.channel.poll_ready(cx).map_err(|err| err.into())
+        self.channel.poll_ready(cx)
     }
 
     fn call(&mut self, req: R) -> Self::Future {
@@ -83,7 +142,7 @@ where
             Ok(req) => {
                 let res = self.channel.call(req);
                 async move {
-                    let resp = res.await.map_err(|err| err.into())?;
+                    let resp = res.await?;
                     let resp = Req::into_response(resp)?;
                     Ok(resp)
                 }

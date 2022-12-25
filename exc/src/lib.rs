@@ -5,6 +5,9 @@
 /// Exc services.
 pub mod services;
 
+/// Util.
+pub mod util;
+
 pub use exc_core::*;
 pub use services::{
     book::SubscribeBidAskService,
@@ -13,12 +16,11 @@ pub use services::{
         FetchCandlesForwardLayer, FetchCandlesService, FetchFirstCandlesService,
     },
     instrument::{FetchInstrumentsService, SubscribeInstrumentsService},
-    subscribe_tickers::{
-        SubscribeTickersService, TradeBidAsk, TradeBidAskService, TradeBidAskServiceLayer,
-    },
+    subscribe_tickers::{SubscribeTickersService, TradeBidAsk, TradeBidAskServiceLayer},
     trade::SubscribeTradesService,
     trading::{CheckOrderService, SubscribeOrdersService, TradingService},
 };
+pub use util::ExcExt;
 
 #[cfg(feature = "okx")]
 /// Okx exchange service.
