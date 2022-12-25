@@ -1,5 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
+use positions::prelude::Str;
 use rust_decimal::Decimal;
 
 use super::place::Place;
@@ -101,13 +102,13 @@ impl Order {
 /// Order identity.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrderId {
-    inner: Arc<String>,
+    inner: Str,
 }
 
 impl From<String> for OrderId {
     fn from(inner: String) -> Self {
         Self {
-            inner: Arc::new(inner),
+            inner: Str::new(inner),
         }
     }
 }
