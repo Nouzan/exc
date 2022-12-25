@@ -17,7 +17,7 @@ where
     /// Convert into exc.
     fn into_exc(self) -> Exc<C, Req>;
 
-    /// Convert the inner channel to a [`SubscribeTickersService`]
+    /// Convert the inner channel to a [`SubscribeTickersService`](crate::SubscribeTickersService)
     fn into_subscribe_tickers(self) -> Exc<TradeBidAsk<Exc<C, Req>>, SubscribeTickers>
     where
         C: Clone + Send + 'static,
@@ -25,6 +25,22 @@ where
         Req: Adaptor<SubscribeTrades> + Adaptor<SubscribeBidAsk> + 'static,
     {
         Exc::new(TradeBidAskServiceLayer::default().layer(self.into_exc()))
+    }
+
+    /// Convert into a [`SubscribeTickersService`](crate::SubscribeTickersService).
+    fn into_subscribe_tickers_accpet_bid_ask_ts(
+        self,
+    ) -> Exc<TradeBidAsk<Exc<C, Req>>, SubscribeTickers>
+    where
+        C: Clone + Send + 'static,
+        C::Future: Send + 'static,
+        Req: Adaptor<SubscribeTrades> + Adaptor<SubscribeBidAsk> + 'static,
+    {
+        Exc::new(
+            TradeBidAskServiceLayer::default()
+                .accept_bid_ask_ts()
+                .layer(self.into_exc()),
+        )
     }
 }
 

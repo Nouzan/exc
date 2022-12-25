@@ -30,40 +30,6 @@ pub trait SubscribeTickersService: ExcService<SubscribeTickers> {
 
 impl<S> SubscribeTickersService for S where S: ExcService<SubscribeTickers> {}
 
-// /// Trada-Bid-Ask service.
-// pub trait TradeBidAskService:
-//     ExcService<SubscribeTrades> + ExcService<SubscribeBidAsk> + Clone + Send + 'static
-// where
-//     <Self as Service<SubscribeTrades>>::Future: Send,
-//     <Self as Service<SubscribeBidAsk>>::Future: Send,
-// {
-//     /// Convert into a [`SubscribeTickersService`].
-//     fn into_subscribe_tickers(self) -> TradeBidAsk<Self> {
-//         TradeBidAsk {
-//             svc: self,
-//             ignore_bid_ask_ts: true,
-//         }
-//     }
-
-//     /// Convert into a [`SubscribeTickersService`].
-//     fn into_subscribe_tickers_accpet_bid_ask_ts(self) -> TradeBidAsk<Self> {
-//         TradeBidAsk {
-//             svc: self,
-//             ignore_bid_ask_ts: false,
-//         }
-//     }
-// }
-
-// impl<S> TradeBidAskService for S
-// where
-//     S: ExcService<SubscribeTrades>,
-//     S: ExcService<SubscribeBidAsk>,
-//     <S as Service<SubscribeTrades>>::Future: Send,
-//     <S as Service<SubscribeBidAsk>>::Future: Send,
-//     S: Clone + Send + 'static,
-// {
-// }
-
 /// Trade-Bid-Ask service layer.
 pub struct TradeBidAskServiceLayer {
     ignore_bid_ask_ts: bool,
