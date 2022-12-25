@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::{binance::Binance, services::utils::ReconnectService, ExcExt, SubscribeTickersService};
+use exc::prelude::*;
 use futures::StreamExt;
 
 #[tokio::main]

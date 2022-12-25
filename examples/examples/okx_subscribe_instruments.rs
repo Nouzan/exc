@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc::SubscribeInstrumentsService;
+use exc::prelude::*;
 use futures::StreamExt;
 
 #[tokio::main]

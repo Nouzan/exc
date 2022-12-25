@@ -1,7 +1,6 @@
 use std::time::Duration;
 
-use exc::okx::Okx;
-use exc::SubscribeTickersService;
+use exc::prelude::*;
 use futures::StreamExt;
 use tracing_subscriber::prelude::*;
 

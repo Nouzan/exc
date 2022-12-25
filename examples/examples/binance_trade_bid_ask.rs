@@ -1,5 +1,4 @@
-use exc::binance::Binance;
-use exc::{SubscribeBidAskService, SubscribeTradesService};
+use exc::prelude::*;
 use futures::StreamExt;
 
 #[tokio::main]

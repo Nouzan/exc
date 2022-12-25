@@ -1,6 +1,5 @@
 use clap::Parser;
-use exc::binance::Binance;
-use exc::{types::Place, CheckOrderService, TradingService};
+use exc::prelude::*;
 use rust_decimal_macros::dec;
 
 #[derive(Parser)]

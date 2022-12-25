@@ -1,6 +1,5 @@
 use clap::Parser;
-use exc::binance::Binance;
-use exc::{types::SubscribeOrders, ExcExt, SubscribeOrdersService, SubscribeTickersService};
+use exc::{prelude::*, types::SubscribeOrders};
 use futures::StreamExt;
 use std::time::Duration;
 

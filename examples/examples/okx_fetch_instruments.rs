@@ -1,4 +1,4 @@
-use exc::{FetchInstrumentsService, Okx};
+use exc::prelude::*;
 use futures::StreamExt;
 
 #[tokio::main]

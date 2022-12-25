@@ -1,5 +1,4 @@
-use exc::okx::{websocket::Request, Okx};
-use exc_okx::OkxRequest;
+use exc_okx::{websocket::Request, Okx, OkxRequest};
 use std::{env::var, time::Duration};
 use tower::{Service, ServiceExt};
 

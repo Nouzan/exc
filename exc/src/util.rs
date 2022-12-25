@@ -1,10 +1,16 @@
 use exc_core::{
-    types::{SubscribeBidAsk, SubscribeTickers, SubscribeTrades},
+    types::{
+        QueryCandles, QueryFirstCandles, QueryLastCandles, SubscribeBidAsk, SubscribeTickers,
+        SubscribeTrades,
+    },
     Adaptor, Exc, ExcService, Request,
 };
 use tower::Layer;
 
-use crate::{TradeBidAsk, TradeBidAskServiceLayer};
+use crate::{
+    FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward, FetchCandlesForwardLayer,
+    TradeBidAsk, TradeBidAskServiceLayer,
+};
 
 pub use exc_core::util::*;
 
@@ -41,6 +47,68 @@ where
                 .accept_bid_ask_ts()
                 .layer(self.into_exc()),
         )
+    }
+
+    /// Convert into a [`FetchCandlesService`](crate::FetchCandlesService)
+    /// # Panic
+    /// Panic if `limit` is zero.
+    fn into_fetch_candles_forward(
+        self,
+        limit: usize,
+    ) -> Exc<FetchCandlesForward<Exc<C, Req>>, QueryCandles>
+    where
+        Req: Adaptor<QueryFirstCandles>,
+        C: Send,
+        C::Future: Send,
+    {
+        Exc::new(FetchCandlesForwardLayer::with_default_bound(limit).layer(self.into_exc()))
+    }
+
+    /// Convert into a [`FetchCandlesService`](crate::FetchCandlesService)
+    /// # Panic
+    /// Panic if `limit` is zero.
+    fn into_fetch_candles_forward_with_bound(
+        self,
+        limit: usize,
+        bound: usize,
+    ) -> Exc<FetchCandlesForward<Exc<C, Req>>, QueryCandles>
+    where
+        Req: Adaptor<QueryFirstCandles>,
+        C: Send,
+        C::Future: Send,
+    {
+        Exc::new(FetchCandlesForwardLayer::new(limit, bound).layer(self.into_exc()))
+    }
+
+    /// Convert into a [`FetchCandlesService`](crate::FetchCandlesService)
+    /// # Panic
+    /// Panic if `limit` is zero.
+    fn into_fetch_candles_backward(
+        self,
+        limit: usize,
+    ) -> Exc<FetchCandlesBackward<Exc<C, Req>>, QueryCandles>
+    where
+        Req: Adaptor<QueryLastCandles>,
+        C: Send,
+        C::Future: Send,
+    {
+        Exc::new(FetchCandlesBackwardLayer::with_default_bound(limit).layer(self.into_exc()))
+    }
+
+    /// Convert into a [`FetchCandlesService`](crate::FetchCandlesService)
+    /// # Panic
+    /// Panic if `limit` is zero.
+    fn into_fetch_candles_backward_with_bound(
+        self,
+        limit: usize,
+        bound: usize,
+    ) -> Exc<FetchCandlesBackward<Exc<C, Req>>, QueryCandles>
+    where
+        Req: Adaptor<QueryLastCandles>,
+        C: Send,
+        C::Future: Send,
+    {
+        Exc::new(FetchCandlesBackwardLayer::new(limit, bound).layer(self.into_exc()))
     }
 }
 

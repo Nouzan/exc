@@ -38,68 +38,6 @@ pub trait FetchCandlesService: ExcService<QueryCandles> {
 
 impl<S> FetchCandlesService for S where S: ExcService<QueryCandles> {}
 
-/// Fetch first candles service.
-pub trait FetchFirstCandlesService: ExcService<QueryFirstCandles> {
-    /// Convert into a [`FetchCandlesForward`] service.
-    /// # Panic
-    /// Panic if `limit` is zero.
-    fn into_fetch_candles_forward(self, limit: usize) -> FetchCandlesForward<Self>
-    where
-        Self: Sized + Send,
-        Self::Future: Send,
-    {
-        FetchCandlesForwardLayer::with_default_bound(limit).layer(self)
-    }
-
-    /// Convert into a [`FetchCandlesForward`] service, with bound set to the given.
-    /// # Panic
-    /// Panic if `limit` is zero.
-    fn into_fetch_candles_forward_with_bound(
-        self,
-        limit: usize,
-        bound: usize,
-    ) -> FetchCandlesForward<Self>
-    where
-        Self: Sized + Send,
-        Self::Future: Send,
-    {
-        FetchCandlesForwardLayer::new(limit, bound).layer(self)
-    }
-}
-
-impl<S> FetchFirstCandlesService for S where S: ExcService<QueryFirstCandles> {}
-
-/// Fetch first candles service.
-pub trait FetchLastCandlesService: ExcService<QueryLastCandles> {
-    /// Convert into a [`FetchCandlesBackward`] service.
-    /// # Panic
-    /// Panic if `limit` is zero.
-    fn into_fetch_candles_backward(self, limit: usize) -> FetchCandlesBackward<Self>
-    where
-        Self: Sized + Send,
-        Self::Future: Send,
-    {
-        FetchCandlesBackwardLayer::with_default_bound(limit).layer(self)
-    }
-
-    /// Convert into a [`FetchCandlesBackward`] service, with bound set to the given.
-    /// # Panic
-    /// Panic if `limit` is zero.
-    fn into_fetch_candles_backward_with_bound(
-        self,
-        limit: usize,
-        bound: usize,
-    ) -> FetchCandlesBackward<Self>
-    where
-        Self: Sized + Send,
-        Self::Future: Send,
-    {
-        FetchCandlesBackwardLayer::new(limit, bound).layer(self)
-    }
-}
-
-impl<S> FetchLastCandlesService for S where S: ExcService<QueryLastCandles> {}
-
 use std::num::NonZeroUsize;
 use tower::buffer::Buffer;
 
