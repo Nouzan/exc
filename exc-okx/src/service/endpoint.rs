@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     http::layer::OkxHttpApiLayer, key::OkxKey, websocket::Endpoint as WsEndpoint, OkxRequest,
 };
-use exc_core::{transport::http, Exc, ExchangeError, IntoExc};
+use exc_core::{transport::http, Exc, ExchangeError};
 use tower::ServiceBuilder;
 
 use super::Okx;
@@ -30,7 +30,7 @@ impl Default for Endpoint {
 impl Endpoint {
     /// Connect and convert into an exc service.
     pub fn connect_exc(&self) -> Exc<Okx, OkxRequest> {
-        self.connect().into_exc()
+        Exc::new(self.connect())
     }
 
     /// Connect.

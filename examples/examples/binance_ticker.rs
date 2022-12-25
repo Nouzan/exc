@@ -1,5 +1,4 @@
-use exc::binance::Binance;
-use exc::{SubscribeTickersService, TradeBidAskService};
+use exc::prelude::*;
 use futures::StreamExt;
 use std::time::Duration;
 

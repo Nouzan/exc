@@ -7,10 +7,10 @@ use std::{
 
 use clap::{clap_derive::ArgEnum, Parser};
 use exc::{
-    types::{OrderId, Place, SubscribeOrders},
-    CheckOrderService, Okx, SubscribeOrdersService, TradingService,
+    binance::SpotOptions,
+    prelude::*,
+    types::{OrderId, SubscribeOrders},
 };
-use exc_binance::{Binance, SpotOptions};
 use futures::StreamExt;
 use humantime::{format_duration, FormattedDuration};
 use rust_decimal::Decimal;

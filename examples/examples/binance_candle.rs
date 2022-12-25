@@ -1,8 +1,6 @@
-use std::time::Duration;
-
-use exc::binance::Binance;
-use exc::{types::Period, FetchCandlesService, FetchFirstCandlesService};
+use exc::prelude::*;
 use futures::StreamExt;
+use std::time::Duration;
 use time::{macros::datetime, UtcOffset};
 
 #[tokio::main]

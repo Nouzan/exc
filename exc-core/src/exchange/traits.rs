@@ -1,6 +1,6 @@
 use super::ExcMut;
 use crate::{Exc, ExchangeError};
-use tower::Service;
+use tower::{util::MapErr, Service};
 
 /// Request and Response binding.
 pub trait Request: Sized {
@@ -17,26 +17,27 @@ pub trait Adaptor<R: Request>: Request {
     fn into_response(resp: Self::Response) -> Result<R::Response, ExchangeError>;
 }
 
-impl<T, R> Adaptor<R> for T
+impl<T, R, E> Adaptor<R> for T
 where
     T: Request,
     R: Request,
-    T: TryFrom<R, Error = ExchangeError>,
-    T::Response: TryInto<R::Response, Error = ExchangeError>,
+    T: TryFrom<R, Error = E>,
+    T::Response: TryInto<R::Response, Error = E>,
+    ExchangeError: From<E>,
 {
     fn from_request(req: R) -> Result<Self, ExchangeError>
     where
         Self: Sized,
     {
-        Self::try_from(req)
+        Ok(Self::try_from(req)?)
     }
 
     fn into_response(resp: Self::Response) -> Result<<R as Request>::Response, ExchangeError> {
-        resp.try_into()
+        Ok(resp.try_into()?)
     }
 }
 
-/// Exc service,
+/// An alias of [`Service`] with the required bounds.
 pub trait ExcService<R>: Service<R, Response = R::Response, Error = ExchangeError>
 where
     R: Request,
@@ -44,21 +45,6 @@ where
     /// Create a mutable reference of itself.
     fn as_service_mut(&mut self) -> ExcMut<'_, Self> {
         ExcMut { inner: self }
-    }
-
-    #[cfg(feature = "retry")]
-    /// Create a retry service.
-    fn into_retry(
-        self,
-        max_duration: std::time::Duration,
-    ) -> tower::retry::Retry<crate::retry::Always, Self>
-    where
-        R: Clone,
-        Self: Sized + Clone,
-    {
-        tower::ServiceBuilder::default()
-            .retry(crate::retry::Always::with_max_duration(max_duration))
-            .service(self)
     }
 }
 
@@ -69,6 +55,8 @@ where
 {
 }
 
+type MapErrFn<E> = fn(E) -> ExchangeError;
+
 /// Service that can be converted into a [`Exc`].
 pub trait IntoExc<R>: Service<R, Response = R::Response>
 where
@@ -76,11 +64,11 @@ where
     R: Request,
 {
     /// Convert into a [`Exc`].
-    fn into_exc(self) -> Exc<Self, R>
+    fn into_exc(self) -> Exc<MapErr<Self, MapErrFn<Self::Error>>, R>
     where
         Self: Sized,
     {
-        Exc::new(self)
+        Exc::new(MapErr::new(self, Self::Error::into))
     }
 }
 

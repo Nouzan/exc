@@ -5,20 +5,43 @@
 /// Exc services.
 pub mod services;
 
+/// Util.
+pub mod util;
+
 pub use exc_core::*;
 pub use services::{
     book::SubscribeBidAskService,
     fetch_candles::{
         FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward,
-        FetchCandlesForwardLayer, FetchCandlesService, FetchFirstCandlesService,
+        FetchCandlesForwardLayer, FetchCandlesService,
     },
     instrument::{FetchInstrumentsService, SubscribeInstrumentsService},
-    subscribe_tickers::{
-        SubscribeTickersService, TradeBidAsk, TradeBidAskService, TradeBidAskServiceLayer,
-    },
+    subscribe_tickers::{SubscribeTickersService, TradeBidAsk, TradeBidAskServiceLayer},
     trade::SubscribeTradesService,
     trading::{CheckOrderService, SubscribeOrdersService, TradingService},
 };
+pub use util::ExcExt;
+
+/// Prelude.
+pub mod prelude {
+    pub use crate::services::{
+        book::SubscribeBidAskService,
+        fetch_candles::FetchCandlesService,
+        instrument::{FetchInstrumentsService, SubscribeInstrumentsService},
+        subscribe_tickers::SubscribeTickersService,
+        trade::SubscribeTradesService,
+        trading::{CheckOrderService, SubscribeOrdersService, TradingService},
+        utils::ReconnectService,
+    };
+    pub use crate::types::{Period, Place, PlaceOrderOptions};
+    pub use crate::util::ExcExt;
+
+    #[cfg(feature = "okx")]
+    pub use crate::Okx;
+
+    #[cfg(feature = "binance")]
+    pub use crate::Binance;
+}
 
 #[cfg(feature = "okx")]
 /// Okx exchange service.

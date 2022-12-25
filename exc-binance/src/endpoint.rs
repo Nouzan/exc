@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use exc_core::{transport::http::endpoint::Endpoint as HttpEndpoint, Exc, IntoExc};
+use exc_core::{transport::http::endpoint::Endpoint as HttpEndpoint, Exc};
 use tower::{buffer::Buffer, ready_cache::ReadyCache, util::Either, ServiceBuilder};
 
 use crate::{
@@ -95,7 +95,7 @@ impl Endpoint {
 
     /// Connect and convert into an exc service.
     pub fn connect_exc(&self) -> Exc<Binance, Request> {
-        self.connect().into_exc()
+        Exc::new(self.connect())
     }
 
     /// Connect to the binance service.

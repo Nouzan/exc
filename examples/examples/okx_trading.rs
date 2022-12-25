@@ -1,8 +1,4 @@
-use exc::{
-    okx::Okx,
-    types::{Place, PlaceOrderOptions},
-    {CheckOrderService, TradingService},
-};
+use exc::prelude::*;
 use rust_decimal_macros::dec;
 use std::{env::var, time::Duration};
 

@@ -1,9 +1,8 @@
 use std::ops::Bound;
 use std::time::Duration;
 
-use exc::services::fetch_candles::FetchLastCandlesService;
-use exc::types::candle::{Period, QueryCandles};
-use exc::Okx;
+use exc::prelude::*;
+use exc::types::QueryCandles;
 use futures::StreamExt;
 use time::macros::{datetime, offset};
 use tower::ServiceExt;
