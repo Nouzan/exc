@@ -1,5 +1,5 @@
 use exc_core::{
-    types::instrument::{FetchInstruments, InstrumentMeta},
+    types::instrument::{Attributes, FetchInstruments, InstrumentMeta},
     Adaptor, ExchangeError,
 };
 use futures::{stream, StreamExt};
@@ -33,18 +33,11 @@ impl Adaptor<FetchInstruments> for Request {
         match info {
             response::ExchangeInfo::UsdMarginFutures(info) => {
                 Ok(stream::iter(info.symbols.into_iter().filter_map(|symbol| {
-                    let inst = symbol
-                        .to_instrument()
-                        .map_err(|err| {
-                            tracing::error!(%err, "parse instrument error");
-                            err
-                        })
-                        .ok()?;
                     let mut price_tick = None;
                     let mut size_tick = None;
                     let mut min_size = None;
                     let mut min_value = None;
-                    for filter in symbol.filters {
+                    for filter in &symbol.filters {
                         if let Filter::Symbol(filter) = filter {
                             match filter {
                                 SymbolFilter::PriceFilter { tick_size, .. } => {
@@ -63,31 +56,35 @@ impl Adaptor<FetchInstruments> for Request {
                             }
                         }
                     }
-                    Some(Ok(InstrumentMeta {
-                        inst,
+                    let attrs = Attributes {
+                        reversed: false,
                         unit: Decimal::ONE,
                         price_tick: price_tick?,
                         size_tick: size_tick?,
                         min_size: min_size?,
-                        min_value: min_value?,
-                    }))
+                        min_value: min_value.copied()?,
+                    };
+                    Some(Ok(InstrumentMeta::new(
+                        &symbol.symbol.to_lowercase(),
+                        symbol
+                            .to_exc_symbol()
+                            .map_err(|err| {
+                                tracing::error!(%err, "cannot build exc symbol from {}", symbol.symbol);
+                                err
+                            })
+                            .ok()?,
+                        attrs,
+                    )))
                 }))
                 .boxed())
             }
             response::ExchangeInfo::Spot(info) => {
                 Ok(stream::iter(info.symbols.into_iter().filter_map(|symbol| {
-                    let inst = symbol
-                        .to_instrument()
-                        .map_err(|err| {
-                            tracing::error!(%err, "parse instrument error");
-                            err
-                        })
-                        .ok()?;
                     let mut price_tick = None;
                     let mut size_tick = None;
                     let mut min_size = None;
                     let mut min_value = None;
-                    for filter in symbol.filters {
+                    for filter in &symbol.filters {
                         if let Filter::Symbol(filter) = filter {
                             match filter {
                                 SymbolFilter::PriceFilter { tick_size, .. } => {
@@ -107,14 +104,25 @@ impl Adaptor<FetchInstruments> for Request {
                         }
                     }
                     tracing::debug!("{price_tick:?} {size_tick:?} {min_size:?} {min_value:?}");
-                    Some(Ok(InstrumentMeta {
-                        inst,
+                    let attrs = Attributes {
+                        reversed: false,
                         unit: Decimal::ONE,
                         price_tick: price_tick?,
                         size_tick: size_tick?,
                         min_size: min_size?,
                         min_value: min_value?,
-                    }))
+                    };
+                    Some(Ok(InstrumentMeta::new(
+                        &symbol.symbol.to_lowercase(),
+                        symbol
+                            .to_exc_symbol()
+                            .map_err(|err| {
+                                tracing::error!(%err, "cannot build exc symbol from {}", symbol.symbol);
+                                err
+                            })
+                            .ok()?,
+                        attrs,
+                    )))
                 }))
                 .boxed())
             }

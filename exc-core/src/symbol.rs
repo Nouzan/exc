@@ -101,6 +101,24 @@ impl ExcSymbol {
         ))
     }
 
+    #[inline]
+    fn parse_date(s: &str) -> Option<Date> {
+        let format = Self::date_format();
+        Date::parse(&format!("20{}", s), &format).ok()
+    }
+
+    /// Create a symbol for futures with the given date in string.
+    /// Return `None` if `date` cannot be parsed by the date format.
+    pub fn futures_with_str(
+        exchange: &str,
+        base: &Asset,
+        quote: &Asset,
+        date: &str,
+    ) -> Option<Self> {
+        let date = Self::parse_date(date)?;
+        Self::futures(exchange, base, quote, date)
+    }
+
     /// Create a symbol for put options.
     /// Return `None` if `date` cannot be parsed by the date format.
     pub fn put(
@@ -145,6 +163,39 @@ impl ExcSymbol {
         ))
     }
 
+    #[inline]
+    fn parse_price(s: &str) -> Option<Decimal> {
+        Decimal::from_str_exact(s).ok()
+    }
+
+    /// Create a symbol for put options.
+    /// Return `None` if `date` cannot be parsed by the date format.
+    pub fn put_with_str(
+        exchange: &str,
+        base: &Asset,
+        quote: &Asset,
+        date: &str,
+        price: &str,
+    ) -> Option<Self> {
+        let date = Self::parse_date(date)?;
+        let price = Self::parse_price(price)?;
+        Self::put(exchange, base, quote, date, price)
+    }
+
+    /// Create a symbol for call options.
+    /// Return `None` if `date` cannot be parsed by the date format.
+    pub fn call_with_str(
+        exchange: &str,
+        base: &Asset,
+        quote: &Asset,
+        date: &str,
+        price: &str,
+    ) -> Option<Self> {
+        let date = Self::parse_date(date)?;
+        let price = Self::parse_price(price)?;
+        Self::call(exchange, base, quote, date, price)
+    }
+
     /// From symbol.
     pub fn from_symbol(symbol: &Symbol) -> Option<Self> {
         if symbol.is_spot() {
@@ -157,8 +208,7 @@ impl ExcSymbol {
                 let (ty, extra) = extra.split_at(1);
                 match ty {
                     Self::FUTURES => {
-                        let format = Self::date_format();
-                        Date::parse(&format!("20{}", extra), &format).ok()?;
+                        Self::parse_date(extra)?;
                     }
                     Self::PERPETUAL => {}
                     Self::OPTIONS => {
@@ -166,10 +216,9 @@ impl ExcSymbol {
                             return None;
                         }
                         let (date, opts) = extra.split_at(6);
-                        let format = Self::date_format();
-                        Date::parse(&format!("20{}", date), &format).ok()?;
+                        Self::parse_date(date)?;
                         let (opts, price) = opts.split_at(1);
-                        Decimal::from_str_exact(price).ok()?;
+                        Self::parse_price(price)?;
                         match opts {
                             Self::PUT => {}
                             Self::CALL => {}

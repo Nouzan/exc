@@ -1,4 +1,8 @@
-use exc_core::{types::instrument::InstrumentMeta, Asset, Instrument, Str};
+use exc_core::{
+    symbol::ExcSymbol,
+    types::instrument::{Attributes, InstrumentMeta},
+    Asset, Str,
+};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr, NoneAsEmptyString};
@@ -6,17 +10,8 @@ use time::OffsetDateTime;
 
 use crate::error::OkxError;
 
-/// Prefix of margin symbols.
-pub const MARGIN: &str = "MARGIN";
-
-/// Prefix of futures symbols.
-pub const FUTURES: &str = "FUTURES";
-
-/// Prefix of swaps (perpetual contracts) symbols.
-pub const SWAP: &str = "SWAP";
-
-/// Prefix of options symbols.
-pub const OPTIONS: &str = "OPTIONS";
+/// Exchange tag.
+pub const OKX: &str = "okx";
 
 /// Okx Instrument Meta.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -80,49 +75,58 @@ impl OkxInstrumentMeta {
         }
     }
 
-    /// Convert to an [`Instrument`].
-    pub fn to_instrument(&self) -> Result<Instrument, OkxError> {
-        Ok(match self {
-            Self::Spot(meta) => Instrument::spot(&meta.base_ccy, &meta.quote_ccy),
-            Self::Margin(meta) => Instrument::derivative(
-                MARGIN,
-                &meta.common.inst_id,
-                &meta.base_ccy,
-                &meta.quote_ccy,
-            )?,
+    /// Is reversed.
+    pub fn is_reversed(&self) -> bool {
+        match self {
+            Self::Spot(_) => false,
+            Self::Margin(_) => false,
+            Self::Futures(FuturesMeta { contract, .. }) => contract.ct_val_ccy == "USD",
+            Self::Swap(SwapMeta { contract, .. }) => contract.ct_val_ccy == "USD",
+            Self::Option(_) => false,
+        }
+    }
+
+    /// Convert to an [`ExcSymbol`].
+    pub fn to_exc_symbol(&self) -> Result<ExcSymbol, OkxError> {
+        match self {
+            Self::Spot(meta) => Some(ExcSymbol::spot(&meta.base_ccy, &meta.quote_ccy)),
+            Self::Margin(meta) => Some(ExcSymbol::margin(OKX, &meta.base_ccy, &meta.quote_ccy)),
             Self::Futures(FuturesMeta {
-                contract,
-                common,
-                ct_type,
-                ..
-            }) => Instrument::derivative(
-                FUTURES,
-                &common.inst_id,
+                contract, common, ..
+            }) => common.inst_id.split('-').nth(2).and_then(|date| {
+                ExcSymbol::futures_with_str(OKX, &contract.ct_val_ccy, &contract.settle_ccy, date)
+            }),
+            Self::Swap(SwapMeta { contract, .. }) => Some(ExcSymbol::perpetual(
+                OKX,
                 &contract.ct_val_ccy,
                 &contract.settle_ccy,
-            )?
-            .prefer_reversed(matches!(ct_type, ContractType::Inverse)),
-            Self::Swap(SwapMeta {
-                contract,
-                common,
-                ct_type,
-                ..
-            }) => Instrument::derivative(
-                SWAP,
-                &common.inst_id,
-                &contract.ct_val_ccy,
-                &contract.settle_ccy,
-            )?
-            .prefer_reversed(matches!(ct_type, ContractType::Inverse)),
+            )),
             Self::Option(OptionMeta {
                 contract, common, ..
-            }) => Instrument::derivative(
-                OPTIONS,
-                &common.inst_id,
-                &contract.ct_val_ccy,
-                &contract.settle_ccy,
-            )?,
-        })
+            }) => {
+                let mut parts = common.inst_id.split('-').skip(2);
+                let date = parts.next();
+                let price = parts.next();
+                parts.next().and_then(|ty| match ty {
+                    "c" | "C" => ExcSymbol::call_with_str(
+                        OKX,
+                        &contract.ct_val_ccy,
+                        &contract.settle_ccy,
+                        date?,
+                        price?,
+                    ),
+                    "p" | "P" => ExcSymbol::put_with_str(
+                        OKX,
+                        &contract.ct_val_ccy,
+                        &contract.settle_ccy,
+                        date?,
+                        price?,
+                    ),
+                    _ => None,
+                })
+            }
+        }
+        .ok_or(OkxError::FailedToBuildExcSymbol)
     }
 }
 
@@ -343,16 +347,19 @@ impl TryFrom<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
         } else {
             Decimal::ONE
         };
-        let price_tick = meta.common().tick_sz;
-        let size_tick = meta.common().lot_sz;
-        let min_size = meta.common().min_sz;
-        Ok(InstrumentMeta {
-            inst: meta.to_instrument()?,
+        let common = meta.common();
+        let attrs = Attributes {
+            reversed: meta.is_reversed(),
             unit,
-            price_tick,
-            size_tick,
-            min_size,
+            price_tick: common.tick_sz,
+            size_tick: common.lot_sz,
+            min_size: common.min_sz,
             min_value: Decimal::ZERO,
-        })
+        };
+        Ok(InstrumentMeta::new(
+            &common.inst_id,
+            meta.to_exc_symbol()?,
+            attrs,
+        ))
     }
 }
