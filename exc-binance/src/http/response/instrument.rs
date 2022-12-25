@@ -1,12 +1,15 @@
 #![allow(dead_code)]
 
-use exc_core::{Asset, Instrument, Str};
+use exc_core::{symbol::ExcSymbol, Asset, Str};
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
 use crate::http::error::RestError;
 
 use super::Data;
+
+/// Exhcange tag for binance.
+pub const BINANCE: &str = "BINANCE";
 
 /// Exchange info.
 #[derive(Debug, Deserialize)]
@@ -72,8 +75,8 @@ pub(crate) struct SpotSymbol {
 }
 
 impl SpotSymbol {
-    pub(crate) fn to_instrument(&self) -> Result<Instrument, RestError> {
-        Ok(Instrument::spot(&self.base_asset, &self.quote_asset))
+    pub(crate) fn to_exc_symbol(&self) -> Result<ExcSymbol, RestError> {
+        Ok(ExcSymbol::spot(&self.base_asset, &self.quote_asset))
     }
 }
 
@@ -143,14 +146,26 @@ pub(crate) struct UFSymbol {
 }
 
 impl UFSymbol {
-    pub(crate) fn to_instrument(&self) -> Result<Instrument, RestError> {
-        let name = self.symbol.to_lowercase();
-        Ok(Instrument::derivative(
-            &self.contract_type.to_prefix(),
-            &name,
-            &self.base_asset,
-            &self.quote_asset,
-        )?)
+    pub(crate) fn to_exc_symbol(&self) -> Result<ExcSymbol, RestError> {
+        match &self.contract_type {
+            ContractType::Known(ty) => match ty {
+                KnownContractType::Perpetual => Ok(ExcSymbol::perpetual(
+                    BINANCE,
+                    &self.base_asset,
+                    &self.quote_asset,
+                )),
+                KnownContractType::NextQuarter | KnownContractType::CurrentQuarter => {
+                    let date = self
+                        .symbol
+                        .split('_')
+                        .last()
+                        .ok_or(RestError::MissingDateForFutures)?;
+                    ExcSymbol::futures_with_str(BINANCE, &self.base_asset, &self.quote_asset, date)
+                        .ok_or(RestError::FailedToBuildExcSymbol)
+                }
+            },
+            ContractType::Unknwon(ty) => Err(RestError::UnknownContractType(ty.clone())),
+        }
     }
 }
 

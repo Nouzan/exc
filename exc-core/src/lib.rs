@@ -2,6 +2,9 @@
 
 #![deny(missing_docs)]
 
+/// Symbol.
+pub mod symbol;
+
 /// Exchange.
 pub mod exchange;
 

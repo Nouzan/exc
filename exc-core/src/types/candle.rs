@@ -2,12 +2,12 @@ use derive_more::Display;
 use futures::stream::BoxStream;
 pub use indicator::{window::mode::tumbling::period::PeriodKind, Period};
 use indicator::{Tick, TickValue, Tickable};
+use positions::prelude::Str;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::{
     fmt,
     ops::{Bound, RangeBounds},
-    sync::Arc,
 };
 use time::OffsetDateTime;
 
@@ -20,7 +20,7 @@ pub type CandleStream = BoxStream<'static, Result<Candle, ExchangeError>>;
 #[derive(Debug, Clone)]
 pub struct QueryCandles {
     /// Instrument.
-    pub inst: Arc<String>,
+    pub inst: Str,
     /// Period.
     pub period: Period,
     /// Start.
@@ -64,7 +64,6 @@ impl QueryCandles {
     where
         R: RangeBounds<OffsetDateTime>,
     {
-        let inst = Arc::new(inst.to_string());
         let offset = period.utc_offset();
         let start = match range.start_bound() {
             Bound::Unbounded => Bound::Unbounded,
@@ -77,7 +76,7 @@ impl QueryCandles {
             Bound::Excluded(&t) => Bound::Excluded(t.to_offset(offset)),
         };
         Self {
-            inst,
+            inst: Str::new(inst),
             period,
             start,
             end,

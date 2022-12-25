@@ -68,6 +68,7 @@ optional = true
 # dev
 [dev-dependencies]
 exc = { workspace = true }
+rust_decimal_macros = { workspace = true }
 
 [package.metadata.docs.rs]
 all-features = true

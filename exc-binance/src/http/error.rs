@@ -49,6 +49,15 @@ pub enum RestError {
     /// Parse Symbol Error.
     #[error("parse symbol error: {0}")]
     ParseSymbol(#[from] exc_core::ParseSymbolError),
+    /// Failed to build exc symbol.
+    #[error("failed to build exc symbol")]
+    FailedToBuildExcSymbol,
+    /// Missing date for futures.
+    #[error("missing date for futures")]
+    MissingDateForFutures,
+    /// Unknown contract type.
+    #[error("unknown contract type: {0:?}")]
+    UnknownContractType(String),
 }
 
 impl RestError {

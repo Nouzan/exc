@@ -85,6 +85,9 @@ pub enum OkxError {
     /// Parse Instrument Error.
     #[error("parse symbol error: {0}")]
     ParseSymbol(#[from] exc_core::ParseSymbolError),
+    /// Failed to build exc symbol.
+    #[error("failed to build exc symbol")]
+    FailedToBuildExcSymbol,
 }
 
 impl OkxError {
