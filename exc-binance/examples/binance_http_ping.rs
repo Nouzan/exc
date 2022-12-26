@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use exc::transport::http::endpoint::Endpoint;
+use exc::core::transport::http::endpoint::Endpoint;
 use exc_binance::http::{
     layer::BinanceRestApiLayer,
     request::{utils::Ping, RestRequest},

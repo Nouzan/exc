@@ -1,7 +1,7 @@
 use exc_core::Str;
 use tower::{util::Oneshot, ServiceExt};
 
-use crate::types::instrument::{FetchInstruments, SubscribeInstruments};
+use crate::core::types::instrument::{FetchInstruments, SubscribeInstruments};
 
 use crate::ExcService;
 

@@ -8,8 +8,8 @@ use std::{
 use clap::{clap_derive::ArgEnum, Parser};
 use exc::{
     binance::SpotOptions,
+    core::types::{OrderId, SubscribeOrders},
     prelude::*,
-    types::{OrderId, SubscribeOrders},
 };
 use futures::StreamExt;
 use humantime::{format_duration, FormattedDuration};

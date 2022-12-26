@@ -1,5 +1,5 @@
 use clap::Parser;
-use exc::{prelude::*, types::SubscribeOrders};
+use exc::{core::types::SubscribeOrders, prelude::*};
 use futures::StreamExt;
 use std::time::Duration;
 

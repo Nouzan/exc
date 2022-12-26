@@ -1,6 +1,6 @@
 use tower::{util::Oneshot, ServiceExt};
 
-use crate::types::trade::SubscribeTrades;
+use crate::core::types::trade::SubscribeTrades;
 
 use crate::ExcService;
 

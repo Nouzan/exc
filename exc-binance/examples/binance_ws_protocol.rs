@@ -20,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
                 .unwrap_or_else(|_| "error,exc_binance=trace,binance_ws_protocol=debug".into()),
         ))
         .init();
-    let ws = exc::transport::websocket::connector::WsConnector::default()
+    let ws = exc::core::transport::websocket::connector::WsConnector::default()
         .oneshot(Uri::from_static(
             "wss://fstream.binance.com/ws/bnbusdt@aggTrade",
         ))

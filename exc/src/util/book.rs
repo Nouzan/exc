@@ -1,6 +1,6 @@
 use tower::{util::Oneshot, ServiceExt};
 
-use crate::types::SubscribeBidAsk;
+use crate::core::types::SubscribeBidAsk;
 
 use crate::ExcService;
 

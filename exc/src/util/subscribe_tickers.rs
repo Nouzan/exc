@@ -8,7 +8,7 @@ use time::OffsetDateTime;
 use tower::{util::Oneshot, Layer, Service, ServiceExt};
 
 use crate::{
-    types::{
+    core::types::{
         ticker::{SubscribeTickers, Ticker, TickerStream},
         SubscribeBidAsk, SubscribeTrades,
     },

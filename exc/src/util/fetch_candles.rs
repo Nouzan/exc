@@ -1,20 +1,20 @@
 use std::ops::{Bound, RangeBounds};
 
-use crate::types::Period;
+use crate::core::types::Period;
 use async_stream::try_stream;
 use futures::{future::BoxFuture, FutureExt, StreamExt};
 use time::OffsetDateTime;
 use tower::{util::Oneshot, Layer, Service, ServiceExt};
 
 use crate::{
-    types::{
+    core::types::{
         candle::{CandleStream, QueryCandles, QueryLastCandles},
         QueryFirstCandles,
     },
     ExchangeError,
 };
 
-use crate::{ExcMut, ExcService};
+use crate::{core::ExcMut, ExcService};
 
 /// Fetch candles service.
 pub trait FetchCandlesService: ExcService<QueryCandles> {

@@ -1,8 +1,8 @@
 use std::ops::Bound;
 use std::time::Duration;
 
+use exc::core::types::QueryCandles;
 use exc::prelude::*;
-use exc::types::QueryCandles;
 use futures::StreamExt;
 use time::macros::{datetime, offset};
 use tower::ServiceExt;

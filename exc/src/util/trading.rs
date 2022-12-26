@@ -5,7 +5,7 @@ use exc_core::{
 use futures::{future::TryFlatten, TryFutureExt};
 use tower::{util::Oneshot, ServiceExt};
 
-use crate::types::trading::{CancelOrder, GetOrder, OrderId, Place, PlaceOrder};
+use crate::core::types::trading::{CancelOrder, GetOrder, OrderId, Place, PlaceOrder};
 
 use crate::ExcService;
 

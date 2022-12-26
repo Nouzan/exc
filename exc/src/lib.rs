@@ -2,10 +2,11 @@
 
 #![deny(missing_docs)]
 
-/// Utils.
+/// Utils for using low-level apis ([`exc::core`]).
 pub mod util;
 
-pub use exc_core::*;
+pub use self::core::{Adaptor, Exc, ExcService, ExchangeError, IntoExc};
+pub use exc_core as core;
 pub use util::{
     book::SubscribeBidAskService,
     fetch_candles::FetchCandlesService,
@@ -18,7 +19,10 @@ pub use util::{
 
 /// Prelude.
 pub mod prelude {
-    pub use crate::types::{Period, Place, PlaceOrderOptions};
+    pub use crate::core::{
+        types::{Period, Place, PlaceOrderOptions},
+        Adaptor, Exc, ExcService, ExchangeError,
+    };
     pub use crate::util::{
         book::SubscribeBidAskService,
         fetch_candles::FetchCandlesService,
