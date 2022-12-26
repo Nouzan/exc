@@ -1,40 +1,34 @@
-//! Exc: Abstractions for exchanges.
+//! Exc: Abstractions for exchanges (high-level apis).
 
 #![deny(missing_docs)]
 
-/// Exc services.
-pub mod services;
-
-/// Util.
+/// Utils.
 pub mod util;
 
 pub use exc_core::*;
-pub use services::{
+pub use util::{
     book::SubscribeBidAskService,
-    fetch_candles::{
-        FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward,
-        FetchCandlesForwardLayer, FetchCandlesService,
-    },
+    fetch_candles::FetchCandlesService,
     instrument::{FetchInstrumentsService, SubscribeInstrumentsService},
-    subscribe_tickers::{SubscribeTickersService, TradeBidAsk, TradeBidAskServiceLayer},
+    subscribe_tickers::SubscribeTickersService,
     trade::SubscribeTradesService,
     trading::{CheckOrderService, SubscribeOrdersService, TradingService},
+    ExcExt,
 };
-pub use util::ExcExt;
 
 /// Prelude.
 pub mod prelude {
-    pub use crate::services::{
+    pub use crate::types::{Period, Place, PlaceOrderOptions};
+    pub use crate::util::{
         book::SubscribeBidAskService,
         fetch_candles::FetchCandlesService,
         instrument::{FetchInstrumentsService, SubscribeInstrumentsService},
+        reconnect::ReconnectService,
         subscribe_tickers::SubscribeTickersService,
         trade::SubscribeTradesService,
         trading::{CheckOrderService, SubscribeOrdersService, TradingService},
-        utils::ReconnectService,
+        ExcExt,
     };
-    pub use crate::types::{Period, Place, PlaceOrderOptions};
-    pub use crate::util::ExcExt;
 
     #[cfg(feature = "okx")]
     pub use crate::Okx;

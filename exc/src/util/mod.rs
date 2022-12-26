@@ -1,3 +1,24 @@
+/// Subscribe tickers.
+pub mod subscribe_tickers;
+
+/// Trade.
+pub mod trade;
+
+/// Book.
+pub mod book;
+
+/// Subscribe instruments.
+pub mod instrument;
+
+/// Fetch candles.
+pub mod fetch_candles;
+
+/// Trading.
+pub mod trading;
+
+/// Reconnect.
+pub mod reconnect;
+
 use exc_core::{
     types::{
         QueryCandles, QueryFirstCandles, QueryLastCandles, SubscribeBidAsk, SubscribeTickers,
@@ -7,9 +28,12 @@ use exc_core::{
 };
 use tower::Layer;
 
-use crate::{
-    FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward, FetchCandlesForwardLayer,
-    TradeBidAsk, TradeBidAskServiceLayer,
+use self::{
+    fetch_candles::{
+        FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward,
+        FetchCandlesForwardLayer,
+    },
+    subscribe_tickers::{TradeBidAsk, TradeBidAskServiceLayer},
 };
 
 pub use exc_core::util::*;

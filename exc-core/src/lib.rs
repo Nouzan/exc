@@ -1,4 +1,4 @@
-//! Exc-core: Abstractions for exchanges (the core part).
+//! Exc-core: Abstractions for exchanges (low-level apis).
 
 #![deny(missing_docs)]
 
