@@ -4,9 +4,9 @@ use exc_core::{
     types::instrument::{FetchInstruments, InstrumentMeta, SubscribeInstruments},
     ExchangeError, Str,
 };
-use futures::StreamExt;
+use futures::{stream, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
-use tower::{Service, ServiceExt};
+use tower::ServiceExt;
 
 use crate::types::instrument::GetInstrument;
 
@@ -23,15 +23,16 @@ impl State {
     pub(super) async fn init(
         self: Arc<Self>,
         mut fetch: FetchInstrumentSvc,
-        tag: Str,
+        tags: Vec<Str>,
     ) -> Result<(), ExchangeError> {
         let mut finished = false;
         while !finished {
             let mut stream = fetch
                 .ready()
                 .await?
-                .call(FetchInstruments { tag: tag.clone() })
-                .await?;
+                .call_all(stream::iter(tags.iter().cloned()).map(|tag| FetchInstruments { tag }))
+                .boxed()
+                .try_flatten();
             while let Some(meta) = stream.next().await {
                 match meta {
                     Ok(meta) => {
@@ -59,14 +60,17 @@ impl State {
     pub(super) async fn watch_instruments(
         self: Arc<Self>,
         mut svc: SubscribeInstrumentSvc,
-        tag: Str,
+        tags: Vec<Str>,
     ) -> Result<(), ExchangeError> {
         loop {
             let mut stream = svc
                 .ready()
                 .await?
-                .call(SubscribeInstruments { tag: tag.clone() })
-                .await?;
+                .call_all(stream::iter(
+                    tags.iter().cloned().map(|tag| SubscribeInstruments { tag }),
+                ))
+                .boxed()
+                .try_flatten();
             while let Some(meta) = stream.next().await {
                 match meta {
                     Ok(meta) => {

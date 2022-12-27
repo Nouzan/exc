@@ -1,4 +1,4 @@
-pub use self::service::{Market, MarketLayer};
+pub use self::service::{options::MarketOptions, Market, MarketLayer};
 
 /// The market service.
 pub mod service;

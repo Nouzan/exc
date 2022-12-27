@@ -14,6 +14,7 @@ use tower::{util::BoxService, Layer, Service, ServiceBuilder, ServiceExt};
 
 use self::{state::State, worker::Worker};
 
+use super::MarketOptions;
 use super::{
     request::{Kind, Request},
     response::Response,
@@ -31,6 +32,9 @@ type FetchInstrumentSvc =
 mod state;
 mod worker;
 
+/// Options.
+pub mod options;
+
 #[derive(Default)]
 enum ServiceState {
     Init(Worker),
@@ -47,10 +51,10 @@ struct MarketService {
 }
 
 impl MarketService {
-    fn new(inst: SubscribeInstrumentSvc, fetch: FetchInstrumentSvc) -> Self {
+    fn new(opts: &MarketOptions, inst: SubscribeInstrumentSvc, fetch: FetchInstrumentSvc) -> Self {
         let state = Arc::default();
         Self {
-            svc_state: ServiceState::Init(Worker::new(&state, inst, fetch)),
+            svc_state: ServiceState::Init(Worker::new(&state, opts, inst, fetch)),
             state,
         }
     }
@@ -158,16 +162,23 @@ impl Service<Request> for Market {
 /// Market Service Layer.
 #[derive(Debug, Clone)]
 pub struct MarketLayer<Req> {
-    bound: usize,
+    opts: MarketOptions,
     _req: PhantomData<fn() -> Req>,
+}
+
+impl<Req> MarketLayer<Req> {
+    /// Create a market layer with the given options.
+    pub fn with_options(opts: MarketOptions) -> Self {
+        Self {
+            opts,
+            _req: PhantomData,
+        }
+    }
 }
 
 impl<Req> Default for MarketLayer<Req> {
     fn default() -> Self {
-        Self {
-            bound: 1024,
-            _req: PhantomData,
-        }
+        Self::with_options(MarketOptions::default())
     }
 }
 
@@ -190,9 +201,9 @@ where
             .rate_limit(1, Duration::from_secs(1))
             .service(svc)
             .boxed();
-        let svc = MarketService::new(inst, fetch);
+        let svc = MarketService::new(&self.opts, inst, fetch);
         let inner = ServiceBuilder::default()
-            .buffer(self.bound)
+            .buffer(self.opts.buffer_bound)
             .service(svc)
             .map_err(|err| ExchangeError::from(err).flatten())
             .boxed_clone();
