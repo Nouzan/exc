@@ -31,5 +31,15 @@ async fn main() -> anyhow::Result<()> {
             println!("{meta}");
         }
     }
+    for symbol in ["BTC-USDT", "P:BTC-USDT", "F221230:BTC-USDT"] {
+        let symbol = symbol.parse()?;
+        let meta: Option<Arc<InstrumentMeta<Decimal>>> = market
+            .request(GetInstrument::with_symbol(&symbol).into())
+            .await?
+            .try_into()?;
+        if let Some(meta) = meta {
+            println!("{meta}");
+        }
+    }
     Ok(())
 }
