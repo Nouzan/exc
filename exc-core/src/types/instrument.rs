@@ -80,6 +80,11 @@ impl<Num> InstrumentMeta<Num> {
         &self.name
     }
 
+    /// Get name of inner type.
+    pub fn smol_name(&self) -> &Str {
+        &self.name
+    }
+
     /// Get instrument.
     pub fn instrument(&self) -> &Instrument {
         &self.inst

@@ -20,6 +20,7 @@ http = ["exc-core/http"]
 retry = ["exc-core/retry"]
 
 [dependencies]
+anyhow = { workspace = true }
 exc-core = { workspace = true }
 tracing = { workspace = true }
 tower = { workspace = true }
@@ -30,6 +31,7 @@ time = { workspace = true, features = ["serde-well-known", "macros"] }
 tokio-stream = { workspace = true }
 rust_decimal = { workspace = true }
 either = { workspace = true }
+tokio = { workspace = true, features = ["rt", "sync"] }
 
 exc-okx = { workspace = true, optional = true }
 exc-binance = { workspace = true, optional = true }
