@@ -10,9 +10,6 @@ use time::OffsetDateTime;
 
 use crate::error::OkxError;
 
-/// Exchange tag.
-pub const OKX: &str = "okx";
-
 /// Okx Instrument Meta.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "instType", rename_all = "UPPERCASE")]
@@ -90,14 +87,13 @@ impl OkxInstrumentMeta {
     pub fn to_exc_symbol(&self) -> Result<ExcSymbol, OkxError> {
         match self {
             Self::Spot(meta) => Some(ExcSymbol::spot(&meta.base_ccy, &meta.quote_ccy)),
-            Self::Margin(meta) => Some(ExcSymbol::margin(OKX, &meta.base_ccy, &meta.quote_ccy)),
+            Self::Margin(meta) => Some(ExcSymbol::margin(&meta.base_ccy, &meta.quote_ccy)),
             Self::Futures(FuturesMeta {
                 contract, common, ..
             }) => common.inst_id.split('-').nth(2).and_then(|date| {
-                ExcSymbol::futures_with_str(OKX, &contract.ct_val_ccy, &contract.settle_ccy, date)
+                ExcSymbol::futures_with_str(&contract.ct_val_ccy, &contract.settle_ccy, date)
             }),
             Self::Swap(SwapMeta { contract, .. }) => Some(ExcSymbol::perpetual(
-                OKX,
                 &contract.ct_val_ccy,
                 &contract.settle_ccy,
             )),
@@ -109,14 +105,12 @@ impl OkxInstrumentMeta {
                 let price = parts.next();
                 parts.next().and_then(|ty| match ty {
                     "c" | "C" => ExcSymbol::call_with_str(
-                        OKX,
                         &contract.ct_val_ccy,
                         &contract.settle_ccy,
                         date?,
                         price?,
                     ),
                     "p" | "P" => ExcSymbol::put_with_str(
-                        OKX,
                         &contract.ct_val_ccy,
                         &contract.settle_ccy,
                         date?,

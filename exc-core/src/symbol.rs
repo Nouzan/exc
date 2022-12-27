@@ -66,38 +66,34 @@ impl ExcSymbol {
         format_description!("[year repr:last_two][month][day]")
     }
 
-    /// Exchange.
-    pub fn exchange(&self) -> Option<&str> {
-        let (prefix, _) = self.0.as_derivative()?;
-        Some(prefix)
-    }
-
     /// Create a symbol for spot.
     pub fn spot(base: &Asset, quote: &Asset) -> Self {
         Self(Symbol::spot(base, quote))
     }
 
     /// Create a symbol for margin.
-    pub fn margin(exchange: &str, base: &Asset, quote: &Asset) -> Self {
-        Self(Symbol::derivative(exchange, &format!("{base}-{quote}")).expect("must be valid"))
+    pub fn margin(base: &Asset, quote: &Asset) -> Self {
+        Self(Symbol::derivative("", &format!("{base}-{quote}")).expect("must be valid"))
     }
 
     /// Create a symbol for perpetual.
-    pub fn perpetual(exchange: &str, base: &Asset, quote: &Asset) -> Self {
+    pub fn perpetual(base: &Asset, quote: &Asset) -> Self {
         Self(
-            Symbol::derivative(exchange, &format!("{base}-{quote}-{}", Self::PERPETUAL))
-                .expect("must be valid"),
+            Symbol::derivative(Self::PERPETUAL, &format!("{base}-{quote}")).expect("must be valid"),
         )
     }
 
     /// Create a symbol for futures.
     /// Return `None` if `date` cannot be parsed by the date format.
-    pub fn futures(exchange: &str, base: &Asset, quote: &Asset, date: Date) -> Option<Self> {
+    pub fn futures(base: &Asset, quote: &Asset, date: Date) -> Option<Self> {
         let format = Self::formatting_date_format();
         let date = date.format(&format).ok()?;
         Some(Self(
-            Symbol::derivative(exchange, &format!("{base}-{quote}-{}{date}", Self::FUTURES))
-                .expect("must be valid"),
+            Symbol::derivative(
+                &format!("{}{date}", Self::FUTURES),
+                &format!("{base}-{quote}"),
+            )
+            .expect("must be valid"),
         ))
     }
 
@@ -109,31 +105,20 @@ impl ExcSymbol {
 
     /// Create a symbol for futures with the given date in string.
     /// Return `None` if `date` cannot be parsed by the date format.
-    pub fn futures_with_str(
-        exchange: &str,
-        base: &Asset,
-        quote: &Asset,
-        date: &str,
-    ) -> Option<Self> {
+    pub fn futures_with_str(base: &Asset, quote: &Asset, date: &str) -> Option<Self> {
         let date = Self::parse_date(date)?;
-        Self::futures(exchange, base, quote, date)
+        Self::futures(base, quote, date)
     }
 
     /// Create a symbol for put options.
     /// Return `None` if `date` cannot be parsed by the date format.
-    pub fn put(
-        exchange: &str,
-        base: &Asset,
-        quote: &Asset,
-        date: Date,
-        price: Decimal,
-    ) -> Option<Self> {
+    pub fn put(base: &Asset, quote: &Asset, date: Date, price: Decimal) -> Option<Self> {
         let format = Self::formatting_date_format();
         let date = date.format(&format).ok()?;
         Some(Self(
             Symbol::derivative(
-                exchange,
-                &format!("{base}-{quote}-{}{date}{}{price}", Self::OPTIONS, Self::PUT),
+                &format!("{}{date}{}{price}", Self::OPTIONS, Self::PUT),
+                &format!("{base}-{quote}"),
             )
             .expect("must be valid"),
         ))
@@ -141,23 +126,13 @@ impl ExcSymbol {
 
     /// Create a symbol for call options.
     /// Return `None` if `date` cannot be parsed by the date format.
-    pub fn call(
-        exchange: &str,
-        base: &Asset,
-        quote: &Asset,
-        date: Date,
-        price: Decimal,
-    ) -> Option<Self> {
+    pub fn call(base: &Asset, quote: &Asset, date: Date, price: Decimal) -> Option<Self> {
         let format = Self::formatting_date_format();
         let date = date.format(&format).ok()?;
         Some(Self(
             Symbol::derivative(
-                exchange,
-                &format!(
-                    "{base}-{quote}-{}{date}{}{price}",
-                    Self::OPTIONS,
-                    Self::CALL
-                ),
+                &format!("{}{date}{}{price}", Self::OPTIONS, Self::CALL),
+                &format!("{base}-{quote}",),
             )
             .expect("must be valid"),
         ))
@@ -170,41 +145,35 @@ impl ExcSymbol {
 
     /// Create a symbol for put options.
     /// Return `None` if `date` cannot be parsed by the date format.
-    pub fn put_with_str(
-        exchange: &str,
-        base: &Asset,
-        quote: &Asset,
-        date: &str,
-        price: &str,
-    ) -> Option<Self> {
+    pub fn put_with_str(base: &Asset, quote: &Asset, date: &str, price: &str) -> Option<Self> {
         let date = Self::parse_date(date)?;
         let price = Self::parse_price(price)?;
-        Self::put(exchange, base, quote, date, price)
+        Self::put(base, quote, date, price)
     }
 
     /// Create a symbol for call options.
     /// Return `None` if `date` cannot be parsed by the date format.
-    pub fn call_with_str(
-        exchange: &str,
-        base: &Asset,
-        quote: &Asset,
-        date: &str,
-        price: &str,
-    ) -> Option<Self> {
+    pub fn call_with_str(base: &Asset, quote: &Asset, date: &str, price: &str) -> Option<Self> {
         let date = Self::parse_date(date)?;
         let price = Self::parse_price(price)?;
-        Self::call(exchange, base, quote, date, price)
+        Self::call(base, quote, date, price)
     }
 
     /// From symbol.
     pub fn from_symbol(symbol: &Symbol) -> Option<Self> {
         if symbol.is_spot() {
             Some(Self(symbol.clone()))
-        } else if let Some((_, sym)) = symbol.as_derivative() {
+        } else if let Some((extra, sym)) = symbol.as_derivative() {
             if !sym.is_ascii() {
                 return None;
             }
-            if let Some(extra) = sym.split(Self::SEP).nth(2) {
+            let mut parts = sym.split(Self::SEP);
+            Asset::from_str(parts.next()?).ok()?;
+            Asset::from_str(parts.next()?).ok()?;
+            if parts.next().is_some() {
+                return None;
+            }
+            if !extra.is_empty() {
                 let (ty, extra) = extra.split_at(1);
                 match ty {
                     Self::FUTURES => {
@@ -240,11 +209,11 @@ impl ExcSymbol {
     pub fn to_parts(&self) -> (Asset, Asset, SymbolType) {
         if let Some((base, quote)) = self.0.as_spot() {
             (base.clone(), quote.clone(), SymbolType::Spot)
-        } else if let Some((_, symbol)) = self.0.as_derivative() {
+        } else if let Some((extra, symbol)) = self.0.as_derivative() {
             let mut parts = symbol.split(Self::SEP);
             let base = parts.next().unwrap();
             let quote = parts.next().unwrap();
-            let ty = if let Some(extra) = parts.next() {
+            let ty = if !extra.is_empty() {
                 let (ty, extra) = extra.split_at(1);
                 match ty {
                     Self::FUTURES => {
@@ -345,7 +314,7 @@ mod tests {
 
     #[test]
     fn test_futures() {
-        let symbol: ExcSymbol = ":BTC-USDT-F221230".parse().unwrap();
+        let symbol: ExcSymbol = "F221230:BTC-USDT".parse().unwrap();
         assert!(!symbol.0.is_spot());
         assert_eq!(
             symbol.to_parts(),
@@ -359,7 +328,7 @@ mod tests {
 
     #[test]
     fn test_perpetual() {
-        let symbol: ExcSymbol = ":BTC-USDT-P".parse().unwrap();
+        let symbol: ExcSymbol = "P:BTC-USDT".parse().unwrap();
         assert!(!symbol.0.is_spot());
         assert_eq!(
             symbol.to_parts(),
@@ -369,7 +338,7 @@ mod tests {
 
     #[test]
     fn test_call_options() {
-        let symbol: ExcSymbol = ":BTC-USDT-O221230C17000".parse().unwrap();
+        let symbol: ExcSymbol = "O221230C17000:BTC-USDT".parse().unwrap();
         assert!(!symbol.0.is_spot());
         assert_eq!(
             symbol.to_parts(),
@@ -383,7 +352,7 @@ mod tests {
 
     #[test]
     fn test_put_options() {
-        let symbol: ExcSymbol = ":BTC-USDT-O221230P17000".parse().unwrap();
+        let symbol: ExcSymbol = "O221230P17000:BTC-USDT".parse().unwrap();
         assert!(!symbol.0.is_spot());
         assert_eq!(
             symbol.to_parts(),
@@ -407,7 +376,7 @@ mod tests {
 
     #[test]
     fn test_margin_creation() {
-        let symbol = ExcSymbol::margin("", &Asset::BTC, &Asset::USDT);
+        let symbol = ExcSymbol::margin(&Asset::BTC, &Asset::USDT);
         assert!(!symbol.0.is_spot());
         assert_eq!(
             symbol.to_parts(),
@@ -417,8 +386,7 @@ mod tests {
 
     #[test]
     fn test_futures_creation() {
-        let symbol =
-            ExcSymbol::futures("", &Asset::BTC, &Asset::USDT, date!(2022 - 12 - 30)).unwrap();
+        let symbol = ExcSymbol::futures(&Asset::BTC, &Asset::USDT, date!(2022 - 12 - 30)).unwrap();
         assert!(!symbol.0.is_spot());
         assert_eq!(
             symbol.to_parts(),
@@ -432,7 +400,7 @@ mod tests {
 
     #[test]
     fn test_perpetual_creation() {
-        let symbol = ExcSymbol::perpetual("", &Asset::BTC, &Asset::USDT);
+        let symbol = ExcSymbol::perpetual(&Asset::BTC, &Asset::USDT);
         assert!(!symbol.0.is_spot());
         assert_eq!(
             symbol.to_parts(),
@@ -443,7 +411,6 @@ mod tests {
     #[test]
     fn test_call_options_creation() {
         let symbol = ExcSymbol::call(
-            "",
             &Asset::BTC,
             &Asset::USDT,
             date!(2022 - 12 - 30),
@@ -464,7 +431,6 @@ mod tests {
     #[test]
     fn test_put_options_creation() {
         let symbol = ExcSymbol::put(
-            "",
             &Asset::BTC,
             &Asset::USDT,
             date!(2022 - 12 - 30),

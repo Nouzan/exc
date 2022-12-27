@@ -8,9 +8,6 @@ use crate::http::error::RestError;
 
 use super::Data;
 
-/// Exhcange tag for binance.
-pub const BINANCE: &str = "BINANCE";
-
 /// Exchange info.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -149,18 +146,16 @@ impl UFSymbol {
     pub(crate) fn to_exc_symbol(&self) -> Result<ExcSymbol, RestError> {
         match &self.contract_type {
             ContractType::Known(ty) => match ty {
-                KnownContractType::Perpetual => Ok(ExcSymbol::perpetual(
-                    BINANCE,
-                    &self.base_asset,
-                    &self.quote_asset,
-                )),
+                KnownContractType::Perpetual => {
+                    Ok(ExcSymbol::perpetual(&self.base_asset, &self.quote_asset))
+                }
                 KnownContractType::NextQuarter | KnownContractType::CurrentQuarter => {
                     let date = self
                         .symbol
                         .split('_')
                         .last()
                         .ok_or(RestError::MissingDateForFutures)?;
-                    ExcSymbol::futures_with_str(BINANCE, &self.base_asset, &self.quote_asset, date)
+                    ExcSymbol::futures_with_str(&self.base_asset, &self.quote_asset, date)
                         .ok_or(RestError::FailedToBuildExcSymbol)
                 }
             },
