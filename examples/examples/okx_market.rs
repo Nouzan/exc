@@ -1,12 +1,11 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use exc::{
-    market::{request::Request, service::MarketLayer},
+    market::service::MarketLayer,
     prelude::*,
     types::instrument::{GetInstrument, InstrumentMeta},
 };
 use rust_decimal::Decimal;
-use tower::{Service, ServiceExt};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,11 +18,6 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let mut market = Okx::endpoint().connect_exc().layer(&MarketLayer::default());
-    // market.ready().await?;
-    market
-        .request(GetInstrument::with_name("BTC-USDT").into())
-        .await?;
-    tokio::time::sleep(Duration::from_secs(10)).await;
     let meta: Option<Arc<InstrumentMeta<Decimal>>> = market
         .request(GetInstrument::with_name("BTC-USDT").into())
         .await?
