@@ -1,11 +1,16 @@
-//! Exc: Abstractions for exchanges (high-level apis).
-
+//! Exc: Abstractions for exchanges.
 #![deny(missing_docs)]
 
-/// Utils for using low-level apis ([`exc::core`]).
+/// Market.
+pub mod market;
+
+/// Types.
+pub mod types;
+
+/// Utils for using low-level apis ([`exc::core`](crate::core)).
 pub mod util;
 
-pub use self::core::{Adaptor, Exc, ExcService, ExchangeError, IntoExc};
+pub use self::core::{Adaptor, Exc, ExcService, ExchangeError, IntoExc, Request};
 pub use exc_core as core;
 pub use util::{
     book::SubscribeBidAskService,
@@ -21,7 +26,7 @@ pub use util::{
 pub mod prelude {
     pub use crate::core::{
         types::{Period, Place, PlaceOrderOptions},
-        Adaptor, Exc, ExcService, ExchangeError,
+        Adaptor, Exc, ExcService, ExchangeError, Request,
     };
     pub use crate::util::{
         book::SubscribeBidAskService,

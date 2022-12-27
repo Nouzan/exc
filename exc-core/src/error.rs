@@ -44,6 +44,9 @@ pub enum ExchangeError {
     /// Forbidden.
     #[error("forbidden: {0}")]
     Forbidden(anyhow::Error),
+    /// Unexpected response type.
+    #[error("unexpected response type: {0}")]
+    UnexpectedResponseType(String),
 }
 
 impl ExchangeError {
@@ -79,6 +82,11 @@ impl ExchangeError {
             Ok(err) => (*err).flatten(),
             Err(err) => Self::Other(anyhow::anyhow!("{err}")),
         }
+    }
+
+    /// Unexpected response type.
+    pub fn unexpected_response_type(msg: impl ToString) -> Self {
+        Self::UnexpectedResponseType(msg.to_string())
     }
 }
 
