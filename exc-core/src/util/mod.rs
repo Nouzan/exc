@@ -1,4 +1,4 @@
 /// Period utils.
 pub mod period;
 
-pub use period::PeriodExt;
+pub use period::{trunc, PeriodExt};

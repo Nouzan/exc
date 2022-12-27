@@ -31,7 +31,7 @@ time = { workspace = true, features = ["serde-well-known", "macros"] }
 tokio-stream = { workspace = true }
 rust_decimal = { workspace = true }
 either = { workspace = true }
-tokio = { workspace = true, features = ["rt", "sync"] }
+tokio = { workspace = true, features = ["rt", "sync", "macros"] }
 
 exc-okx = { workspace = true, optional = true }
 exc-binance = { workspace = true, optional = true }
