@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use exc::{
     instrument::service::InstrumentsLayer,
@@ -13,13 +13,14 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stdout)
         .with_env_filter(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "error,exc::market=trace,market=debug".into()),
+                .unwrap_or_else(|_| "error,exc::instrument=trace,okx_instruments=debug".into()),
         ))
         .init();
 
-    let mut market = Okx::endpoint()
-        .connect_exc()
-        .layer(&InstrumentsLayer::new(&["SPOT", "FUTURES", "SWAP"]));
+    let mut market = Okx::endpoint().connect_exc().layer(
+        InstrumentsLayer::new(&["SPOT", "FUTURES", "SWAP"])
+            .set_fetch_rate_limit(2, Duration::from_secs(1)),
+    );
     for name in ["BTC-USDT", "BTC-USDT-SWAP", "BTC-USD-221230"] {
         let meta: Option<Arc<InstrumentMeta<Decimal>>> = market
             .request(GetInstrument::with_name(name).into())

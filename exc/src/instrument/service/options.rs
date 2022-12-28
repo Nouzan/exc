@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::core::Str;
 
 /// Options of Instruments layer.
@@ -5,6 +7,8 @@ use crate::core::Str;
 pub(crate) struct InstrumentsOptions {
     pub(crate) buffer_bound: usize,
     pub(crate) inst_tags: Vec<Str>,
+    pub(crate) fetch_rate_limit: (u64, Duration),
+    pub(crate) subscribe_rate_limit: (u64, Duration),
 }
 
 impl InstrumentsOptions {
@@ -26,6 +30,8 @@ impl Default for InstrumentsOptions {
         Self {
             buffer_bound: 1024,
             inst_tags: vec![Str::new_inline("")],
+            fetch_rate_limit: (1, Duration::from_secs(1)),
+            subscribe_rate_limit: (1, Duration::from_secs(1)),
         }
     }
 }

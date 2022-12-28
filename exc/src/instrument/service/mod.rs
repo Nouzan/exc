@@ -219,6 +219,20 @@ impl<Req, L1, L2> InstrumentsLayer<Req, L1, L2> {
             _req: PhantomData,
         }
     }
+
+    /// Set fetch rate-limit.
+    /// Default to 1 per secs.
+    pub fn set_fetch_rate_limit(&mut self, num: u64, dur: Duration) -> &mut Self {
+        self.opts.fetch_rate_limit = (num, dur);
+        self
+    }
+
+    /// Set subscribe rate-limit.
+    /// Default to 1 per secs.
+    pub fn set_subscribe_rate_limit(&mut self, num: u64, dur: Duration) -> &mut Self {
+        self.opts.subscribe_rate_limit = (num, dur);
+        self
+    }
 }
 
 impl<S, Req, L1: Layer<S>, L2: Layer<S>> Layer<S> for InstrumentsLayer<Req, L1, L2>
@@ -235,12 +249,15 @@ where
 
     fn layer(&self, svc: S) -> Self::Service {
         let fetch = ServiceBuilder::default()
-            .rate_limit(1, Duration::from_secs(1))
+            .rate_limit(self.opts.fetch_rate_limit.0, self.opts.fetch_rate_limit.1)
             .layer(&self.fetch_instruments)
             .service(svc.clone())
             .boxed();
         let subscribe = ServiceBuilder::default()
-            .rate_limit(1, Duration::from_secs(1))
+            .rate_limit(
+                self.opts.subscribe_rate_limit.0,
+                self.opts.subscribe_rate_limit.1,
+            )
             .layer(&self.subscribe_instruments)
             .service(svc)
             .boxed();
