@@ -10,7 +10,10 @@ pub mod types;
 /// Utils for using low-level apis ([`exc::core`](crate::core)).
 pub mod util;
 
-pub use self::core::{Adaptor, Exc, ExcService, ExchangeError, IntoExc, Request};
+pub use self::core::{
+    exchange::adapt::AdaptLayer, Adaptor, Exc, ExcLayer, ExcService, ExchangeError, IntoExc,
+    Request,
+};
 pub use exc_core as core;
 pub use util::{
     book::SubscribeBidAskService,
@@ -45,6 +48,9 @@ pub mod prelude {
     #[cfg(feature = "binance")]
     pub use crate::Binance;
 }
+
+#[cfg(feature = "retry")]
+pub use crate::core::retry;
 
 #[cfg(feature = "okx")]
 /// Okx exchange service.

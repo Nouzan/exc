@@ -1,9 +1,10 @@
 use std::time::Duration;
 use std::{marker::PhantomData, sync::Arc, task::Poll};
 
-use crate::core::{Adaptor, Exc, ExcService};
+use crate::core::ExcService;
 use crate::{core::types::instrument::SubscribeInstruments, ExchangeError};
 use exc_core::types::instrument::FetchInstruments;
+use exc_core::ExcLayer;
 use futures::{
     future::{ready, BoxFuture},
     FutureExt, TryFutureExt,
@@ -161,8 +162,10 @@ impl Service<Request> for Market {
 
 /// Market Service Layer.
 #[derive(Debug, Clone)]
-pub struct MarketLayer<Req> {
+pub struct MarketLayer<Req, L1 = ExcLayer<Req>, L2 = ExcLayer<Req>> {
     opts: MarketOptions,
+    fetch_instruments: L1,
+    subscribe_instruments: L2,
     _req: PhantomData<fn() -> Req>,
 }
 
@@ -171,6 +174,30 @@ impl<Req> MarketLayer<Req> {
     pub fn with_options(opts: MarketOptions) -> Self {
         Self {
             opts,
+            fetch_instruments: ExcLayer::default(),
+            subscribe_instruments: ExcLayer::default(),
+            _req: PhantomData,
+        }
+    }
+}
+
+impl<Req, L1, L2> MarketLayer<Req, L1, L2> {
+    /// Setup fetch instruments layer.
+    pub fn fetch_instruments<L>(self, layer: L) -> MarketLayer<Req, L, L2> {
+        MarketLayer {
+            opts: self.opts,
+            fetch_instruments: layer,
+            subscribe_instruments: self.subscribe_instruments,
+            _req: PhantomData,
+        }
+    }
+
+    /// Setup subscribe instruments layer.
+    pub fn subscribe_instruments<L>(self, layer: L) -> MarketLayer<Req, L1, L> {
+        MarketLayer {
+            opts: self.opts,
+            fetch_instruments: self.fetch_instruments,
+            subscribe_instruments: layer,
             _req: PhantomData,
         }
     }
@@ -182,26 +209,30 @@ impl<Req> Default for MarketLayer<Req> {
     }
 }
 
-impl<S, Req> Layer<S> for MarketLayer<Req>
+impl<S, Req, L1: Layer<S>, L2: Layer<S>> Layer<S> for MarketLayer<Req, L1, L2>
 where
     S: ExcService<Req> + Send + 'static + Clone,
     S::Future: Send + 'static,
-    Req: 'static,
-    Req: Adaptor<SubscribeInstruments> + Adaptor<FetchInstruments>,
+    Req: crate::Request + 'static,
+    L1::Service: ExcService<FetchInstruments> + Send + 'static,
+    <L1::Service as Service<FetchInstruments>>::Future: Send,
+    L2::Service: ExcService<SubscribeInstruments> + Send + 'static,
+    <L2::Service as Service<SubscribeInstruments>>::Future: Send,
 {
     type Service = Market;
 
-    fn layer(&self, inner: S) -> Self::Service {
-        let svc = Exc::new(inner);
-        let inst = ServiceBuilder::default()
-            .rate_limit(1, Duration::from_secs(1))
-            .service(svc.clone())
-            .boxed();
+    fn layer(&self, svc: S) -> Self::Service {
         let fetch = ServiceBuilder::default()
             .rate_limit(1, Duration::from_secs(1))
+            .layer(&self.fetch_instruments)
+            .service(svc.clone())
+            .boxed();
+        let subscribe = ServiceBuilder::default()
+            .rate_limit(1, Duration::from_secs(1))
+            .layer(&self.subscribe_instruments)
             .service(svc)
             .boxed();
-        let svc = MarketService::new(&self.opts, inst, fetch);
+        let svc = MarketService::new(&self.opts, subscribe, fetch);
         let inner = ServiceBuilder::default()
             .buffer(self.opts.buffer_bound)
             .service(svc)

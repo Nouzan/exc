@@ -9,7 +9,7 @@ use std::{
 
 use futures::{future::BoxFuture, FutureExt};
 use humantime::format_duration;
-use tower::retry::Policy;
+use tower::retry::{Policy, RetryLayer};
 
 const DEFAULT_MAX_SECS_TO_WAIT: u64 = 128;
 
@@ -187,4 +187,9 @@ where
             }
         }
     }
+}
+
+/// Always retry layer.
+pub fn retry_always(max_duration: Duration) -> RetryLayer<Always> {
+    RetryLayer::new(Always::with_max_duration(max_duration))
 }
