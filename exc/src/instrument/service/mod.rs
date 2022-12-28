@@ -15,10 +15,10 @@ use tower::{util::BoxService, Layer, Service, ServiceBuilder, ServiceExt};
 
 use self::{state::State, worker::Worker};
 
-use super::MarketOptions;
+use self::options::InstrumentsOptions;
 use super::{
-    request::{Kind, Request},
-    response::Response,
+    request::{InstrumentsRequest, Kind},
+    response::InstrumentsResponse,
 };
 
 type SubscribeInstrumentSvc = BoxService<
@@ -45,14 +45,18 @@ enum ServiceState {
     Failed,
 }
 
-/// Market Service (the inner part).
-struct MarketService {
+/// Instrument Service (the inner part).
+struct Inner {
     state: Arc<State>,
     svc_state: ServiceState,
 }
 
-impl MarketService {
-    fn new(opts: &MarketOptions, inst: SubscribeInstrumentSvc, fetch: FetchInstrumentSvc) -> Self {
+impl Inner {
+    fn new(
+        opts: &InstrumentsOptions,
+        inst: SubscribeInstrumentSvc,
+        fetch: FetchInstrumentSvc,
+    ) -> Self {
         let state = Arc::default();
         Self {
             svc_state: ServiceState::Init(Worker::new(&state, opts, inst, fetch)),
@@ -61,7 +65,7 @@ impl MarketService {
     }
 }
 
-impl Drop for MarketService {
+impl Drop for Inner {
     fn drop(&mut self) {
         if let ServiceState::Running(handle) = std::mem::take(&mut self.svc_state) {
             handle.abort();
@@ -69,8 +73,8 @@ impl Drop for MarketService {
     }
 }
 
-impl Service<Request> for MarketService {
-    type Response = Response;
+impl Service<InstrumentsRequest> for Inner {
+    type Response = InstrumentsResponse;
 
     type Error = ExchangeError;
 
@@ -126,24 +130,24 @@ impl Service<Request> for MarketService {
         Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, req: Request) -> Self::Future {
+    fn call(&mut self, req: InstrumentsRequest) -> Self::Future {
         match req.kind() {
             Kind::GetInstrument(req) => {
                 let meta = self.state.clone().get_instrument(req);
-                ready(Ok(Response::from(meta))).boxed()
+                ready(Ok(InstrumentsResponse::from(meta))).boxed()
             }
         }
     }
 }
 
-/// Market Service.
+/// Instruments Service.
 #[derive(Debug, Clone)]
-pub struct Market {
-    inner: BoxCloneService<Request, Response, ExchangeError>,
+pub struct Instruments {
+    inner: BoxCloneService<InstrumentsRequest, InstrumentsResponse, ExchangeError>,
 }
 
-impl Service<Request> for Market {
-    type Response = Response;
+impl Service<InstrumentsRequest> for Instruments {
+    type Response = InstrumentsResponse;
 
     type Error = ExchangeError;
 
@@ -155,23 +159,37 @@ impl Service<Request> for Market {
     }
 
     #[inline]
-    fn call(&mut self, req: Request) -> Self::Future {
+    fn call(&mut self, req: InstrumentsRequest) -> Self::Future {
         self.inner.call(req)
     }
 }
 
-/// Market Service Layer.
+/// Instruments Service Layer.
 #[derive(Debug, Clone)]
-pub struct MarketLayer<Req, L1 = ExcLayer<Req>, L2 = ExcLayer<Req>> {
-    opts: MarketOptions,
+pub struct InstrumentsLayer<Req, L1 = ExcLayer<Req>, L2 = ExcLayer<Req>> {
+    opts: InstrumentsOptions,
     fetch_instruments: L1,
     subscribe_instruments: L2,
     _req: PhantomData<fn() -> Req>,
 }
 
-impl<Req> MarketLayer<Req> {
-    /// Create a market layer with the given options.
-    pub fn with_options(opts: MarketOptions) -> Self {
+impl<Req> InstrumentsLayer<Req> {
+    /// Create a instruments layer with the default buffer bound.
+    pub fn new(inst_tags: &[&str]) -> Self {
+        let opts = InstrumentsOptions::default().tags(inst_tags);
+        Self {
+            opts,
+            fetch_instruments: ExcLayer::default(),
+            subscribe_instruments: ExcLayer::default(),
+            _req: PhantomData,
+        }
+    }
+
+    /// Create a instruments layer with the given buffer bound.
+    pub fn with_buffer_bound(inst_tags: &[&str], bound: usize) -> Self {
+        let opts = InstrumentsOptions::default()
+            .tags(inst_tags)
+            .buffer_bound(bound);
         Self {
             opts,
             fetch_instruments: ExcLayer::default(),
@@ -181,10 +199,10 @@ impl<Req> MarketLayer<Req> {
     }
 }
 
-impl<Req, L1, L2> MarketLayer<Req, L1, L2> {
+impl<Req, L1, L2> InstrumentsLayer<Req, L1, L2> {
     /// Setup fetch instruments layer.
-    pub fn fetch_instruments<L>(self, layer: L) -> MarketLayer<Req, L, L2> {
-        MarketLayer {
+    pub fn fetch_instruments<L>(self, layer: L) -> InstrumentsLayer<Req, L, L2> {
+        InstrumentsLayer {
             opts: self.opts,
             fetch_instruments: layer,
             subscribe_instruments: self.subscribe_instruments,
@@ -193,8 +211,8 @@ impl<Req, L1, L2> MarketLayer<Req, L1, L2> {
     }
 
     /// Setup subscribe instruments layer.
-    pub fn subscribe_instruments<L>(self, layer: L) -> MarketLayer<Req, L1, L> {
-        MarketLayer {
+    pub fn subscribe_instruments<L>(self, layer: L) -> InstrumentsLayer<Req, L1, L> {
+        InstrumentsLayer {
             opts: self.opts,
             fetch_instruments: self.fetch_instruments,
             subscribe_instruments: layer,
@@ -203,13 +221,7 @@ impl<Req, L1, L2> MarketLayer<Req, L1, L2> {
     }
 }
 
-impl<Req> Default for MarketLayer<Req> {
-    fn default() -> Self {
-        Self::with_options(MarketOptions::default())
-    }
-}
-
-impl<S, Req, L1: Layer<S>, L2: Layer<S>> Layer<S> for MarketLayer<Req, L1, L2>
+impl<S, Req, L1: Layer<S>, L2: Layer<S>> Layer<S> for InstrumentsLayer<Req, L1, L2>
 where
     S: ExcService<Req> + Send + 'static + Clone,
     S::Future: Send + 'static,
@@ -219,7 +231,7 @@ where
     L2::Service: ExcService<SubscribeInstruments> + Send + 'static,
     <L2::Service as Service<SubscribeInstruments>>::Future: Send,
 {
-    type Service = Market;
+    type Service = Instruments;
 
     fn layer(&self, svc: S) -> Self::Service {
         let fetch = ServiceBuilder::default()
@@ -232,12 +244,12 @@ where
             .layer(&self.subscribe_instruments)
             .service(svc)
             .boxed();
-        let svc = MarketService::new(&self.opts, subscribe, fetch);
+        let svc = Inner::new(&self.opts, subscribe, fetch);
         let inner = ServiceBuilder::default()
             .buffer(self.opts.buffer_bound)
             .service(svc)
             .map_err(|err| ExchangeError::from(err).flatten())
             .boxed_clone();
-        Market { inner }
+        Instruments { inner }
     }
 }

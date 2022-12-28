@@ -6,7 +6,7 @@ use std::{
 use exc_core::ExchangeError;
 use futures::{future::BoxFuture, FutureExt};
 
-use crate::market::MarketOptions;
+use super::InstrumentsOptions;
 
 use super::{state::State, FetchInstrumentSvc, SubscribeInstrumentSvc};
 
@@ -14,13 +14,13 @@ pub(super) struct Worker {
     init: Option<BoxFuture<'static, Result<(), ExchangeError>>>,
     state: Arc<State>,
     inst: SubscribeInstrumentSvc,
-    opts: MarketOptions,
+    opts: InstrumentsOptions,
 }
 
 impl Worker {
     pub(super) fn new(
         state: &Arc<State>,
-        opts: &MarketOptions,
+        opts: &InstrumentsOptions,
         inst: SubscribeInstrumentSvc,
         fetch: FetchInstrumentSvc,
     ) -> Self {

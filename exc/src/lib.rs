@@ -1,8 +1,8 @@
 //! Exc: Abstractions for exchanges.
 #![deny(missing_docs)]
 
-/// Market.
-pub mod market;
+/// Instruments Layer.
+pub mod instrument;
 
 /// Types.
 pub mod types;

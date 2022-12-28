@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use exc::{
-    market::{service::MarketLayer, MarketOptions},
+    instrument::service::InstrumentsLayer,
     prelude::*,
     types::instrument::{GetInstrument, InstrumentMeta},
 };
@@ -19,9 +19,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut market = Okx::endpoint()
         .connect_exc()
-        .layer(&MarketLayer::with_options(
-            MarketOptions::default().tags(&["SPOT", "FUTURES", "SWAP"]),
-        ));
+        .layer(&InstrumentsLayer::new(&["SPOT", "FUTURES", "SWAP"]));
     for name in ["BTC-USDT", "BTC-USDT-SWAP", "BTC-USD-221230"] {
         let meta: Option<Arc<InstrumentMeta<Decimal>>> = market
             .request(GetInstrument::with_name(name).into())

@@ -1,15 +1,15 @@
 use crate::core::Symbol;
 use crate::types::instrument::GetInstrument;
 
-use super::response::Response;
+use super::response::InstrumentsResponse;
 
-/// The request type of [`MarketService`](super::MarketService).
+/// The request type of [`Instruments`](super::Instruments).
 #[derive(Debug, Clone)]
-pub struct Request {
+pub struct InstrumentsRequest {
     kind: Kind,
 }
 
-impl Request {
+impl InstrumentsRequest {
     fn new(kind: Kind) -> Self {
         Self { kind }
     }
@@ -25,7 +25,7 @@ impl Request {
     }
 }
 
-impl From<GetInstrument> for Request {
+impl From<GetInstrument> for InstrumentsRequest {
     fn from(req: GetInstrument) -> Self {
         Self::new(Kind::GetInstrument(req))
     }
@@ -36,12 +36,12 @@ pub(crate) enum Kind {
     GetInstrument(GetInstrument),
 }
 
-impl Request {
+impl InstrumentsRequest {
     pub(crate) fn kind(&self) -> &Kind {
         &self.kind
     }
 }
 
-impl crate::Request for Request {
-    type Response = Response;
+impl crate::Request for InstrumentsRequest {
+    type Response = InstrumentsResponse;
 }

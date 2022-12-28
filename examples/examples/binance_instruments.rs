@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use exc::{
-    market::{service::MarketLayer, MarketOptions},
+    instrument::service::InstrumentsLayer,
     prelude::*,
     types::instrument::{GetInstrument, InstrumentMeta},
     util::instrument::PollInstrumentsLayer,
@@ -21,12 +21,10 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let mut market = Binance::usd_margin_futures().connect_exc().layer(
-        &MarketLayer::with_options(MarketOptions::default().tags(&[""])).subscribe_instruments(
-            Stack::new(
-                ExcLayer::default(),
-                PollInstrumentsLayer::new(Duration::from_secs(60 * 60)),
-            ),
-        ),
+        &InstrumentsLayer::new(&[""]).subscribe_instruments(Stack::new(
+            ExcLayer::default(),
+            PollInstrumentsLayer::new(Duration::from_secs(60 * 60)),
+        )),
     );
     for name in ["btcusdt", "btcusdt_221230"] {
         let meta: Option<Arc<InstrumentMeta<Decimal>>> = market
