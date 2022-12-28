@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use exc_core::types::{self, Order, OrderUpdate};
+use exc_core::{
+    types::{self, Order, OrderUpdate},
+    Asset, Str,
+};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr, NoneAsEmptyString};
@@ -63,10 +66,10 @@ pub struct OkxOrder {
     #[serde_as(as = "NoneAsEmptyString")]
     pub ccy: Option<String>,
     /// Order id.
-    pub ord_id: String,
+    pub ord_id: Str,
     /// Client id.
     #[serde_as(as = "NoneAsEmptyString")]
-    pub cl_ord_id: Option<String>,
+    pub cl_ord_id: Option<Str>,
     /// Tag.
     #[serde_as(as = "NoneAsEmptyString")]
     pub tag: Option<String>,
@@ -89,7 +92,7 @@ pub struct OkxOrder {
     pub td_mode: String,
     /// "Tgt" currency.
     #[serde_as(as = "NoneAsEmptyString")]
-    pub tgt_ccy: Option<String>,
+    pub tgt_ccy: Option<Asset>,
     /// Fill price.
     #[serde_as(as = "NoneAsEmptyString")]
     pub fill_px: Option<Decimal>,
@@ -108,7 +111,7 @@ pub struct OkxOrder {
     pub fill_fee: Option<Decimal>,
     /// Fill fee currency.
     #[serde_as(as = "NoneAsEmptyString")]
-    pub fill_fee_ccy: Option<String>,
+    pub fill_fee_ccy: Option<Asset>,
     /// Execute type.
     #[serde_as(as = "NoneAsEmptyString")]
     pub exec_type: Option<String>,
@@ -150,12 +153,12 @@ pub struct OkxOrder {
     pub stop_loss_price: Option<Decimal>,
     /// Fee currency.
     #[serde_as(as = "NoneAsEmptyString")]
-    pub fee_ccy: Option<String>,
+    pub fee_ccy: Option<Asset>,
     /// Fee.
     pub fee: Decimal,
     /// Rebate currency.
     #[serde_as(as = "NoneAsEmptyString")]
-    pub rebate_ccy: Option<String>,
+    pub rebate_ccy: Option<Asset>,
     /// Rebate.
     pub rebate: Decimal,
     /// Profit and loss.

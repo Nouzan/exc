@@ -10,28 +10,29 @@ use futures::{future::BoxFuture, stream::BoxStream};
 use indicator::{Tick, TickValue, Tickable};
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, OrderTrade, TimeInForce};
 pub use place::Place;
+use positions::Asset;
 use time::OffsetDateTime;
 
-use crate::{ExchangeError, Request};
+use crate::{ExchangeError, Request, Str};
 
 /// Options for order placement.
 #[derive(Debug, Clone)]
 pub struct PlaceOrderOptions {
     /// Instrument.
-    instrument: String,
+    instrument: Str,
     /// Client id.
-    client_id: Option<String>,
+    client_id: Option<Str>,
     /// Margin currency perferred to use.
-    margin: Option<String>,
+    margin: Option<Asset>,
     /// Exchange-defined options.
-    custom: BTreeMap<String, String>,
+    custom: BTreeMap<Str, Str>,
 }
 
 impl PlaceOrderOptions {
     /// Create a new options with the given instrument.
     pub fn new(inst: &str) -> Self {
         Self {
-            instrument: inst.to_string(),
+            instrument: Str::new(inst),
             client_id: None,
             margin: None,
             custom: BTreeMap::default(),
@@ -40,7 +41,7 @@ impl PlaceOrderOptions {
 
     /// Set the client id to place.
     pub fn with_client_id(&mut self, id: Option<&str>) -> &mut Self {
-        self.client_id = id.map(|s| s.to_string());
+        self.client_id = id.map(Str::new);
         self
     }
 
@@ -48,8 +49,8 @@ impl PlaceOrderOptions {
     /// # Warning
     /// It is up to the exchange to decide if this option applies,
     /// so please check the documents of the exchange you use.
-    pub fn with_margin(&mut self, currency: &str) -> &mut Self {
-        self.margin = Some(currency.to_string());
+    pub fn with_margin(&mut self, currency: &Asset) -> &mut Self {
+        self.margin = Some(currency.clone());
         self
     }
 
@@ -60,7 +61,7 @@ impl PlaceOrderOptions {
         V: AsRef<str>,
     {
         self.custom
-            .insert(key.as_ref().to_string(), value.as_ref().to_string());
+            .insert(Str::new(key.as_ref()), Str::new(value.as_ref()));
         self
     }
 
@@ -80,7 +81,7 @@ impl PlaceOrderOptions {
     }
 
     /// Get the exchange-defined custom options.
-    pub fn custom(&self) -> &BTreeMap<String, String> {
+    pub fn custom(&self) -> &BTreeMap<Str, Str> {
         &self.custom
     }
 }
@@ -164,7 +165,7 @@ impl Request for CancelOrder {
 #[derive(Debug, Clone)]
 pub struct GetOrder {
     /// Instrument.
-    pub instrument: String,
+    pub instrument: Str,
     /// Id.
     pub id: OrderId,
 }

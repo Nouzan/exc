@@ -1,6 +1,6 @@
 use exc_core::{
     types::{trading::PlaceOrderOptions, SubscribeOrders},
-    ExcMut, Request,
+    ExcMut, Request, Str,
 };
 use futures::{future::TryFlatten, TryFutureExt};
 use tower::{util::Oneshot, ServiceExt};
@@ -58,7 +58,7 @@ pub trait CheckOrderService: ExcService<GetOrder> + Sized {
         ServiceExt::oneshot(
             ExcService::<GetOrder>::as_service_mut(self),
             GetOrder {
-                instrument: inst.to_string(),
+                instrument: Str::new(inst),
                 id: id.clone(),
             },
         )
