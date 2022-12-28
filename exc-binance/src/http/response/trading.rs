@@ -1,4 +1,4 @@
-use exc_core::ExchangeError;
+use exc_core::{Asset, ExchangeError};
 use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_with::serde_as;
@@ -205,7 +205,7 @@ pub struct SpotFill {
     /// Fee.
     pub commission: Decimal,
     /// Fee asset.
-    pub commission_asset: String,
+    pub commission_asset: Asset,
     /// Trade id.
     pub trade_id: i64,
 }

@@ -30,7 +30,7 @@ impl Adaptor<GetOrder> for HttpRequest {
         {
             Ok(HttpRequest::PrivateGet(PrivateGet::Order(Order {
                 inst_id: req.instrument,
-                ord_id: Some(req.id.as_str().to_string()),
+                ord_id: Some(req.id.as_smol_str().clone()),
                 cl_ord_id: None,
             })))
         }
@@ -39,7 +39,7 @@ impl Adaptor<GetOrder> for HttpRequest {
             Ok(HttpRequest::PrivateGet(PrivateGet::Order(Order {
                 inst_id: req.instrument,
                 ord_id: None,
-                cl_ord_id: Some(req.id.as_str().to_string()),
+                cl_ord_id: Some(req.id.as_smol_str().clone()),
             })))
         }
     }

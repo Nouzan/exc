@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use positions::prelude::Str;
+use positions::{prelude::Str, Asset};
 use rust_decimal::Decimal;
 
 use super::place::Place;
@@ -54,7 +54,7 @@ pub struct OrderState {
     /// Status.
     pub status: OrderStatus,
     /// Fees.
-    pub fees: HashMap<String, Decimal>,
+    pub fees: HashMap<Asset, Decimal>,
 }
 
 impl Default for OrderState {
@@ -113,10 +113,21 @@ impl From<String> for OrderId {
     }
 }
 
+impl From<Str> for OrderId {
+    fn from(inner: Str) -> Self {
+        Self { inner }
+    }
+}
+
 impl OrderId {
     /// Convert to [`&str`]
     pub fn as_str(&self) -> &str {
         self.inner.as_str()
+    }
+
+    /// Convert to smol str.
+    pub fn as_smol_str(&self) -> &Str {
+        &self.inner
     }
 }
 
@@ -130,5 +141,5 @@ pub struct OrderTrade {
     /// Fee.
     pub fee: Decimal,
     /// Fee asset.
-    pub fee_asset: Option<String>,
+    pub fee_asset: Option<Asset>,
 }
