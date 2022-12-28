@@ -1,4 +1,5 @@
 use either::Either;
+use exc_core::{Asset, Str};
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
@@ -76,10 +77,10 @@ pub enum UpdateKind {
 pub struct OrderUpdate {
     /// Symbol.
     #[serde(rename = "s")]
-    pub symbol: String,
+    pub symbol: Str,
     /// Client id.
     #[serde(rename = "c")]
-    pub client_id: String,
+    pub client_id: Str,
     /// Order side.
     #[serde(rename = "S")]
     pub side: OrderSide,
@@ -121,7 +122,7 @@ pub struct OrderUpdate {
     pub last_trade_price: Decimal,
     /// Fee asset.
     #[serde(rename = "N")]
-    pub fee_asset: Option<String>,
+    pub fee_asset: Option<Asset>,
     /// Fee.
     #[serde(rename = "n", default)]
     pub fee: Decimal,
@@ -174,13 +175,13 @@ pub struct ExecutionReport {
     pub event_ts: i64,
     /// Symbol.
     #[serde(rename = "s")]
-    pub symbol: String,
+    pub symbol: Str,
     /// Client id.
     #[serde(rename = "c")]
-    pub client_id: String,
+    pub client_id: Str,
     /// Orignal Client id.
     #[serde(rename = "C")]
-    pub orignal_client_id: String,
+    pub orignal_client_id: Str,
     /// Order side.
     #[serde(rename = "S")]
     pub side: OrderSide,
@@ -225,7 +226,7 @@ pub struct ExecutionReport {
     pub last_trade_price: Decimal,
     /// Fee asset.
     #[serde(rename = "N")]
-    pub fee_asset: Option<String>,
+    pub fee_asset: Option<Asset>,
     /// Fee.
     #[serde(rename = "n", default)]
     pub fee: Decimal,

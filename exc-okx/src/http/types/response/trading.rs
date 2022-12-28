@@ -1,3 +1,4 @@
+use exc_core::{Asset, Str};
 use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_with::{serde_as, NoneAsEmptyString};
@@ -15,14 +16,14 @@ pub struct OrderDetail {
     /// Currency.
     #[serde(rename = "ccy")]
     #[serde_as(as = "NoneAsEmptyString")]
-    pub currency: Option<String>,
+    pub currency: Option<Asset>,
     /// Order id.
     #[serde(rename = "ordId")]
-    pub order_id: String,
+    pub order_id: Str,
     /// Client id.
     #[serde(rename = "clOrdId")]
     #[serde_as(as = "NoneAsEmptyString")]
-    pub client_id: Option<String>,
+    pub client_id: Option<Str>,
     /// Tag.
     pub tag: String,
     /// Price.
@@ -91,14 +92,14 @@ pub struct OrderDetail {
     #[serde(rename = "feeCcy")]
     #[serde_as(as = "NoneAsEmptyString")]
     /// Fee currency.
-    pub fee_currency: Option<String>,
+    pub fee_currency: Option<Asset>,
     /// Fee.
     #[serde_as(as = "NoneAsEmptyString")]
     pub fee: Option<Decimal>,
     /// Rebate currency
     #[serde(rename = "rebateCcy")]
     #[serde_as(as = "NoneAsEmptyString")]
-    pub rebate_currency: Option<String>,
+    pub rebate_currency: Option<Asset>,
     /// Rebate
     #[serde_as(as = "NoneAsEmptyString")]
     pub rebate: Option<Decimal>,
