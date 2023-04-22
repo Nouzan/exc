@@ -11,6 +11,9 @@ description = "Binance exchange services"
 keywords = ["exchange", "tower", "binance"]
 
 [features]
+default = ["native-tls"]
+native-tls = ["exc-core/native-tls", "tokio-tungstenite/native-tls"]
+rustls-tls = ["exc-core/rustls-tls", "tokio-tungstenite/rustls-tls-webpki-roots"]
 ci = []
 
 [dependencies]
@@ -45,6 +48,7 @@ features = ["derive"]
 
 [dependencies.exc-core]
 workspace = true
+default-features = false
 features = ["websocket", "http", "retry"]
 
 [dependencies.hyper]
@@ -65,7 +69,6 @@ features = ["time", "sync"]
 
 [dependencies.tokio-tungstenite]
 workspace = true
-features = ["native-tls"]
 
 # dev
 [dev-dependencies]

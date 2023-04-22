@@ -11,6 +11,9 @@ description.workspace = true
 rust-version.workspace = true
 
 [features]
+default = ["websocket", "http", "retry", "native-tls"]
+native-tls = ["exc-core/native-tls", "exc-okx/native-tls", "exc-binance/native-tls"]
+rustls-tls = ["exc-core/rustls-tls", "exc-okx/rustls-tls", "exc-binance/rustls-tls"]
 okx = ["exc-okx"]
 okx-prefer-client-id = ["okx", "exc-okx/prefer-client-id"]
 binance = ["exc-binance"]
@@ -21,7 +24,7 @@ retry = ["exc-core/retry"]
 
 [dependencies]
 anyhow = { workspace = true }
-exc-core = { workspace = true }
+exc-core = { workspace = true, default-features = false }
 tracing = { workspace = true }
 tower = { workspace = true }
 futures = { workspace = true }
@@ -33,8 +36,8 @@ rust_decimal = { workspace = true }
 either = { workspace = true }
 tokio = { workspace = true, features = ["rt", "sync", "macros", "time"] }
 
-exc-okx = { workspace = true, optional = true }
-exc-binance = { workspace = true, optional = true }
+exc-okx = { workspace = true, default-features = false, optional = true }
+exc-binance = { workspace = true, default-features = false, optional = true }
 
 [package.metadata.docs.rs]
 all-features = true

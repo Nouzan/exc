@@ -1,9 +1,17 @@
+use crate::ExchangeError;
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
 use http::{Request, Response};
 use hyper::{client::HttpConnector, Body, Client};
-use hyper_tls::HttpsConnector;
 
-use crate::ExchangeError;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "native-tls")] {
+        use hyper_tls::HttpsConnector;
+    } else if #[cfg(feature = "rustls-tls")] {
+        use hyper_rustls::HttpsConnector;
+    } else {
+        compile_error!{"Not support TLS"}
+    }
+}
 
 /// Https channel.
 #[derive(Clone)]

@@ -11,14 +11,17 @@ rust-version.workspace = true
 readme = "./README.md"
 
 [features]
-default = ["websocket", "http", "retry"]
+default = ["websocket", "http", "retry", "native-tls"]
+native-tls = ["tokio-tungstenite/native-tls", "hyper-tls"]
+rustls-tls = ["tokio-tungstenite/rustls-tls-webpki-roots", "hyper-rustls"]
 websocket = ["tokio-tungstenite", "dep:http", "tokio/net"]
 driven = ["tokio/sync", "tokio/rt", "pin-project-lite"]
-http = ["hyper/client", "hyper/http1", "hyper-tls", "dep:http"]
+http = ["hyper/client", "hyper/http1", "dep:http"]
 retry = ["tower/retry", "tokio/time", "humantime"]
 
 [dependencies]
 anyhow = { workspace = true }
+cfg-if = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 tower = { workspace = true, features = [
@@ -42,7 +45,6 @@ derive_more = "0.99"
 
 [dependencies.tokio-tungstenite]
 workspace = true
-features = ["native-tls"]
 optional = true
 
 [dependencies.http]
@@ -62,7 +64,13 @@ workspace = true
 optional = true
 
 [dependencies.hyper-tls]
-workspace = true
+version = "0.5.0"
+optional = true
+
+[dependencies.hyper-rustls]
+version = "0.23.0"
+default-features = false
+features = ["webpki-tokio", "http1"]
 optional = true
 
 # dev
