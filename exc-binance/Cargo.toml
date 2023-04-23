@@ -11,7 +11,7 @@ description = "Binance exchange services"
 keywords = ["exchange", "tower", "binance"]
 
 [features]
-default = ["native-tls"]
+default = ["rustls-tls"]
 native-tls = ["exc-core/native-tls", "tokio-tungstenite/native-tls"]
 rustls-tls = ["exc-core/rustls-tls", "tokio-tungstenite/rustls-tls-webpki-roots"]
 ci = []
