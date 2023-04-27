@@ -14,14 +14,14 @@ use hyper::Body;
 use tower::{retry::Retry, Layer, Service, ServiceBuilder};
 
 /// Okx HTTP API layer.
-pub struct OkxHttpApiLayer<'a, F> {
-    host: &'a str,
+pub struct OkxHttpApiLayer<F> {
     testing: bool,
+    aws: bool,
     key: Option<Key>,
     retry_policy: RetryPolicy<HttpRequest, HttpResponse, F>,
 }
 
-impl<'a, F> OkxHttpApiLayer<'a, F> {
+impl<F> OkxHttpApiLayer<F> {
     /// Set key.
     pub fn private(&mut self, key: Key) -> &mut Self {
         self.key = Some(key);
@@ -34,24 +34,39 @@ impl<'a, F> OkxHttpApiLayer<'a, F> {
         self
     }
 
+    /// Switch to AWS endpoint.
+    pub fn aws(&mut self, enable: bool) -> &mut Self {
+        self.aws = enable;
+        self
+    }
+
     /// Set retry policy.
     pub fn retry<F2>(
         self,
         policy: RetryPolicy<HttpRequest, HttpResponse, F2>,
-    ) -> OkxHttpApiLayer<'a, F2>
+    ) -> OkxHttpApiLayer<F2>
     where
         F2: Clone,
     {
         OkxHttpApiLayer {
-            host: self.host,
+            aws: self.aws,
             retry_policy: policy,
             key: self.key,
             testing: self.testing,
         }
     }
 
+    /// Get Okx HTTP API Host.
+    pub fn host(&self) -> &'static str {
+        match (self.testing, self.aws) {
+            (true, _) => "https://www.okx.com",
+            (false, true) => "https://aws.okx.com",
+            (false, false) => "https://www.okx.com",
+        }
+    }
+
     /// Retry on `true`.
-    pub fn retry_on<F2>(self, f: F2) -> OkxHttpApiLayer<'a, F2>
+    pub fn retry_on<F2>(self, f: F2) -> OkxHttpApiLayer<F2>
     where
         F2: Fn(&ExchangeError) -> bool,
         F2: Send + 'static + Clone,
@@ -60,22 +75,22 @@ impl<'a, F> OkxHttpApiLayer<'a, F> {
     }
 
     /// Always retry on errors.
-    pub fn retry_on_error(self) -> OkxHttpApiLayer<'a, fn(&ExchangeError) -> bool> {
+    pub fn retry_on_error(self) -> OkxHttpApiLayer<fn(&ExchangeError) -> bool> {
         self.retry(RetryPolicy::default().retry_on(|_| true))
     }
 }
 
-impl Default for OkxHttpApiLayer<'static, fn(&ExchangeError) -> bool> {
+impl Default for OkxHttpApiLayer<fn(&ExchangeError) -> bool> {
     fn default() -> Self {
-        Self::new("https://www.okx.com")
+        Self::new()
     }
 }
 
-impl<'a> OkxHttpApiLayer<'a, fn(&ExchangeError) -> bool> {
+impl OkxHttpApiLayer<fn(&ExchangeError) -> bool> {
     /// Create a new okx http api layer.
-    pub fn new(host: &'a str) -> Self {
+    pub fn new() -> Self {
         Self {
-            host,
+            aws: false,
             retry_policy: RetryPolicy::never(),
             key: None,
             testing: false,
@@ -83,7 +98,7 @@ impl<'a> OkxHttpApiLayer<'a, fn(&ExchangeError) -> bool> {
     }
 }
 
-impl<'a, S, F> Layer<S> for OkxHttpApiLayer<'a, F>
+impl<S, F> Layer<S> for OkxHttpApiLayer<F>
 where
     S: Service<Request<Body>, Response = Response<Body>> + Clone,
     S::Future: Send + 'static,
@@ -96,7 +111,7 @@ where
 
     fn layer(&self, inner: S) -> Self::Service {
         let svc = OkxHttpApi {
-            host: self.host.to_string(),
+            host: self.host().to_string(),
             http: inner,
             key: self.key.clone(),
             testing: self.testing,

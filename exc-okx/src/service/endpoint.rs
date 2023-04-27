@@ -13,7 +13,7 @@ const CAP: usize = 512;
 /// OKX endpoint.
 pub struct Endpoint {
     ws: WsEndpoint,
-    http: OkxHttpApiLayer<'static, fn(&ExchangeError) -> bool>,
+    http: OkxHttpApiLayer<fn(&ExchangeError) -> bool>,
     buffer: usize,
 }
 
@@ -70,6 +70,13 @@ impl Endpoint {
     pub fn private(&mut self, key: OkxKey) -> &mut Self {
         self.ws.private(key.clone());
         self.http.private(key);
+        self
+    }
+
+    /// Switch to AWS endpoint.
+    pub fn aws(&mut self, enable: bool) -> &mut Self {
+        self.ws.aws(enable);
+        self.http.aws(enable);
         self
     }
 
