@@ -84,7 +84,7 @@ impl Rest for PlaceOrder {
     }
 
     fn serialize(&self, endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
-        Ok(serde_json::to_value(&self.dispatch(endpoint)?)?)
+        Ok(serde_json::to_value(self.dispatch(endpoint)?)?)
     }
 
     fn to_payload(&self) -> super::Payload {

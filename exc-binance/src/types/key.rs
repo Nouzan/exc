@@ -142,7 +142,7 @@ mod test {
             "timestamp": 1499827319559_i64,
             "signature": "c8db56825ae71d6d79447849e617115f4a920fa2acdcab2b053c4b2838bd6b71",
         });
-        assert_eq!(serde_json::to_value(&signed)?, target);
+        assert_eq!(serde_json::to_value(signed)?, target);
         Ok(())
     }
 }

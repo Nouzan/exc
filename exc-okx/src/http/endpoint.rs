@@ -1,5 +1,3 @@
 /// Okx HTTP API Endpoint.
 #[derive(Debug)]
-pub struct Endpoint {
-    
-}
+pub struct Endpoint {}
