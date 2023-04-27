@@ -11,9 +11,9 @@ rust-version.workspace = true
 readme = "./README.md"
 
 [features]
-default = ["websocket", "http", "retry", "native-tls"]
-native-tls = ["tokio-tungstenite/native-tls", "hyper-tls"]
-rustls-tls = ["tokio-tungstenite/rustls-tls-webpki-roots", "hyper-rustls"]
+default = ["websocket", "http", "retry", "rustls-tls"]
+native-tls = ["tokio-tungstenite?/native-tls", "hyper-tls"]
+rustls-tls = ["tokio-tungstenite?/rustls-tls-webpki-roots", "hyper-rustls"]
 websocket = ["tokio-tungstenite", "dep:http", "tokio/net"]
 driven = ["tokio/sync", "tokio/rt", "pin-project-lite"]
 http = ["hyper/client", "hyper/http1", "dep:http"]
