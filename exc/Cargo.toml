@@ -12,8 +12,8 @@ rust-version.workspace = true
 
 [features]
 default = ["websocket", "http", "retry", "rustls-tls"]
-native-tls = ["exc-core/native-tls", "exc-okx/native-tls", "exc-binance/native-tls"]
-rustls-tls = ["exc-core/rustls-tls", "exc-okx/rustls-tls", "exc-binance/rustls-tls"]
+native-tls = ["exc-core/native-tls", "exc-okx?/native-tls", "exc-binance?/native-tls"]
+rustls-tls = ["exc-core/rustls-tls", "exc-okx?/rustls-tls", "exc-binance?/rustls-tls"]
 okx = ["exc-okx"]
 okx-prefer-client-id = ["okx", "exc-okx/prefer-client-id"]
 binance = ["exc-binance"]
