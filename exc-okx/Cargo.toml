@@ -11,6 +11,9 @@ description = "OKX exchange services"
 keywords = ["exchange", "tower", "okx"]
 
 [features]
+default = ["rustls-tls"]
+native-tls = ["exc-core/native-tls", "tokio-tungstenite/native-tls"]
+rustls-tls = ["exc-core/rustls-tls", "tokio-tungstenite/rustls-tls-webpki-roots"]
 prefer-client-id = []
 
 [dependencies]
@@ -38,6 +41,7 @@ features = ["derive"]
 
 [dependencies.exc-core]
 workspace = true
+default-features = false
 features = ["websocket", "driven", "http", "retry"]
 
 [dependencies.tower]
@@ -46,7 +50,6 @@ features = ["util", "reconnect", "buffer", "timeout", "retry"]
 
 [dependencies.tokio-tungstenite]
 workspace = true
-features = ["native-tls"]
 
 [dependencies.tokio]
 workspace = true
