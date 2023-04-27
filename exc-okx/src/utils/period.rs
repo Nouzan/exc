@@ -16,6 +16,7 @@ const M15: Duration = Duration::from_secs(900);
 const M5: Duration = Duration::from_secs(300);
 const M3: Duration = Duration::from_secs(180);
 const M1: Duration = Duration::from_secs(60);
+const S1: Duration = Duration::from_secs(1);
 
 const HK: UtcOffset = offset!(+8);
 
@@ -107,6 +108,7 @@ pub fn period_to_bar(period: &Period) -> Option<&'static str> {
             M5 => Some("5m"),
             M3 => Some("3m"),
             M1 => Some("1m"),
+            S1 => Some("1s"),
             _ => None,
         },
     }
@@ -115,6 +117,7 @@ pub fn period_to_bar(period: &Period) -> Option<&'static str> {
 /// Bar to period.
 pub fn bar_to_period(bar: &str) -> Option<Period> {
     match bar {
+        "1s" => Some(Period::seconds(HK, 1)),
         "1m" => Some(Period::minutes(HK, 1)),
         "3m" => Some(Period::minutes(HK, 3)),
         "5m" => Some(Period::minutes(HK, 5)),
@@ -138,5 +141,43 @@ pub fn bar_to_period(bar: &str) -> Option<Period> {
         "1Y" => Some(Period::year(HK)),
         "1Yutc" => Some(Period::year(UtcOffset::UTC)),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn test_bar(bar: &str) {
+        let period = bar_to_period(bar).unwrap();
+        let out_bar = period_to_bar(&period).unwrap();
+        assert_eq!(bar, out_bar);
+    }
+    fn test_period(period: Period) {
+        let bar = period_to_bar(&period).unwrap();
+        let out_period = bar_to_period(bar).unwrap();
+        assert_eq!(period, out_period);
+    }
+
+    #[test]
+    fn test_all_bar() {
+        for bar in [
+            "1s", "1m", "3m", "5m", "15m", "30m", "1H", "2H", "4H", "6H", "6Hutc", "12H", "12Hutc",
+            "1D", "1Dutc", "3D", "3Dutc", "1W", "1Wutc", "1M", "1Mutc", "1Y", "1Yutc",
+        ] {
+            test_bar(bar);
+        }
+    }
+    #[test]
+    fn test_all_period() {
+        for period in [
+            W1, D3, D2, D1, H12, H6, H4, H2, H1, M30, M15, M5, M3, M1, S1,
+        ] {
+            let period = Period {
+                offset: HK,
+                kind: PeriodKind::Duration(period),
+            };
+            test_period(period);
+        }
     }
 }
