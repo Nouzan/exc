@@ -218,7 +218,7 @@ impl<T: Rest> RestRequest<T> {
         let body = if self.payload.need_sign() {
             if let Some(key) = key.as_ref() {
                 let value = key.sign(value)?;
-                let s = serde_urlencoded::to_string(&value)?;
+                let s = serde_urlencoded::to_string(value)?;
                 tracing::trace!("params: {s}");
                 match self.payload.method(endpoint)? {
                     http::Method::GET => {

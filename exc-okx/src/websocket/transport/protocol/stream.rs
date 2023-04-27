@@ -53,7 +53,7 @@ impl StreamContext {
 
 impl Drop for StreamContext {
     fn drop(&mut self) {
-        let _ = self.sender.send(Err(OkxError::StreamDropped));
+        let _fut = self.sender.send(Err(OkxError::StreamDropped));
     }
 }
 
