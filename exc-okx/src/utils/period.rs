@@ -132,6 +132,8 @@ pub fn bar_to_period(bar: &str) -> Option<Period> {
         "12Hutc" => Some(Period::hours(UtcOffset::UTC, 12)),
         "1D" => Some(Period::day(HK)),
         "1Dutc" => Some(Period::day(UtcOffset::UTC)),
+        "2D" => Some(Period::days(HK, 2)),
+        "2Dutc" => Some(Period::days(UtcOffset::UTC, 2)),
         "3D" => Some(Period::days(HK, 3)),
         "3Dutc" => Some(Period::days(UtcOffset::UTC, 3)),
         "1W" => Some(Period::weeks(HK, 1)),
@@ -149,13 +151,13 @@ mod test {
     use super::*;
 
     fn test_bar(bar: &str) {
-        let period = bar_to_period(bar).unwrap();
-        let out_bar = period_to_bar(&period).unwrap();
+        let period = bar_to_period(bar).unwrap_or_else(|| panic!("{}", bar));
+        let out_bar = period_to_bar(&period).unwrap_or_else(|| panic!("{} - {}", bar, period));
         assert_eq!(bar, out_bar);
     }
     fn test_period(period: Period) {
-        let bar = period_to_bar(&period).unwrap();
-        let out_period = bar_to_period(bar).unwrap();
+        let bar = period_to_bar(&period).unwrap_or_else(|| panic!("{}", period));
+        let out_period = bar_to_period(bar).unwrap_or_else(|| panic!("{} - {}", period, bar));
         assert_eq!(period, out_period);
     }
 
@@ -163,7 +165,8 @@ mod test {
     fn test_all_bar() {
         for bar in [
             "1s", "1m", "3m", "5m", "15m", "30m", "1H", "2H", "4H", "6H", "6Hutc", "12H", "12Hutc",
-            "1D", "1Dutc", "3D", "3Dutc", "1W", "1Wutc", "1M", "1Mutc", "1Y", "1Yutc",
+            "1D", "1Dutc", "2D", "2Dutc", "3D", "3Dutc", "1W", "1Wutc", "1M", "1Mutc", "1Y",
+            "1Yutc",
         ] {
             test_bar(bar);
         }
@@ -173,11 +176,18 @@ mod test {
         for period in [
             W1, D3, D2, D1, H12, H6, H4, H2, H1, M30, M15, M5, M3, M1, S1,
         ] {
-            let period = Period {
+            let need_test_utc = period > H4;
+
+            let mut period = Period {
                 offset: HK,
                 kind: PeriodKind::Duration(period),
             };
             test_period(period);
+
+            if need_test_utc {
+                period.offset = UtcOffset::UTC;
+                test_period(period);
+            }
         }
     }
 }
