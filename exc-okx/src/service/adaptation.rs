@@ -2,10 +2,12 @@ use exc_core::{
     types::{
         instrument::{FetchInstruments, SubscribeInstruments},
         utils::Reconnect,
-        CancelOrder, GetOrder, PlaceOrder, QueryLastCandles, SubscribeOrders, SubscribeTickers,
+        BidAsk, CancelOrder, GetOrder, PlaceOrder, QueryLastCandles, SubscribeBidAsk,
+        SubscribeOrders, SubscribeTickers, SubscribeTrades, Trade,
     },
     Adaptor, ExchangeError, Request,
 };
+use futures::{StreamExt, TryStreamExt};
 
 use crate::http::types::request::HttpRequest;
 use crate::websocket::Request as WsRequest;
@@ -51,6 +53,65 @@ impl Adaptor<SubscribeTickers> for OkxRequest {
     ) -> Result<<SubscribeTickers as Request>::Response, ExchangeError> {
         let res = resp.ws()?;
         <WsRequest as Adaptor<SubscribeTickers>>::into_response(res)
+    }
+}
+
+impl Adaptor<SubscribeBidAsk> for OkxRequest {
+    fn from_request(req: SubscribeBidAsk) -> Result<Self, ExchangeError> {
+        let req = WsRequest::from_request(SubscribeTickers {
+            instrument: req.instrument,
+        })?;
+        Ok(Self::Ws(req))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeBidAsk as Request>::Response, ExchangeError> {
+        let res = resp.ws()?;
+        let stream = <WsRequest as Adaptor<SubscribeTickers>>::into_response(res)?;
+        Ok(stream
+            .map_err(ExchangeError::from)
+            .and_then(|t| async move {
+                Ok(BidAsk {
+                    ts: t.ts,
+                    bid: match (t.bid, t.bid_size) {
+                        (Some(bid), Some(bid_size)) => Some((bid, bid_size)),
+                        _ => None,
+                    },
+                    ask: match (t.ask, t.ask_size) {
+                        (Some(ask), Some(ask_size)) => Some((ask, ask_size)),
+                        _ => None,
+                    },
+                })
+            })
+            .boxed())
+    }
+}
+
+impl Adaptor<SubscribeTrades> for OkxRequest {
+    fn from_request(req: SubscribeTrades) -> Result<Self, ExchangeError> {
+        let req = WsRequest::from_request(SubscribeTickers {
+            instrument: req.instrument,
+        })?;
+        Ok(Self::Ws(req))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeTrades as Request>::Response, ExchangeError> {
+        let res = resp.ws()?;
+        let stream = <WsRequest as Adaptor<SubscribeTickers>>::into_response(res)?;
+        Ok(stream
+            .map_err(ExchangeError::from)
+            .and_then(|t| async move {
+                Ok(Trade {
+                    ts: t.ts,
+                    price: t.last,
+                    size: t.size,
+                    buy: t.buy.unwrap_or_default(),
+                })
+            })
+            .boxed())
     }
 }
 
