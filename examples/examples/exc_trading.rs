@@ -5,7 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use clap::{clap_derive::ArgEnum, Parser};
+use clap::{clap_derive::ValueEnum, Parser};
 use exc::{
     binance::SpotOptions,
     core::types::{OrderId, SubscribeOrders},
@@ -17,7 +17,7 @@ use rust_decimal::Decimal;
 use serde::Deserialize;
 use tower::Service;
 
-#[derive(Clone, Copy, ArgEnum)]
+#[derive(Clone, Copy, ValueEnum)]
 enum MarginOp {
     Loan,
     Repay,
@@ -32,7 +32,7 @@ impl From<MarginOp> for exc_binance::MarginOp {
     }
 }
 
-#[derive(Clone, Copy, ArgEnum)]
+#[derive(Clone, Copy, ValueEnum)]
 enum Exchange {
     BinanceU,
     BinanceS,
@@ -41,7 +41,7 @@ enum Exchange {
 
 #[derive(Parser)]
 struct Args {
-    #[clap(long, env, arg_enum)]
+    #[clap(long, env, value_enum)]
     exchange: Exchange,
     #[clap(long, env)]
     key: String,
@@ -50,9 +50,9 @@ struct Args {
     exec: Option<Vec<String>>,
     #[clap(long, short)]
     script: Option<PathBuf>,
-    #[clap(long, arg_enum)]
+    #[clap(long, value_enum)]
     buy_margin: Option<MarginOp>,
-    #[clap(long, arg_enum)]
+    #[clap(long, value_enum)]
     sell_margin: Option<MarginOp>,
 }
 
@@ -207,7 +207,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let args = Args::from_args();
+    let args = Args::parse();
     let mut execs = Vec::default();
     if let Some(ops) = args.exec {
         for op in ops {
