@@ -49,6 +49,9 @@ pub mod prelude {
     pub use crate::Binance;
 }
 
+/// The result type of `exc`.
+pub type Result<T> = std::result::Result<T, ExchangeError>;
+
 #[cfg(feature = "retry")]
 pub use crate::core::retry;
 
