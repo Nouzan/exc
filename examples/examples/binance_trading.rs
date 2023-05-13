@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let args = Args::from_args();
+    let args = Args::parse();
     let key = serde_json::from_str(&args.binance_key)?;
 
     let endpoint = std::env::var("ENDPOINT").unwrap_or_else(|_| String::from("binance-u"));
