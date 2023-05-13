@@ -1,11 +1,10 @@
 use async_stream::try_stream;
 use either::Either;
-use exc_core::ExcMut;
 use futures::{future::BoxFuture, FutureExt, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
 use std::task::{Context, Poll};
 use time::OffsetDateTime;
-use tower::{util::Oneshot, Layer, Service, ServiceExt};
+use tower::{Layer, Service, ServiceExt};
 
 use crate::{
     core::types::{
@@ -18,17 +17,25 @@ use crate::{
 use super::book::SubscribeBidAskService;
 
 /// Subscribe tickers service.
-pub trait SubscribeTickersService: ExcService<SubscribeTickers> {
+pub trait SubscribeTickersService {
     /// Subscribe tickers.
-    fn subscribe_tickers(&mut self, inst: &str) -> Oneshot<ExcMut<'_, Self>, SubscribeTickers>
+    fn subscribe_tickers(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TickerStream>>;
+}
+
+impl<S> SubscribeTickersService for S
+where
+    S: ExcService<SubscribeTickers> + Send,
+    S::Future: Send,
+{
+    /// Subscribe tickers.
+    fn subscribe_tickers(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TickerStream>>
     where
         Self: Sized,
     {
         ServiceExt::<SubscribeTickers>::oneshot(self.as_service_mut(), SubscribeTickers::new(inst))
+            .boxed()
     }
 }
-
-impl<S> SubscribeTickersService for S where S: ExcService<SubscribeTickers> {}
 
 /// Trade-Bid-Ask service layer.
 pub struct TradeBidAskServiceLayer {
