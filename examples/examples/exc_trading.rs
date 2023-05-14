@@ -6,16 +6,11 @@ use std::{
 };
 
 use clap::{clap_derive::ValueEnum, Parser};
-use exc::{
-    binance::SpotOptions,
-    core::types::{OrderId, SubscribeOrders},
-    prelude::*,
-};
+use exc::{binance::SpotOptions, core::types::OrderId, prelude::*};
 use futures::StreamExt;
 use humantime::{format_duration, FormattedDuration};
 use rust_decimal::Decimal;
 use serde::Deserialize;
-use tower::Service;
 
 #[derive(Clone, Copy, ValueEnum)]
 enum MarginOp {
@@ -108,7 +103,6 @@ impl Env {
     async fn execute<S>(&mut self, mut exc: S, inst: String, execs: Vec<Op>) -> anyhow::Result<()>
     where
         S: SubscribeOrdersService + TradingService + CheckOrderService + Clone + Send + 'static,
-        <S as Service<SubscribeOrders>>::Future: Send,
     {
         let mut orders_provider = exc.clone();
         let shared_inst = inst.clone();

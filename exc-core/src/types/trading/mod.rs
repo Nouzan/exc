@@ -141,14 +141,14 @@ pub struct CancelOrder {
 
 /// Cancel order response.
 #[derive(Clone)]
-pub struct Cancelled {
+pub struct Canceled {
     /// The placed order.
     pub order: Option<Order>,
     /// Timestamp.
     pub ts: OffsetDateTime,
 }
 
-impl fmt::Debug for Cancelled {
+impl fmt::Debug for Canceled {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Cancelled")
             .field("ts", &self.ts.to_string())
@@ -158,7 +158,7 @@ impl fmt::Debug for Cancelled {
 }
 
 impl Request for CancelOrder {
-    type Response = BoxFuture<'static, Result<Cancelled, ExchangeError>>;
+    type Response = BoxFuture<'static, Result<Canceled, ExchangeError>>;
 }
 
 /// Get order.
