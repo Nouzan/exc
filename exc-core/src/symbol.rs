@@ -100,7 +100,7 @@ impl ExcSymbol {
     #[inline]
     fn parse_date(s: &str) -> Option<Date> {
         let format = Self::date_format();
-        Date::parse(&format!("20{}", s), &format).ok()
+        Date::parse(&format!("20{s}"), &format).ok()
     }
 
     /// Create a symbol for futures with the given date in string.

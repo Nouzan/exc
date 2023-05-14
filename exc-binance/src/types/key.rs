@@ -106,7 +106,7 @@ mod test {
         let mut mac = HmacSha256::new_from_slice(key.as_bytes())?;
         mac.update(raw.as_bytes());
         let encoded = hex::encode(mac.finalize().into_bytes());
-        println!("{}", encoded);
+        println!("{encoded}");
         assert_eq!(
             encoded,
             "157fb937ec848b5f802daa4d9f62bea08becbf4f311203bda2bd34cd9853e320"

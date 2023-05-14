@@ -50,6 +50,6 @@ impl FromStr for Timestamp {
 impl fmt::Display for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ts = self.0.unix_timestamp_nanos() / 1_000_000;
-        write!(f, "{}", ts)
+        write!(f, "{ts}")
     }
 }
