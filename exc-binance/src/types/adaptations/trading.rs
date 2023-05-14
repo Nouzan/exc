@@ -397,7 +397,7 @@ impl Adaptor<types::CancelOrder> for Request {
     ) -> Result<<types::CancelOrder as exc_core::Request>::Response, ExchangeError> {
         Ok(async move {
             let order = resp.into_response::<Order>()?;
-            Ok(types::Cancelled {
+            Ok(types::Canceled {
                 ts: order
                     .updated()
                     .map(super::from_timestamp)

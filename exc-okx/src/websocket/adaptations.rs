@@ -4,7 +4,7 @@ use exc_core::{
     types::{
         instrument::{InstrumentMeta, SubscribeInstruments},
         trading::{CancelOrder, OrderId, PlaceOrder},
-        Cancelled, OrderUpdate, Placed, SubscribeOrders,
+        Canceled, OrderUpdate, Placed, SubscribeOrders,
     },
     Adaptor, ExchangeError, Str,
 };
@@ -220,7 +220,7 @@ impl Adaptor<CancelOrder> for Request {
             {
                 if code == "0" {
                     if let Some(_data) = data.pop() {
-                        Ok(Cancelled {
+                        Ok(Canceled {
                             ts: OffsetDateTime::now_utc(),
                             order: None,
                         })
@@ -241,7 +241,7 @@ impl Adaptor<CancelOrder> for Request {
             } else {
                 Err(OkxError::UnexpectedDataType(anyhow::anyhow!("{event:?}")))
             }?;
-            Ok(Cancelled {
+            Ok(Canceled {
                 ts: OffsetDateTime::now_utc(),
                 order: None,
             })
