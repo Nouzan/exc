@@ -29,3 +29,23 @@ where
         .boxed()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[allow(dead_code)]
+    fn boxed_bid_ask<'a, S>(svc: S) -> Box<dyn SubscribeBidAskService + 'a>
+    where
+        S: SubscribeBidAskService + 'a,
+    {
+        Box::new(svc)
+    }
+
+    #[cfg(feature = "binance")]
+    #[tokio::test]
+    async fn test_box_bid_ask() {
+        let binance = crate::Binance::usd_margin_futures().connect_exc();
+        std::hint::black_box(boxed_bid_ask(binance));
+    }
+}

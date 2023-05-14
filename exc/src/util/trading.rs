@@ -126,3 +126,53 @@ where
         .boxed()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[allow(dead_code)]
+    fn boxed_trading<'a, S>(svc: S) -> Box<dyn TradingService + 'a>
+    where
+        S: TradingService + 'a,
+    {
+        Box::new(svc)
+    }
+
+    #[cfg(feature = "okx")]
+    #[tokio::test]
+    async fn test_box_trading() {
+        let okx = crate::Okx::endpoint().connect_exc();
+        std::hint::black_box(boxed_trading(okx));
+    }
+
+    #[allow(dead_code)]
+    fn boxed_check_order<'a, S>(svc: S) -> Box<dyn CheckOrderService + 'a>
+    where
+        S: CheckOrderService + 'a,
+    {
+        Box::new(svc)
+    }
+
+    #[cfg(feature = "okx")]
+    #[tokio::test]
+    async fn test_box_check_order() {
+        let okx = crate::Okx::endpoint().connect_exc();
+        std::hint::black_box(boxed_check_order(okx));
+    }
+
+    #[allow(dead_code)]
+    fn boxed_subscribe_order<'a, S>(svc: S) -> Box<dyn SubscribeOrdersService + 'a>
+    where
+        S: SubscribeOrdersService + 'a,
+    {
+        Box::new(svc)
+    }
+
+    #[cfg(feature = "okx")]
+    #[tokio::test]
+    async fn test_box_subscribe_order() {
+        let okx = crate::Okx::endpoint().connect_exc();
+        std::hint::black_box(boxed_subscribe_order(okx));
+    }
+}
