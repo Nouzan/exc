@@ -1,15 +1,16 @@
-use std::{str::FromStr, time::Duration};
+use std::{ops::RangeBounds, str::FromStr, time::Duration};
 
 use clap::Parser;
 use exc::{
-    core::types::{SubscribeTickers, SubscribeTrades, Ticker, Trade},
+    core::types::{Candle, SubscribeTickers, SubscribeTrades, Ticker, Trade},
+    prelude::*,
     types::instrument::InstrumentMeta,
     util::instrument::PollInstrumentsLayer,
-    ExcExt, ExcLayer, IntoExc, SubscribeInstrumentsService, SubscribeTickersService,
-    SubscribeTradesService,
+    ExcLayer, IntoExc,
 };
 use futures::{Stream, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
+use time::{macros::datetime, OffsetDateTime};
 use tower::{
     layer::{layer_fn, util::Stack},
     ServiceExt,
@@ -19,6 +20,7 @@ struct Exchange {
     ticker: Box<dyn SubscribeTickersService>,
     trade: Box<dyn SubscribeTradesService>,
     inst: Box<dyn SubscribeInstrumentsService>,
+    candle: Box<dyn FetchCandlesService>,
 }
 
 impl Exchange {
@@ -29,10 +31,11 @@ impl Exchange {
             // We cannot clone `Binance` here because the user may subscribe to both ticker and trade
             // channels which will undelryingly subscribe trade channel twice.
             trade: Box::new(exc::Binance::usd_margin_futures().connect_exc()),
-            inst: Box::new(binance.layer(&Stack::new(
+            inst: Box::new(binance.clone().layer(&Stack::new(
                 ExcLayer::default(),
                 PollInstrumentsLayer::new(Duration::from_secs(3600)),
             ))),
+            candle: Box::new(binance.into_fetch_candles_forward(1000)),
         }
     }
 
@@ -63,10 +66,11 @@ impl Exchange {
         Self {
             ticker: Box::new(okx.clone()),
             trade: Box::new(trade_svc),
-            inst: Box::new(okx.layer(&Stack::new(
+            inst: Box::new(okx.clone().layer(&Stack::new(
                 ExcLayer::default(),
                 PollInstrumentsLayer::new(Duration::from_secs(3600)),
             ))),
+            candle: Box::new(okx.into_fetch_candles_backward(100)),
         }
     }
 
@@ -89,6 +93,15 @@ impl Exchange {
         tag: impl AsRef<str>,
     ) -> anyhow::Result<impl Stream<Item = exc::Result<InstrumentMeta<Decimal>>>> {
         Ok(self.inst.subscribe_instruments(tag.as_ref()).await?)
+    }
+
+    async fn fetch_candles(
+        &mut self,
+        inst: impl AsRef<str>,
+        period: Period,
+        range: impl RangeBounds<OffsetDateTime>,
+    ) -> anyhow::Result<impl Stream<Item = exc::Result<Candle>>> {
+        Ok(self.candle.fetch_candles_range(inst, period, range).await?)
     }
 }
 
@@ -124,6 +137,19 @@ async fn main() -> anyhow::Result<()> {
         .init();
     let cli = Cli::try_parse()?;
     let mut exchange: Exchange = cli.exchange.parse()?;
+    // Fetch candeles.
+    let mut candles = exchange
+        .fetch_candles(
+            &cli.inst,
+            Period::secs(60),
+            datetime!(2023-05-14 00:00:00 +0)..datetime!(2023-05-14 00:02:00 +0),
+        )
+        .await?;
+    while let Some(candle) = candles.try_next().await? {
+        println!("candle: {candle}");
+    }
+
+    // Subscribe to tickers.
     let mut stream = exchange.subscribe_tickers(cli.inst.clone()).await?;
     let ticker_handle = tokio::spawn(async move {
         while let Some(ticker) = stream.try_next().await? {
@@ -131,6 +157,8 @@ async fn main() -> anyhow::Result<()> {
         }
         anyhow::Result::<_>::Ok(())
     });
+
+    // Subscribe to trades.
     let mut stream = exchange.subscribe_trades(cli.inst.clone()).await?;
     let trade_handle = tokio::spawn(async move {
         while let Some(trade) = stream.try_next().await? {
@@ -138,6 +166,8 @@ async fn main() -> anyhow::Result<()> {
         }
         anyhow::Result::<_>::Ok(())
     });
+
+    // Subscribe to instruments.
     let mut stream = exchange.subscribe_insts(cli.tag.clone()).await?;
     let inst_handle = tokio::spawn(async move {
         while let Some(inst) = stream.try_next().await? {

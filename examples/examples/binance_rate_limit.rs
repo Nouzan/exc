@@ -10,7 +10,7 @@ async fn task(inst: &str) -> anyhow::Result<()> {
         .into_rate_limited(70, Duration::from_secs(60))
         .into_fetch_candles_forward(1500);
     let mut stream = binance
-        .fetch_candles(
+        .fetch_candles_range(
             inst,
             Period::minutes(UtcOffset::UTC, 1),
             datetime!(2020-01-01 00:00:00 +08:00)..,

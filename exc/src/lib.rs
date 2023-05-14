@@ -33,7 +33,7 @@ pub mod prelude {
     };
     pub use crate::util::{
         book::SubscribeBidAskService,
-        fetch_candles::FetchCandlesService,
+        fetch_candles::{FetchCandlesService, FetchCandlesServiceExt},
         instrument::{FetchInstrumentsService, SubscribeInstrumentsService},
         reconnect::ReconnectService,
         subscribe_tickers::SubscribeTickersService,
