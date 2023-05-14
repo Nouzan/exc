@@ -19,10 +19,7 @@ where
     S::Future: Send,
 {
     /// Subscribe current best bid and ask.
-    fn subscribe_bid_ask(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<BidAskStream>>
-    where
-        Self: Sized,
-    {
+    fn subscribe_bid_ask(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<BidAskStream>> {
         ServiceExt::oneshot(
             self,
             SubscribeBidAsk {

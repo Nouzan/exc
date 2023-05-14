@@ -15,10 +15,7 @@ where
     S: ExcService<SubscribeTrades> + Send,
     S::Future: Send,
 {
-    fn subscribe_trades(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TradeStream>>
-    where
-        Self: Sized,
-    {
+    fn subscribe_trades(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TradeStream>> {
         ServiceExt::oneshot(
             self,
             SubscribeTrades {

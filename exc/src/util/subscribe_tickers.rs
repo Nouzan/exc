@@ -28,10 +28,7 @@ where
     S::Future: Send,
 {
     /// Subscribe tickers.
-    fn subscribe_tickers(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TickerStream>>
-    where
-        Self: Sized,
-    {
+    fn subscribe_tickers(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TickerStream>> {
         ServiceExt::<SubscribeTickers>::oneshot(self.as_service_mut(), SubscribeTickers::new(inst))
             .boxed()
     }
