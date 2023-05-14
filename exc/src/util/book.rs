@@ -1,13 +1,25 @@
-use tower::{util::Oneshot, ServiceExt};
+use exc_core::types::BidAskStream;
+use futures::future::BoxFuture;
+use futures::FutureExt;
+use tower::ServiceExt;
 
 use crate::core::types::SubscribeBidAsk;
 
 use crate::ExcService;
 
 /// Subscribe current best bid and ask service.
-pub trait SubscribeBidAskService: ExcService<SubscribeBidAsk> {
+pub trait SubscribeBidAskService {
     /// Subscribe current best bid and ask.
-    fn subscribe_bid_ask(&mut self, inst: &str) -> Oneshot<&mut Self, SubscribeBidAsk>
+    fn subscribe_bid_ask(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<BidAskStream>>;
+}
+
+impl<S> SubscribeBidAskService for S
+where
+    S: ExcService<SubscribeBidAsk> + Send,
+    S::Future: Send,
+{
+    /// Subscribe current best bid and ask.
+    fn subscribe_bid_ask(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<BidAskStream>>
     where
         Self: Sized,
     {
@@ -17,7 +29,6 @@ pub trait SubscribeBidAskService: ExcService<SubscribeBidAsk> {
                 instrument: inst.to_string(),
             },
         )
+        .boxed()
     }
 }
-
-impl<S> SubscribeBidAskService for S where S: ExcService<SubscribeBidAsk> {}
