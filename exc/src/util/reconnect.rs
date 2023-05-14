@@ -1,6 +1,6 @@
 use exc_core::{types::utils::Reconnect, ExcService, ExchangeError};
 use futures::{
-    future::{ready, LocalBoxFuture},
+    future::{ready, BoxFuture},
     stream::iter,
     FutureExt, StreamExt,
 };
@@ -12,9 +12,17 @@ enum State {
 }
 
 /// Force reconnect service.
-pub trait ReconnectService: ExcService<Reconnect> {
+pub trait ReconnectService {
     /// Force reconnect.
-    fn reconnect(&mut self) -> LocalBoxFuture<'_, Result<(), ExchangeError>>
+    fn reconnect(&mut self) -> BoxFuture<'_, Result<(), ExchangeError>>;
+}
+
+impl<S> ReconnectService for S
+where
+    S: ExcService<Reconnect> + Send,
+    S::Future: Send,
+{
+    fn reconnect(&mut self) -> BoxFuture<'_, Result<(), ExchangeError>>
     where
         Self: Sized,
     {
@@ -30,8 +38,6 @@ pub trait ReconnectService: ExcService<Reconnect> {
                 }
                 State::Reconnect => ready(res),
             })
-            .boxed_local()
+            .boxed()
     }
 }
-
-impl<S> ReconnectService for S where S: ExcService<Reconnect> {}

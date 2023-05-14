@@ -21,6 +21,7 @@ struct Exchange {
     trade: Box<dyn SubscribeTradesService>,
     inst: Box<dyn SubscribeInstrumentsService>,
     candle: Box<dyn FetchCandlesService>,
+    reconnect: Box<dyn ReconnectService>,
 }
 
 impl Exchange {
@@ -35,7 +36,8 @@ impl Exchange {
                 ExcLayer::default(),
                 PollInstrumentsLayer::new(Duration::from_secs(3600)),
             ))),
-            candle: Box::new(binance.into_fetch_candles_forward(1000)),
+            candle: Box::new(binance.clone().into_fetch_candles_forward(1000)),
+            reconnect: Box::new(binance),
         }
     }
 
@@ -70,7 +72,8 @@ impl Exchange {
                 ExcLayer::default(),
                 PollInstrumentsLayer::new(Duration::from_secs(3600)),
             ))),
-            candle: Box::new(okx.into_fetch_candles_backward(100)),
+            candle: Box::new(okx.clone().into_fetch_candles_backward(100)),
+            reconnect: Box::new(okx),
         }
     }
 
@@ -102,6 +105,11 @@ impl Exchange {
         range: impl RangeBounds<OffsetDateTime>,
     ) -> anyhow::Result<impl Stream<Item = exc::Result<Candle>>> {
         Ok(self.candle.fetch_candles_range(inst, period, range).await?)
+    }
+
+    async fn reconnect(&mut self) -> anyhow::Result<()> {
+        self.reconnect.reconnect().await?;
+        Ok(())
     }
 }
 
@@ -175,6 +183,8 @@ async fn main() -> anyhow::Result<()> {
         }
         anyhow::Result::<_>::Ok(())
     });
+    // Just for an example.
+    exchange.reconnect().await?;
     ticker_handle.await??;
     trade_handle.await??;
     inst_handle.await??;
