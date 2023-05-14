@@ -212,15 +212,7 @@ impl Request for QueryFirstCandles {
 
 /// Candle (OHLCV).
 #[derive(Debug, Clone, Serialize, Deserialize, Display)]
-#[display(
-    fmt = "ts={} ohlcv=[{}, {}, {}, {}, {}]",
-    ts,
-    open,
-    high,
-    low,
-    close,
-    volume
-)]
+#[display(fmt = "ts={ts} ohlcv=[{open}, {high}, {low}, {close}, {volume}]")]
 pub struct Candle {
     /// Timestamp.
     #[serde(with = "time::serde::rfc3339")]

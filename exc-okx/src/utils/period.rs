@@ -151,13 +151,13 @@ mod test {
     use super::*;
 
     fn test_bar(bar: &str) {
-        let period = bar_to_period(bar).unwrap_or_else(|| panic!("{}", bar));
-        let out_bar = period_to_bar(&period).unwrap_or_else(|| panic!("{} - {}", bar, period));
+        let period = bar_to_period(bar).unwrap_or_else(|| panic!("{bar}"));
+        let out_bar = period_to_bar(&period).unwrap_or_else(|| panic!("{bar} - {period}"));
         assert_eq!(bar, out_bar);
     }
     fn test_period(period: Period) {
-        let bar = period_to_bar(&period).unwrap_or_else(|| panic!("{}", period));
-        let out_period = bar_to_period(bar).unwrap_or_else(|| panic!("{} - {}", period, bar));
+        let bar = period_to_bar(&period).unwrap_or_else(|| panic!("{period}"));
+        let out_period = bar_to_period(bar).unwrap_or_else(|| panic!("{period} - {bar}"));
         assert_eq!(period, out_period);
     }
 
