@@ -1,11 +1,12 @@
 use std::time::Duration;
 
 use async_stream::stream;
+use exc_core::types::instrument::InstrumentStream;
 use exc_core::{ExchangeError, Str};
-use futures::future::{ready, Ready};
-use futures::{StreamExt, TryStreamExt};
+use futures::future::{ready, BoxFuture, Ready};
+use futures::{FutureExt, StreamExt, TryStreamExt};
 use tokio::time::MissedTickBehavior;
-use tower::{util::Oneshot, ServiceExt};
+use tower::ServiceExt;
 use tower::{Layer, Service};
 
 use crate::core::types::instrument::{FetchInstruments, SubscribeInstruments};
@@ -13,9 +14,21 @@ use crate::core::types::instrument::{FetchInstruments, SubscribeInstruments};
 use crate::ExcService;
 
 /// Subscribe instruments service.
-pub trait SubscribeInstrumentsService: ExcService<SubscribeInstruments> {
+pub trait SubscribeInstrumentsService {
     /// Subscribe instruments filter by a given tag.
-    fn subscribe_instruments(&mut self, tag: &str) -> Oneshot<&mut Self, SubscribeInstruments>
+    fn subscribe_instruments(
+        &mut self,
+        tag: &str,
+    ) -> BoxFuture<'_, crate::Result<InstrumentStream>>;
+}
+
+impl<S> SubscribeInstrumentsService for S
+where
+    S: ExcService<SubscribeInstruments> + Send,
+    S::Future: Send,
+{
+    /// Subscribe instruments filter by a given tag.
+    fn subscribe_instruments(&mut self, tag: &str) -> BoxFuture<'_, crate::Result<InstrumentStream>>
     where
         Self: Sized,
     {
@@ -23,23 +36,30 @@ pub trait SubscribeInstrumentsService: ExcService<SubscribeInstruments> {
             self,
             SubscribeInstruments { tag: Str::new(tag) },
         )
+        .boxed()
     }
 }
-
-impl<S> SubscribeInstrumentsService for S where S: ExcService<SubscribeInstruments> {}
 
 /// Fetch instruments service.
 pub trait FetchInstrumentsService: ExcService<FetchInstruments> {
     /// Fetch instruments filter by a given tag.
-    fn fetch_instruments(&mut self, tag: &str) -> Oneshot<&mut Self, FetchInstruments>
+    fn fetch_instruments(&mut self, tag: &str) -> BoxFuture<'_, crate::Result<InstrumentStream>>;
+}
+
+impl<S> FetchInstrumentsService for S
+where
+    S: ExcService<FetchInstruments> + Send,
+    S::Future: Send,
+{
+    /// Fetch instruments filter by a given tag.
+    fn fetch_instruments(&mut self, tag: &str) -> BoxFuture<'_, crate::Result<InstrumentStream>>
     where
         Self: Sized,
     {
         ServiceExt::<FetchInstruments>::oneshot(self, FetchInstruments { tag: Str::new(tag) })
+            .boxed()
     }
 }
-
-impl<S> FetchInstrumentsService for S where S: ExcService<FetchInstruments> {}
 
 /// Subscribe instruments by polling.
 #[derive(Debug, Clone, Copy)]
