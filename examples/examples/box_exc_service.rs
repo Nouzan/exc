@@ -1,29 +1,43 @@
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
 use clap::Parser;
 use exc::{
     core::types::{SubscribeTickers, SubscribeTrades, Ticker, Trade},
-    ExcExt, IntoExc, SubscribeTickersService, SubscribeTradesService,
+    types::instrument::InstrumentMeta,
+    util::instrument::PollInstrumentsLayer,
+    ExcExt, ExcLayer, IntoExc, SubscribeInstrumentsService, SubscribeTickersService,
+    SubscribeTradesService,
 };
 use futures::{Stream, StreamExt, TryStreamExt};
-use tower::{layer::layer_fn, ServiceExt};
+use rust_decimal::Decimal;
+use tower::{
+    layer::{layer_fn, util::Stack},
+    ServiceExt,
+};
 
 struct Exchange {
     ticker: Box<dyn SubscribeTickersService>,
     trade: Box<dyn SubscribeTradesService>,
+    inst: Box<dyn SubscribeInstrumentsService>,
 }
 
 impl Exchange {
     fn binance() -> Self {
-        // We cannot clone `Binance` here because the user may subscribe to both ticker and trade
-        // channels which will undelryingly subscribe trade channel twice.
+        let binance = exc::Binance::usd_margin_futures().connect_exc();
         Self {
-            ticker: Box::new(exc::Binance::spot().connect_exc().into_subscribe_tickers()),
-            trade: Box::new(exc::Binance::spot().connect_exc()),
+            ticker: Box::new(binance.clone().into_subscribe_tickers()),
+            // We cannot clone `Binance` here because the user may subscribe to both ticker and trade
+            // channels which will undelryingly subscribe trade channel twice.
+            trade: Box::new(exc::Binance::usd_margin_futures().connect_exc()),
+            inst: Box::new(binance.layer(&Stack::new(
+                ExcLayer::default(),
+                PollInstrumentsLayer::new(Duration::from_secs(3600)),
+            ))),
         }
     }
 
     fn okx() -> Self {
+        let okx = exc::Okx::endpoint().connect_exc();
         // We cannot clone `Okx` here because the user may subscribe to both ticker and trade
         // channels which will undelryingly subscribe to ticker channel twice.
         let trade_svc = exc::Okx::endpoint()
@@ -47,8 +61,12 @@ impl Exchange {
                     })
             }));
         Self {
-            ticker: Box::new(exc::Okx::endpoint().connect_exc()),
+            ticker: Box::new(okx.clone()),
             trade: Box::new(trade_svc),
+            inst: Box::new(okx.layer(&Stack::new(
+                ExcLayer::default(),
+                PollInstrumentsLayer::new(Duration::from_secs(3600)),
+            ))),
         }
     }
 
@@ -64,6 +82,13 @@ impl Exchange {
         inst: impl AsRef<str>,
     ) -> anyhow::Result<impl Stream<Item = exc::Result<Trade>>> {
         Ok(self.trade.subscribe_trades(inst.as_ref()).await?)
+    }
+
+    async fn subscribe_insts(
+        &mut self,
+        tag: impl AsRef<str>,
+    ) -> anyhow::Result<impl Stream<Item = exc::Result<InstrumentMeta<Decimal>>>> {
+        Ok(self.inst.subscribe_instruments(tag.as_ref()).await?)
     }
 }
 
@@ -85,10 +110,18 @@ struct Cli {
     exchange: String,
     #[arg(long)]
     inst: String,
+    #[arg(long, default_value = "")]
+    tag: String,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::fmt()
+        .with_writer(std::io::stderr)
+        .with_env_filter(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
+        ))
+        .init();
     let cli = Cli::try_parse()?;
     let mut exchange: Exchange = cli.exchange.parse()?;
     let mut stream = exchange.subscribe_tickers(cli.inst.clone()).await?;
@@ -105,7 +138,15 @@ async fn main() -> anyhow::Result<()> {
         }
         anyhow::Result::<_>::Ok(())
     });
+    let mut stream = exchange.subscribe_insts(cli.tag.clone()).await?;
+    let inst_handle = tokio::spawn(async move {
+        while let Some(inst) = stream.try_next().await? {
+            println!("inst: {inst}");
+        }
+        anyhow::Result::<_>::Ok(())
+    });
     ticker_handle.await??;
     trade_handle.await??;
+    inst_handle.await??;
     Ok(())
 }
