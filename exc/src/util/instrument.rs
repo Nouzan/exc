@@ -41,7 +41,7 @@ where
 }
 
 /// Fetch instruments service.
-pub trait FetchInstrumentsService: ExcService<FetchInstruments> {
+pub trait FetchInstrumentsService {
     /// Fetch instruments filter by a given tag.
     fn fetch_instruments(&mut self, tag: &str) -> BoxFuture<'_, crate::Result<InstrumentStream>>;
 }
