@@ -5,7 +5,7 @@ use tower::{Layer, Service};
 
 use crate::{Adaptor, ExcService, ExchangeError, Request};
 
-/// Adapt layer.
+/// Layer for creating [`Adapted`].
 #[derive(Debug)]
 pub struct AdaptLayer<Req, R>(PhantomData<fn() -> (Req, R)>);
 
@@ -23,7 +23,7 @@ impl<S, Req, R> Layer<S> for AdaptLayer<Req, R> {
     }
 }
 
-/// Adapted channel.
+/// Convert the inner service to be a service of the target request.
 #[derive(Debug)]
 pub struct Adapted<S, Req, R>(S, PhantomData<fn() -> (Req, R)>);
 

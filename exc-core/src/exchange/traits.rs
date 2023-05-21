@@ -1,6 +1,9 @@
-use super::ExcMut;
+use super::{
+    adapt::{AdaptLayer, Adapted},
+    ExcMut,
+};
 use crate::{Exc, ExchangeError};
-use tower::{util::MapErr, Service};
+use tower::{util::MapErr, Layer, Service};
 
 /// Request and Response binding.
 pub trait Request: Sized {
@@ -45,6 +48,29 @@ where
     /// Create a mutable reference of itself.
     fn as_service_mut(&mut self) -> ExcMut<'_, Self> {
         ExcMut { inner: self }
+    }
+
+    /// Apply a layer of which the result service is still a [`ExcService`].
+    fn apply<L, R2>(self, layer: &L) -> L::Service
+    where
+        Self: Sized,
+        R2: Request,
+        L: Layer<Self>,
+        L::Service: ExcService<R2>,
+    {
+        layer.layer(self)
+    }
+
+    /// Adapt the request type to the given.
+    fn adapt<R2>(self) -> Adapted<Self, R, R2>
+    where
+        Self: Sized,
+        R2: Request,
+        R2::Response: Send + 'static,
+        R: Adaptor<R2>,
+        Self::Future: Send + 'static,
+    {
+        self.apply(&AdaptLayer::default())
     }
 }
 
