@@ -6,7 +6,7 @@ use exc::{
     prelude::*,
     types::instrument::InstrumentMeta,
     util::instrument::PollInstrumentsLayer,
-    ExcLayer, IntoExc,
+    ExcLayer,
 };
 use futures::{Stream, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
@@ -49,9 +49,9 @@ impl Exchange {
             exc::Okx::endpoint()
                 .connect_exc()
                 .into_layered(&layer_fn(|svc: exc::Okx| {
-                    svc.into_exc()
-                        // We use `adapt` method to convert the request type to `SubscribeTickers`.
-                        .into_adapted::<SubscribeTickers>()
+                    svc
+                        // We use the `adapt` method to convert the request type to `SubscribeTickers`.
+                        .adapt::<SubscribeTickers>()
                         .map_request(|req: SubscribeTrades| SubscribeTickers {
                             instrument: req.instrument,
                         })
