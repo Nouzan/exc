@@ -28,10 +28,10 @@ where
     S::Future: Send,
 {
     /// Subscribe instruments filter by a given tag.
-    fn subscribe_instruments(&mut self, tag: &str) -> BoxFuture<'_, crate::Result<InstrumentStream>>
-    where
-        Self: Sized,
-    {
+    fn subscribe_instruments(
+        &mut self,
+        tag: &str,
+    ) -> BoxFuture<'_, crate::Result<InstrumentStream>> {
         ServiceExt::<SubscribeInstruments>::oneshot(
             self,
             SubscribeInstruments { tag: Str::new(tag) },
@@ -52,10 +52,7 @@ where
     S::Future: Send,
 {
     /// Fetch instruments filter by a given tag.
-    fn fetch_instruments(&mut self, tag: &str) -> BoxFuture<'_, crate::Result<InstrumentStream>>
-    where
-        Self: Sized,
-    {
+    fn fetch_instruments(&mut self, tag: &str) -> BoxFuture<'_, crate::Result<InstrumentStream>> {
         ServiceExt::<FetchInstruments>::oneshot(self, FetchInstruments { tag: Str::new(tag) })
             .boxed()
     }
