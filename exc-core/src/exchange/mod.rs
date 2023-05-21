@@ -1,9 +1,5 @@
 use futures::{future::BoxFuture, FutureExt};
-use std::{
-    marker::PhantomData,
-    task::{Context, Poll},
-    time::Duration,
-};
+use std::{marker::PhantomData, time::Duration};
 use tower::{
     limit::{RateLimit, RateLimitLayer},
     Layer, Service, ServiceExt,
@@ -161,29 +157,5 @@ where
             Err(err) => futures::future::ready(Err(err)).right_future(),
         }
         .boxed()
-    }
-}
-
-/// A wrapper of exchange service.
-#[derive(Debug)]
-pub struct ExcMut<'a, S: ?Sized> {
-    pub(crate) inner: &'a mut S,
-}
-
-impl<'a, S, R> Service<R> for ExcMut<'a, S>
-where
-    R: Request,
-    S: ExcService<R>,
-{
-    type Response = R::Response;
-    type Error = ExchangeError;
-    type Future = S::Future;
-
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready(cx)
-    }
-
-    fn call(&mut self, req: R) -> Self::Future {
-        self.inner.call(req)
     }
 }

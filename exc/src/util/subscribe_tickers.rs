@@ -29,8 +29,7 @@ where
 {
     /// Subscribe tickers.
     fn subscribe_tickers(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TickerStream>> {
-        ServiceExt::<SubscribeTickers>::oneshot(self.as_service_mut(), SubscribeTickers::new(inst))
-            .boxed()
+        ServiceExt::<SubscribeTickers>::oneshot(self, SubscribeTickers::new(inst)).boxed()
     }
 }
 
@@ -85,15 +84,12 @@ where
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Service::<SubscribeTrades>::poll_ready(
-            &mut ExcService::<SubscribeTrades>::as_service_mut(&mut self.svc),
-            cx,
-        )
+        Service::<SubscribeTrades>::poll_ready(&mut self.svc, cx)
     }
 
     fn call(&mut self, req: SubscribeTickers) -> Self::Future {
         let trade = Service::<SubscribeTrades>::call(
-            &mut ExcService::<SubscribeTrades>::as_service_mut(&mut self.svc),
+            &mut self.svc,
             SubscribeTrades {
                 instrument: req.instrument.clone(),
             },

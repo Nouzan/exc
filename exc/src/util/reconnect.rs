@@ -27,7 +27,7 @@ where
         Self: Sized,
     {
         let mut state = State::Init;
-        ServiceExt::<Reconnect>::call_all(self.as_service_mut(), iter([Reconnect, Reconnect]))
+        ServiceExt::<Reconnect>::call_all(self, iter([Reconnect, Reconnect]))
             .fold(Ok(()), move |res, x| match state {
                 State::Init => {
                     state = State::Reconnect;

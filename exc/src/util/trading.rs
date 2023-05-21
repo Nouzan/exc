@@ -50,7 +50,7 @@ where
         opts: &PlaceOrderOptions,
     ) -> BoxFuture<'_, crate::Result<Placed>> {
         let req = (*place).into_request(opts);
-        ServiceExt::<PlaceOrder>::oneshot(ExcService::<PlaceOrder>::as_service_mut(self), req)
+        ServiceExt::<PlaceOrder>::oneshot(self, req)
             .try_flatten()
             .boxed()
     }
@@ -70,7 +70,7 @@ where
     /// Cancel an order.
     fn cancel(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, crate::Result<Canceled>> {
         ServiceExt::<CancelOrder>::oneshot(
-            ExcService::<CancelOrder>::as_service_mut(self),
+            self,
             CancelOrder {
                 instrument: inst.to_string(),
                 id: id.clone(),
@@ -94,7 +94,7 @@ where
 {
     fn check(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, crate::Result<OrderUpdate>> {
         ServiceExt::oneshot(
-            ExcService::<GetOrder>::as_service_mut(self),
+            self,
             GetOrder {
                 instrument: Str::new(inst),
                 id: id.clone(),
@@ -118,7 +118,7 @@ where
 {
     fn subscribe_orders(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<OrderStream>> {
         ServiceExt::<SubscribeOrders>::oneshot(
-            self.as_service_mut(),
+            self,
             SubscribeOrders {
                 instrument: inst.to_string(),
             },

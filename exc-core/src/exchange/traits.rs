@@ -1,7 +1,4 @@
-use super::{
-    adapt::{AdaptLayer, Adapted},
-    ExcMut,
-};
+use super::adapt::{AdaptLayer, Adapted};
 use crate::{Exc, ExchangeError};
 use tower::{util::MapErr, Layer, Service};
 
@@ -45,11 +42,6 @@ pub trait ExcService<R>: Service<R, Response = R::Response, Error = ExchangeErro
 where
     R: Request,
 {
-    /// Create a mutable reference of itself.
-    fn as_service_mut(&mut self) -> ExcMut<'_, Self> {
-        ExcMut { inner: self }
-    }
-
     /// Apply a layer of which the result service is still a [`ExcService`].
     fn apply<L, R2>(self, layer: &L) -> L::Service
     where
