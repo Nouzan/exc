@@ -1,4 +1,4 @@
-use crate::{ExchangeError, Request};
+use crate::{ExchangeError, Request, Str};
 use derive_more::Display;
 use futures::stream::BoxStream;
 use indicator::{Tick, TickValue, Tickable};
@@ -13,14 +13,14 @@ pub type TickerStream = BoxStream<'static, Result<Ticker, ExchangeError>>;
 #[derive(Debug, Clone)]
 pub struct SubscribeTickers {
     /// Instrument.
-    pub instrument: String,
+    pub instrument: Str,
 }
 
 impl SubscribeTickers {
-    /// Create a new [`SubscribeTickers`]
-    pub fn new(inst: &str) -> Self {
+    /// Create a new [`SubscribeTickers`] request.
+    pub fn new(inst: impl AsRef<str>) -> Self {
         Self {
-            instrument: inst.to_string(),
+            instrument: Str::new(inst),
         }
     }
 }

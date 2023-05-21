@@ -5,7 +5,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
-use crate::{ExchangeError, Request};
+use crate::{ExchangeError, Request, Str};
 
 /// Trade Stream.
 pub type TradeStream = BoxStream<'static, Result<Trade, ExchangeError>>;
@@ -29,7 +29,16 @@ pub struct Trade {
 #[derive(Debug, Clone)]
 pub struct SubscribeTrades {
     /// Instrument.
-    pub instrument: String,
+    pub instrument: Str,
+}
+
+impl SubscribeTrades {
+    /// Create a new [`SubscribeTrades`] request.
+    pub fn new(inst: impl AsRef<str>) -> Self {
+        Self {
+            instrument: Str::new(inst),
+        }
+    }
 }
 
 impl Request for SubscribeTrades {

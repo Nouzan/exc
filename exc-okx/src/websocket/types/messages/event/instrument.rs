@@ -351,7 +351,7 @@ impl TryFrom<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
             min_value: Decimal::ZERO,
         };
         Ok(InstrumentMeta::new(
-            &common.inst_id,
+            common.inst_id.as_str(),
             meta.to_exc_symbol()?,
             attrs,
         ))

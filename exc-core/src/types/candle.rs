@@ -60,7 +60,7 @@ impl fmt::Display for QueryCandles {
 
 impl QueryCandles {
     /// Create a new query.
-    pub fn new<R>(inst: &str, period: Period, range: R) -> Self
+    pub fn new<R>(inst: impl AsRef<str>, period: Period, range: R) -> Self
     where
         R: RangeBounds<OffsetDateTime>,
     {

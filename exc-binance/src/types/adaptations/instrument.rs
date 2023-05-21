@@ -65,7 +65,7 @@ impl Adaptor<FetchInstruments> for Request {
                         min_value: min_value.copied()?,
                     };
                     Some(Ok(InstrumentMeta::new(
-                        &symbol.symbol.to_lowercase(),
+                        symbol.symbol.to_lowercase(),
                         symbol
                             .to_exc_symbol()
                             .map_err(|err| {
@@ -113,7 +113,7 @@ impl Adaptor<FetchInstruments> for Request {
                         min_value: min_value?,
                     };
                     Some(Ok(InstrumentMeta::new(
-                        &symbol.symbol.to_lowercase(),
+                        symbol.symbol.to_lowercase(),
                         symbol
                             .to_exc_symbol()
                             .map_err(|err| {
