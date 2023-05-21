@@ -1,27 +1,27 @@
-//! Exc-core: Abstractions for exchanges (low-level apis).
+//! Exc-core: Abstractions for exchanges (the low-level apis).
 
 #![deny(missing_docs)]
 
 /// Symbol.
 pub mod symbol;
 
-/// Services.
+/// Core services.
 pub mod service;
 
-/// Transport.
+/// Transport utils.
 pub mod transport;
 
-/// Types.
+/// The core types for exchange APIs.
 pub mod types;
 
 /// Errors.
 pub mod error;
 
 #[cfg(feature = "retry")]
-/// Retry.
+/// Retry utils.
 pub mod retry;
 
-/// Utils.
+/// Other utils.
 pub mod util;
 
 pub use self::error::ExchangeError;
