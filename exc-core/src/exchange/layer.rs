@@ -6,7 +6,7 @@ use crate::{ExcService, Request};
 
 use super::Exc;
 
-/// Exc layer.
+/// Build [`Exc`] from an [`ExcService`].
 pub struct ExcLayer<Req> {
     _req: PhantomData<fn() -> Req>,
 }

@@ -17,7 +17,7 @@ pub mod layer;
 /// Traits.
 pub mod traits;
 
-/// Adapt.
+/// The adapt layer.
 pub mod adapt;
 
 pub use layer::ExcLayer;
@@ -25,8 +25,18 @@ pub use traits::{Adaptor, ExcService, IntoExc, Request};
 
 use self::adapt::{AdaptLayer, Adapted};
 
-/// A wrapper that convert a general purpose exchange service
-/// into the specific exc services that are supported.
+/// The core service wrapper of this crate, which implements
+/// [`ExcService<T>`] *if* the request type of the underlying
+/// service implements [`Adaptor<T>`].
+///
+/// With the help of [`Exc`], we can use a single type to represent
+/// all the services that an exchange can provide.
+///
+/// For example, let `Exchange` be an api endpoint implementation of a exchange,
+/// which implements [`Service<R>`], where `R` is the request type of the api endpoint.
+/// Then `Exc<Exchange, R>` will implement `Service<SubscribeTickers>` and
+/// `Service<PlaceOrder>`, as long as `R` implements both `Adaptor<SubscribeTickers>`
+/// and `Adaptor<PlaceOrder>`.
 #[derive(Debug)]
 pub struct Exc<C, Req> {
     channel: C,
@@ -58,10 +68,10 @@ where
     Req: Request,
     C: ExcService<Req>,
 {
-    /// Create a new exchange client from the given channel.
-    pub fn new(channel: C) -> Self {
+    /// Create from the given [`ExcService`].
+    pub fn new(service: C) -> Self {
         Self {
-            channel,
+            channel: service,
             _req: PhantomData,
         }
     }
