@@ -20,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut market = Binance::usd_margin_futures().connect_exc().layer(
+    let mut market = Binance::usd_margin_futures().connect_exc().into_layered(
         &InstrumentsLayer::new(&[""]).subscribe_instruments(Stack::new(
             ExcLayer::default(),
             PollInstrumentsLayer::new(Duration::from_secs(60 * 60)),

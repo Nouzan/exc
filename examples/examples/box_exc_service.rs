@@ -32,7 +32,7 @@ impl Exchange {
             // We cannot clone `Binance` here because the user may subscribe to both ticker and trade
             // channels which will undelryingly subscribe trade channel twice.
             trade: Box::new(exc::Binance::usd_margin_futures().connect_exc()),
-            inst: Box::new(binance.clone().layer(&Stack::new(
+            inst: Box::new(binance.clone().into_layered(&Stack::new(
                 ExcLayer::default(),
                 PollInstrumentsLayer::new(Duration::from_secs(3600)),
             ))),
@@ -45,30 +45,31 @@ impl Exchange {
         let okx = exc::Okx::endpoint().connect_exc();
         // We cannot clone `Okx` here because the user may subscribe to both ticker and trade
         // channels which will undelryingly subscribe to ticker channel twice.
-        let trade_svc = exc::Okx::endpoint()
-            .connect_exc()
-            .layer(&layer_fn(|svc: exc::Okx| {
-                svc.into_exc()
-                    // We use `adapt` method to convert the request type to `SubscribeTickers`.
-                    .adapt::<SubscribeTickers>()
-                    .map_request(|req: SubscribeTrades| SubscribeTickers {
-                        instrument: req.instrument,
-                    })
-                    .map_response(|res| {
-                        res.map_ok(|t| Trade {
-                            ts: t.ts,
-                            price: t.last,
-                            size: t.size,
-                            // Just as an example, it is not recommended.
-                            buy: t.buy.unwrap_or(true),
+        let trade_svc =
+            exc::Okx::endpoint()
+                .connect_exc()
+                .into_layered(&layer_fn(|svc: exc::Okx| {
+                    svc.into_exc()
+                        // We use `adapt` method to convert the request type to `SubscribeTickers`.
+                        .into_adapted::<SubscribeTickers>()
+                        .map_request(|req: SubscribeTrades| SubscribeTickers {
+                            instrument: req.instrument,
                         })
-                        .boxed()
-                    })
-            }));
+                        .map_response(|res| {
+                            res.map_ok(|t| Trade {
+                                ts: t.ts,
+                                price: t.last,
+                                size: t.size,
+                                // Just as an example, it is not recommended.
+                                buy: t.buy.unwrap_or(true),
+                            })
+                            .boxed()
+                        })
+                }));
         Self {
             ticker: Box::new(okx.clone()),
             trade: Box::new(trade_svc),
-            inst: Box::new(okx.clone().layer(&Stack::new(
+            inst: Box::new(okx.clone().into_layered(&Stack::new(
                 ExcLayer::default(),
                 PollInstrumentsLayer::new(Duration::from_secs(3600)),
             ))),

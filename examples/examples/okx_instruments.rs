@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let mut market = Okx::endpoint().connect_exc().layer(
+    let mut market = Okx::endpoint().connect_exc().into_layered(
         InstrumentsLayer::new(&["SPOT", "FUTURES", "SWAP"])
             .set_fetch_rate_limit(2, Duration::from_secs(1)),
     );
