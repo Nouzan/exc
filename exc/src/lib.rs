@@ -11,8 +11,7 @@ pub mod types;
 pub mod util;
 
 pub use self::core::{
-    exchange::adapt::AdaptLayer, Adaptor, Exc, ExcLayer, ExcService, ExchangeError, IntoExc,
-    Request,
+    service::adapt::AdaptLayer, Adaptor, Exc, ExcLayer, ExcService, ExchangeError, IntoExc, Request,
 };
 pub use exc_core as core;
 pub use util::{
