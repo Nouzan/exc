@@ -76,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut revision = 0;
     let mut orders = binance
-        .adapt::<SubscribeOrders>()
+        .into_adapted::<SubscribeOrders>()
         .into_retry(Duration::from_secs(30));
     loop {
         revision += 1;

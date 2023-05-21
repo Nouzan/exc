@@ -73,7 +73,7 @@ where
 
     /// Apply rate-limit layer to the channel.
     pub fn into_rate_limited(self, num: u64, per: Duration) -> Exc<RateLimit<C>, Req> {
-        self.layer(&RateLimitLayer::new(num, per))
+        self.into_layered(&RateLimitLayer::new(num, per))
     }
 
     #[cfg(feature = "retry")]
@@ -89,22 +89,22 @@ where
         use crate::retry::Always;
         use tower::retry::RetryLayer;
 
-        self.layer(&RetryLayer::new(Always::with_max_duration(max_duration)))
+        self.into_layered(&RetryLayer::new(Always::with_max_duration(max_duration)))
     }
 
-    /// Adapt to the given request.
-    pub fn adapt<R>(self) -> Exc<Adapted<C, Req, R>, R>
+    /// Adapt the request type of the underlying channel to the target type `R`.
+    pub fn into_adapted<R>(self) -> Exc<Adapted<C, Req, R>, R>
     where
         R: Request,
         R::Response: Send + 'static,
         Req: Adaptor<R>,
         C::Future: Send + 'static,
     {
-        self.layer(&AdaptLayer::default())
+        self.into_layered(&AdaptLayer::default())
     }
 
     /// Apply a layer to the underlying channel.
-    pub fn layer<T, R>(self, layer: &T) -> Exc<T::Service, R>
+    pub fn into_layered<T, R>(self, layer: &T) -> Exc<T::Service, R>
     where
         T: Layer<C>,
         R: Request,
