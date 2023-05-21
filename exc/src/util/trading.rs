@@ -69,15 +69,9 @@ where
 
     /// Cancel an order.
     fn cancel(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, crate::Result<Canceled>> {
-        ServiceExt::<CancelOrder>::oneshot(
-            self,
-            CancelOrder {
-                instrument: inst.to_string(),
-                id: id.clone(),
-            },
-        )
-        .try_flatten()
-        .boxed()
+        ServiceExt::<CancelOrder>::oneshot(self, CancelOrder::new(inst, id.clone()))
+            .try_flatten()
+            .boxed()
     }
 }
 
@@ -117,13 +111,7 @@ where
     S::Future: Send,
 {
     fn subscribe_orders(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<OrderStream>> {
-        ServiceExt::<SubscribeOrders>::oneshot(
-            self,
-            SubscribeOrders {
-                instrument: inst.to_string(),
-            },
-        )
-        .boxed()
+        ServiceExt::<SubscribeOrders>::oneshot(self, SubscribeOrders::new(inst)).boxed()
     }
 }
 

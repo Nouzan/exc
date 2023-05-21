@@ -63,7 +63,7 @@ pub struct Attributes<Num> {
 
 impl<Num> InstrumentMeta<Num> {
     /// Create a new [`InstrumentMeta`].
-    pub fn new(name: &str, symbol: ExcSymbol, attrs: Attributes<Num>) -> Self {
+    pub fn new(name: impl AsRef<str>, symbol: ExcSymbol, attrs: Attributes<Num>) -> Self {
         let (base, quote, _) = symbol.to_parts();
         let inst = Instrument::try_with_symbol(symbol.into(), &base, &quote)
             .expect("symbol must be valid")
@@ -106,11 +106,25 @@ pub struct SubscribeInstruments {
     pub tag: Str,
 }
 
+impl SubscribeInstruments {
+    /// Create a new [`SubscribeInstruments`] request.
+    pub fn new(tag: impl AsRef<str>) -> Self {
+        Self { tag: Str::new(tag) }
+    }
+}
+
 /// Fetch instruments.
 #[derive(Debug, Clone)]
 pub struct FetchInstruments {
     /// Tag.
     pub tag: Str,
+}
+
+impl FetchInstruments {
+    /// Create a new [`FetchInstruments`] request.
+    pub fn new(tag: impl AsRef<str>) -> Self {
+        Self { tag: Str::new(tag) }
+    }
 }
 
 impl Request for SubscribeInstruments {

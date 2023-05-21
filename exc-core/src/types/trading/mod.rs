@@ -30,7 +30,7 @@ pub struct PlaceOrderOptions {
 
 impl PlaceOrderOptions {
     /// Create a new options with the given instrument.
-    pub fn new(inst: &str) -> Self {
+    pub fn new(inst: impl AsRef<str>) -> Self {
         Self {
             instrument: Str::new(inst),
             client_id: None,
@@ -40,7 +40,7 @@ impl PlaceOrderOptions {
     }
 
     /// Set the client id to place.
-    pub fn with_client_id(&mut self, id: Option<&str>) -> &mut Self {
+    pub fn with_client_id(&mut self, id: Option<impl AsRef<str>>) -> &mut Self {
         self.client_id = id.map(Str::new);
         self
     }
@@ -134,9 +134,19 @@ impl Request for PlaceOrder {
 #[derive(Debug, Clone)]
 pub struct CancelOrder {
     /// Instrument.
-    pub instrument: String,
+    pub instrument: Str,
     /// Id.
     pub id: OrderId,
+}
+
+impl CancelOrder {
+    /// Create a new [`CancelOrder`] request.
+    pub fn new(inst: impl AsRef<str>, id: OrderId) -> Self {
+        Self {
+            instrument: Str::new(inst),
+            id,
+        }
+    }
 }
 
 /// Cancel order response.
@@ -168,6 +178,16 @@ pub struct GetOrder {
     pub instrument: Str,
     /// Id.
     pub id: OrderId,
+}
+
+impl GetOrder {
+    /// Create a new [`GetOrder`] request.
+    pub fn new(inst: impl AsRef<str>, id: OrderId) -> Self {
+        Self {
+            instrument: Str::new(inst),
+            id,
+        }
+    }
 }
 
 /// Order update.
@@ -215,7 +235,16 @@ pub type OrderStream = BoxStream<'static, Result<OrderUpdate, ExchangeError>>;
 #[derive(Debug, Clone)]
 pub struct SubscribeOrders {
     /// Instrument.
-    pub instrument: String,
+    pub instrument: Str,
+}
+
+impl SubscribeOrders {
+    /// Create a new [`SubscribeOrders`] request.
+    pub fn new(inst: impl AsRef<str>) -> Self {
+        Self {
+            instrument: Str::new(inst),
+        }
+    }
 }
 
 impl Request for SubscribeOrders {

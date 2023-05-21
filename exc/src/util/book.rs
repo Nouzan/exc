@@ -20,13 +20,7 @@ where
 {
     /// Subscribe current best bid and ask.
     fn subscribe_bid_ask(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<BidAskStream>> {
-        ServiceExt::oneshot(
-            self,
-            SubscribeBidAsk {
-                instrument: inst.to_string(),
-            },
-        )
-        .boxed()
+        ServiceExt::oneshot(self, SubscribeBidAsk::new(inst)).boxed()
     }
 }
 

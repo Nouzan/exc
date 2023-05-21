@@ -6,7 +6,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
-use crate::{ExchangeError, Request};
+use crate::{ExchangeError, Request, Str};
 
 /// Best bid and ask Stream.
 pub type BidAskStream = BoxStream<'static, Result<BidAsk, ExchangeError>>;
@@ -62,7 +62,16 @@ impl Tickable for BidAsk {
 #[derive(Debug, Clone)]
 pub struct SubscribeBidAsk {
     /// Instrument.
-    pub instrument: String,
+    pub instrument: Str,
+}
+
+impl SubscribeBidAsk {
+    /// Create a new [`SubscribeBidAsk`] request.
+    pub fn new(inst: impl AsRef<str>) -> Self {
+        Self {
+            instrument: Str::new(inst),
+        }
+    }
 }
 
 impl Request for SubscribeBidAsk {
