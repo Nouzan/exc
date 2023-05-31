@@ -6,6 +6,7 @@ use time::OffsetDateTime;
 mod book;
 mod candle;
 mod instrument;
+mod ticker;
 mod trade;
 mod trading;
 mod utils;

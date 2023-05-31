@@ -21,8 +21,8 @@ pub mod reconnect;
 
 use exc_core::{
     types::{
-        QueryCandles, QueryFirstCandles, QueryLastCandles, SubscribeBidAsk, SubscribeTickers,
-        SubscribeTrades,
+        QueryCandles, QueryFirstCandles, QueryLastCandles, SubscribeBidAsk, SubscribeMiniTickers,
+        SubscribeTickers, SubscribeTrades,
     },
     Adaptor, Exc, ExcService, Request,
 };
@@ -52,7 +52,10 @@ where
     where
         C: Clone + Send + 'static,
         C::Future: Send + 'static,
-        Req: Adaptor<SubscribeTrades> + Adaptor<SubscribeBidAsk> + 'static,
+        Req: Adaptor<SubscribeMiniTickers>
+            + Adaptor<SubscribeTrades>
+            + Adaptor<SubscribeBidAsk>
+            + 'static,
     {
         Exc::new(TradeBidAskServiceLayer::default().layer(self.into_exc()))
     }
@@ -64,7 +67,10 @@ where
     where
         C: Clone + Send + 'static,
         C::Future: Send + 'static,
-        Req: Adaptor<SubscribeTrades> + Adaptor<SubscribeBidAsk> + 'static,
+        Req: Adaptor<SubscribeMiniTickers>
+            + Adaptor<SubscribeTrades>
+            + Adaptor<SubscribeBidAsk>
+            + 'static,
     {
         Exc::new(
             TradeBidAskServiceLayer::default()

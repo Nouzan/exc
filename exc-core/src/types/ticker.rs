@@ -58,6 +58,21 @@ pub struct Ticker {
     /// The size of current best ask.
     #[serde(default)]
     pub ask_size: Option<Decimal>,
+    /// Open price in the past 24 hours
+    #[serde(default)]
+    pub open_24h: Option<Decimal>,
+    /// Highest price in the past 24 hours
+    #[serde(default)]
+    pub high_24h: Option<Decimal>,
+    /// Lowest price in the past 24 hours
+    #[serde(default)]
+    pub low_24h: Option<Decimal>,
+    /// 24h trading volume, with a unit of currency.
+    #[serde(default)]
+    pub vol_ccy_24h: Option<Decimal>,
+    /// 24h trading volume, with a unit of contract.
+    #[serde(default)]
+    pub vol_24h: Option<Decimal>,
 }
 
 impl Tickable for Ticker {
@@ -74,4 +89,55 @@ impl Tickable for Ticker {
     fn into_tick_value(self) -> TickValue<Self::Value> {
         TickValue::new(self.ts, self)
     }
+}
+
+/// Mini Ticker Stream.
+pub type MiniTickerStream = BoxStream<'static, Result<MiniTicker, ExchangeError>>;
+
+/// Subscribe tickers.
+#[derive(Debug, Clone)]
+pub struct SubscribeMiniTickers {
+    /// Instrument.
+    pub instrument: Str,
+}
+
+impl SubscribeMiniTickers {
+    /// Create a new [`SubscribeMiniTicker`] request.
+    pub fn new(inst: impl AsRef<str>) -> Self {
+        Self {
+            instrument: Str::new(inst),
+        }
+    }
+}
+
+impl Request for SubscribeMiniTickers {
+    type Response = MiniTickerStream;
+}
+
+/// Mini Ticker.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Display)]
+#[display(
+    fmt = "ts={ts}, last={last}, open={open_24h:?}, high={high_24h:?}, low={low_24h:?}, vol_ccy={vol_ccy_24h:?}, vol={vol_24h:?}"
+)]
+pub struct MiniTicker {
+    /// Timestamp.
+    #[serde(with = "time::serde::rfc3339")]
+    pub ts: OffsetDateTime,
+    /// Last traded price.
+    pub last: Decimal,
+    /// Open price in the past 24 hours
+    #[serde(default)]
+    pub open_24h: Decimal,
+    /// Highest price in the past 24 hours
+    #[serde(default)]
+    pub high_24h: Decimal,
+    /// Lowest price in the past 24 hours
+    #[serde(default)]
+    pub low_24h: Decimal,
+    /// 24h trading volume, with a unit of currency.
+    #[serde(default)]
+    pub vol_ccy_24h: Decimal,
+    /// 24h trading volume, with a unit of contract.
+    #[serde(default)]
+    pub vol_24h: Decimal,
 }

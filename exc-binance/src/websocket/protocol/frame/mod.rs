@@ -8,10 +8,15 @@ use serde_with::{serde_as, DisplayFromStr};
 
 use crate::websocket::error::WsError;
 
-use self::{account::AccountEvent, agg_trade::AggTrade, book_ticker::BookTicker};
+use self::{
+    account::AccountEvent, agg_trade::AggTrade, book_ticker::BookTicker, mini_ticker::MiniTicker,
+};
 
 /// Aggregate trade.
 pub mod agg_trade;
+
+/// Mini ticker.
+pub mod mini_ticker;
 
 /// Book ticker.
 pub mod book_ticker;
@@ -54,6 +59,14 @@ impl Name {
         Self {
             inst: Some(inst.to_string()),
             channel: "aggTrade".to_string(),
+        }
+    }
+
+    /// Mini ticker
+    pub fn mini_ticker(inst: &str) -> Self {
+        Self {
+            inst: Some(inst.to_string()),
+            channel: "miniTicker".to_string(),
         }
     }
 
@@ -174,6 +187,8 @@ pub enum StreamFrameKind {
     /// Aggregate trade.
     AggTrade(AggTrade),
     /// Book ticker.
+    MiniTicker(MiniTicker),
+    /// Book ticker.
     BookTicker(BookTicker),
     /// Account event.
     AccountEvent(AccountEvent),
@@ -195,6 +210,7 @@ impl StreamFrame {
     pub fn to_name(&self) -> Option<Name> {
         match &self.data {
             StreamFrameKind::AggTrade(f) => Some(f.to_name()),
+            StreamFrameKind::MiniTicker(f) => Some(f.to_name()),
             StreamFrameKind::BookTicker(f) => Some(f.to_name()),
             StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
             StreamFrameKind::Unknwon(_) => None,
@@ -232,6 +248,7 @@ mod test {
 
     use super::agg_trade::AggTrade;
     use super::book_ticker::BookTicker;
+    use super::mini_ticker::MiniTicker;
 
     #[tokio::test]
     async fn test_aggregate_trade() -> anyhow::Result<()> {
@@ -240,6 +257,19 @@ mod test {
             .oneshot(Request::subscribe(Name::agg_trade("btcbusd")))
             .await?
             .into_stream::<AggTrade>()?;
+        pin_mut!(stream);
+        let trade = stream.try_next().await?.unwrap();
+        println!("{trade:?}");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_mini_ticker() -> anyhow::Result<()> {
+        let mut api = Binance::usd_margin_futures().connect();
+        let stream = (&mut api)
+            .oneshot(Request::subscribe(Name::mini_ticker("btcbusd")))
+            .await?
+            .into_stream::<MiniTicker>()?;
         pin_mut!(stream);
         let trade = stream.try_next().await?.unwrap();
         println!("{trade:?}");

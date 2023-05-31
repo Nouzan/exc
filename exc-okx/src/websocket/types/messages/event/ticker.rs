@@ -36,6 +36,11 @@ impl From<OkxTicker> for Ticker {
             ask: Some(ti.ask_px),
             bid_size: Some(ti.bid_sz),
             ask_size: Some(ti.ask_sz),
+            open_24h: Some(ti.open_24h),
+            high_24h: Some(ti.high_24h),
+            low_24h: Some(ti.low_24h),
+            vol_ccy_24h: Some(ti.vol_ccy_24h),
+            vol_24h: Some(ti.vol_24h),
         }
     }
 }
