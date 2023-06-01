@@ -41,10 +41,7 @@ impl Nameable for MiniTicker {
     fn to_name(&self) -> Name {
         Name {
             inst: Some(self.symbol.to_lowercase()),
-            channel: self
-                .event
-                .clone()
-                .unwrap_or_else(|| String::from("miniTicker")),
+            channel: String::from("miniTicker"),
         }
     }
 }
