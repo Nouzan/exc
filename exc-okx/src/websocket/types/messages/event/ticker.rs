@@ -39,8 +39,7 @@ impl From<OkxTicker> for Ticker {
             open_24h: Some(ti.open_24h),
             high_24h: Some(ti.high_24h),
             low_24h: Some(ti.low_24h),
-            vol_ccy_24h: Some(ti.vol_ccy_24h),
-            vol_24h: Some(ti.vol_24h),
+            vol_24h: Some(ti.vol_ccy_24h),
         }
     }
 }

@@ -67,10 +67,7 @@ pub struct Ticker {
     /// Lowest price in the past 24 hours
     #[serde(default)]
     pub low_24h: Option<Decimal>,
-    /// 24h trading volume, with a unit of currency.
-    #[serde(default)]
-    pub vol_ccy_24h: Option<Decimal>,
-    /// 24h trading volume, with a unit of contract.
+    /// 24h trading volume.
     #[serde(default)]
     pub vol_24h: Option<Decimal>,
 }
@@ -117,7 +114,7 @@ impl Request for SubscribeMiniTickers {
 /// Mini Ticker.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Display)]
 #[display(
-    fmt = "ts={ts}, last={last}, open={open_24h:?}, high={high_24h:?}, low={low_24h:?}, vol_ccy={vol_ccy_24h:?}, vol={vol_24h:?}"
+    fmt = "ts={ts}, last={last}, open={open_24h:?}, high={high_24h:?}, low={low_24h:?}, vol={vol_24h:?}, vol_quote={vol_quote_24h:?}"
 )]
 pub struct MiniTicker {
     /// Timestamp.
@@ -134,10 +131,10 @@ pub struct MiniTicker {
     /// Lowest price in the past 24 hours
     #[serde(default)]
     pub low_24h: Decimal,
-    /// 24h trading volume, with a unit of currency.
-    #[serde(default)]
-    pub vol_ccy_24h: Decimal,
-    /// 24h trading volume, with a unit of contract.
+    /// 24h trading volume.
     #[serde(default)]
     pub vol_24h: Decimal,
+    /// 24h trading volume in quote.
+    #[serde(default)]
+    pub vol_quote_24h: Decimal,
 }

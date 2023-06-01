@@ -148,7 +148,6 @@ where
                     open_24h:None,
                     high_24h:None,
                     low_24h:None,
-                    vol_ccy_24h:None,
                     vol_24h:None,
                 };
                 let mut trade_init = false;
@@ -170,7 +169,6 @@ where
                             ticker.open_24h = Some(mini_ticker.open_24h);
                             ticker.high_24h = Some(mini_ticker.high_24h);
                             ticker.low_24h = Some(mini_ticker.low_24h);
-                            ticker.vol_ccy_24h = Some(mini_ticker.vol_ccy_24h);
                             ticker.vol_24h = Some(mini_ticker.vol_24h);
                         },
                         Response::BidAsk(bid_ask) => {

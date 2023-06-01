@@ -34,7 +34,7 @@ pub struct MiniTicker {
     pub vol: Decimal,
     /// Total traded quote asset volume.
     #[serde(rename = "q")]
-    pub vol_ccy: Decimal,
+    pub vol_quote: Decimal,
 }
 
 impl Nameable for MiniTicker {

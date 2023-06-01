@@ -22,8 +22,8 @@ impl Adaptor<types::SubscribeMiniTickers> for Request {
                     open_24h: t.open.normalize(),
                     high_24h: t.high.normalize(),
                     low_24h: t.low.normalize(),
-                    vol_ccy_24h: t.vol_ccy.normalize(),
                     vol_24h: t.vol.normalize(),
+                    vol_quote_24h: t.vol_quote.normalize(),
                 })
             })
             .boxed())
