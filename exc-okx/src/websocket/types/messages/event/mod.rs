@@ -106,8 +106,6 @@ pub enum Action {
     Snapshot,
 }
 
-
-
 /// Change event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Change {
