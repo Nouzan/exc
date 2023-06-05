@@ -33,7 +33,7 @@ impl<Req, E, Resp> Driven<Req, E, Resp> {
             }
             tracing::trace!("driven worker; stream is dead");
         };
-        tokio::spawn(async move { worker.await });
+        tokio::spawn(worker);
         Driven {
             sink: Box::pin(sink),
             stream: UnboundedReceiverStream::new(stream_rx),
