@@ -97,18 +97,16 @@ pub enum TradeResponse {
 /// Action kind.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum Action {
     /// A update change.
+    #[default]
     Update,
     /// A snapsshot change.
     Snapshot,
 }
 
-impl Default for Action {
-    fn default() -> Self {
-        Action::Update
-    }
-}
+
 
 /// Change event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
