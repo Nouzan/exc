@@ -9,7 +9,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use crate::websocket::error::WsError;
 
 use self::{
-    account::AccountEvent, agg_trade::AggTrade, book_ticker::BookTicker, mini_ticker::MiniTicker,
+    account::AccountEvent, agg_trade::AggTrade, book_ticker::BookTicker, mini_ticker::Statistic,
 };
 
 /// Aggregate trade.
@@ -187,7 +187,7 @@ pub enum StreamFrameKind {
     /// Aggregate trade.
     AggTrade(AggTrade),
     /// Book ticker.
-    MiniTicker(MiniTicker),
+    Statistic(Statistic),
     /// Book ticker.
     BookTicker(BookTicker),
     /// Account event.
@@ -210,7 +210,7 @@ impl StreamFrame {
     pub fn to_name(&self) -> Option<Name> {
         match &self.data {
             StreamFrameKind::AggTrade(f) => Some(f.to_name()),
-            StreamFrameKind::MiniTicker(f) => Some(f.to_name()),
+            StreamFrameKind::Statistic(f) => Some(f.to_name()),
             StreamFrameKind::BookTicker(f) => Some(f.to_name()),
             StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
             StreamFrameKind::Unknwon(_) => None,
@@ -248,7 +248,7 @@ mod test {
 
     use super::agg_trade::AggTrade;
     use super::book_ticker::BookTicker;
-    use super::mini_ticker::MiniTicker;
+    use super::mini_ticker::Statistic;
 
     #[tokio::test]
     async fn test_aggregate_trade() -> anyhow::Result<()> {
@@ -269,7 +269,7 @@ mod test {
         let stream = (&mut api)
             .oneshot(Request::subscribe(Name::mini_ticker("btcbusd")))
             .await?
-            .into_stream::<MiniTicker>()?;
+            .into_stream::<Statistic>()?;
         pin_mut!(stream);
         let trade = stream.try_next().await?.unwrap();
         println!("{trade:?}");

@@ -1,7 +1,10 @@
 use crate::error::OkxError;
 
 use super::{callback::Callback, frames::server::ServerFrame};
-use exc_core::{types::ticker::Ticker, ExchangeError};
+use exc_core::{
+    types::ticker::{Statistic, Ticker},
+    ExchangeError,
+};
 use futures::{future::BoxFuture, stream::BoxStream, FutureExt, Stream, StreamExt, TryStreamExt};
 use pin_project_lite::pin_project;
 use thiserror::Error;
@@ -110,6 +113,36 @@ impl TryFrom<Response> for BoxStream<'static, Result<Ticker, ExchangeError>> {
                     .skip(1)
                     .flat_map(|frame| {
                         let res: Result<Vec<Result<Ticker, OkxError>>, OkxError> =
+                            frame.and_then(|f| f.try_into());
+                        match res {
+                            Ok(tickers) => futures::stream::iter(tickers).left_stream(),
+                            Err(err) => {
+                                futures::stream::once(async move { Err(err) }).right_stream()
+                            }
+                        }
+                    })
+                    .map_err(ExchangeError::from)
+                    .boxed();
+                Ok(stream)
+            }
+            Response::Error(status) => Err(OkxError::Api(status).into()),
+            Response::Reconnected => Err(ExchangeError::Other(anyhow::anyhow!(
+                "invalid response kind"
+            ))),
+        }
+    }
+}
+
+impl TryFrom<Response> for BoxStream<'static, Result<Statistic, ExchangeError>> {
+    type Error = ExchangeError;
+
+    fn try_from(value: Response) -> Result<Self, Self::Error> {
+        match value {
+            Response::Streaming(stream) => {
+                let stream = stream
+                    .skip(1)
+                    .flat_map(|frame| {
+                        let res: Result<Vec<Result<Statistic, OkxError>>, OkxError> =
                             frame.and_then(|f| f.try_into());
                         match res {
                             Ok(tickers) => futures::stream::iter(tickers).left_stream(),

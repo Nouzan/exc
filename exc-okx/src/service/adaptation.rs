@@ -2,7 +2,8 @@ use exc_core::{
     types::{
         instrument::{FetchInstruments, SubscribeInstruments},
         utils::Reconnect,
-        CancelOrder, GetOrder, PlaceOrder, QueryLastCandles, SubscribeOrders, SubscribeTickers,
+        CancelOrder, GetOrder, PlaceOrder, QueryLastCandles, SubscribeOrders, SubscribeStatistics,
+        SubscribeTickers,
     },
     Adaptor, ExchangeError, Request,
 };
@@ -51,6 +52,19 @@ impl Adaptor<SubscribeTickers> for OkxRequest {
     ) -> Result<<SubscribeTickers as Request>::Response, ExchangeError> {
         let res = resp.ws()?;
         <WsRequest as Adaptor<SubscribeTickers>>::into_response(res)
+    }
+}
+impl Adaptor<SubscribeStatistics> for OkxRequest {
+    fn from_request(req: SubscribeStatistics) -> Result<Self, ExchangeError> {
+        let req = WsRequest::from_request(req)?;
+        Ok(Self::Ws(req))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeStatistics as Request>::Response, ExchangeError> {
+        let res = resp.ws()?;
+        <WsRequest as Adaptor<SubscribeStatistics>>::into_response(res)
     }
 }
 

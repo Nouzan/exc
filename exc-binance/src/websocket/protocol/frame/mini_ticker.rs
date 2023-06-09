@@ -7,7 +7,7 @@ use super::{Name, Nameable, StreamFrame, StreamFrameKind};
 
 /// 24hr rolling window mini-ticker statistics.
 #[derive(Debug, Clone, Deserialize)]
-pub struct MiniTicker {
+pub struct Statistic {
     /// Event type.
     #[serde(rename = "e")]
     pub event: Option<String>,
@@ -37,7 +37,7 @@ pub struct MiniTicker {
     pub vol_quote: Decimal,
 }
 
-impl Nameable for MiniTicker {
+impl Nameable for Statistic {
     fn to_name(&self) -> Name {
         Name {
             inst: Some(self.symbol.to_lowercase()),
@@ -46,11 +46,11 @@ impl Nameable for MiniTicker {
     }
 }
 
-impl TryFrom<StreamFrame> for MiniTicker {
+impl TryFrom<StreamFrame> for Statistic {
     type Error = WsError;
 
     fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
-        if let StreamFrameKind::MiniTicker(t) = frame.data {
+        if let StreamFrameKind::Statistic(t) = frame.data {
             Ok(t)
         } else {
             Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}")))

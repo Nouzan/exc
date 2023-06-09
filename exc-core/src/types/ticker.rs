@@ -58,18 +58,6 @@ pub struct Ticker {
     /// The size of current best ask.
     #[serde(default)]
     pub ask_size: Option<Decimal>,
-    /// Open price in the past 24 hours
-    #[serde(default)]
-    pub open_24h: Option<Decimal>,
-    /// Highest price in the past 24 hours
-    #[serde(default)]
-    pub high_24h: Option<Decimal>,
-    /// Lowest price in the past 24 hours
-    #[serde(default)]
-    pub low_24h: Option<Decimal>,
-    /// 24h trading volume.
-    #[serde(default)]
-    pub vol_24h: Option<Decimal>,
 }
 
 impl Tickable for Ticker {
@@ -88,18 +76,18 @@ impl Tickable for Ticker {
     }
 }
 
-/// Mini Ticker Stream.
-pub type MiniTickerStream = BoxStream<'static, Result<MiniTicker, ExchangeError>>;
+/// Statistic Stream.
+pub type StatisticStream = BoxStream<'static, Result<Statistic, ExchangeError>>;
 
 /// Subscribe tickers.
 #[derive(Debug, Clone)]
-pub struct SubscribeMiniTickers {
+pub struct SubscribeStatistics {
     /// Instrument.
     pub instrument: Str,
 }
 
-impl SubscribeMiniTickers {
-    /// Create a new [`SubscribeMiniTicker`] request.
+impl SubscribeStatistics {
+    /// Create a new [`SubscribeStatistic`] request.
     pub fn new(inst: impl AsRef<str>) -> Self {
         Self {
             instrument: Str::new(inst),
@@ -107,34 +95,29 @@ impl SubscribeMiniTickers {
     }
 }
 
-impl Request for SubscribeMiniTickers {
-    type Response = MiniTickerStream;
+impl Request for SubscribeStatistics {
+    type Response = StatisticStream;
 }
 
-/// Mini Ticker.
+/// Statistic.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Display)]
-#[display(
-    fmt = "ts={ts}, last={last}, open={open_24h:?}, high={high_24h:?}, low={low_24h:?}, vol={vol_24h:?}, vol_quote={vol_quote_24h:?}"
-)]
-pub struct MiniTicker {
+#[display(fmt = "ts={ts}, close={close}, open={open:?}, high={high:?}, low={low:?}, vol={vol:?}")]
+pub struct Statistic {
     /// Timestamp.
     #[serde(with = "time::serde::rfc3339")]
     pub ts: OffsetDateTime,
     /// Last traded price.
-    pub last: Decimal,
+    pub close: Decimal,
     /// Open price in the past 24 hours
     #[serde(default)]
-    pub open_24h: Decimal,
+    pub open: Decimal,
     /// Highest price in the past 24 hours
     #[serde(default)]
-    pub high_24h: Decimal,
+    pub high: Decimal,
     /// Lowest price in the past 24 hours
     #[serde(default)]
-    pub low_24h: Decimal,
+    pub low: Decimal,
     /// 24h trading volume.
     #[serde(default)]
-    pub vol_24h: Decimal,
-    /// 24h trading volume in quote.
-    #[serde(default)]
-    pub vol_quote_24h: Decimal,
+    pub vol: Decimal,
 }

@@ -24,7 +24,7 @@ pub use candle::{
     Candle, CandleStream, Period, PeriodKind, QueryCandles, QueryFirstCandles, QueryLastCandles,
 };
 pub use ticker::{
-    MiniTicker, MiniTickerStream, SubscribeMiniTickers, SubscribeTickers, Ticker, TickerStream,
+    Statistic, StatisticStream, SubscribeStatistics, SubscribeTickers, Ticker, TickerStream,
 };
 pub use trade::{SubscribeTrades, Trade, TradeStream};
 pub use trading::{

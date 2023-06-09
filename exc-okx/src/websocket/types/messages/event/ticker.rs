@@ -1,4 +1,4 @@
-use exc_core::types::ticker::Ticker;
+use exc_core::types::ticker::{Statistic, Ticker};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -36,10 +36,19 @@ impl From<OkxTicker> for Ticker {
             ask: Some(ti.ask_px),
             bid_size: Some(ti.bid_sz),
             ask_size: Some(ti.ask_sz),
-            open_24h: Some(ti.open_24h),
-            high_24h: Some(ti.high_24h),
-            low_24h: Some(ti.low_24h),
-            vol_24h: Some(ti.vol_ccy_24h),
+        }
+    }
+}
+
+impl From<OkxTicker> for Statistic {
+    fn from(ti: OkxTicker) -> Self {
+        Self {
+            ts: ti.ts,
+            close: ti.last,
+            open: ti.open_24h,
+            high: ti.high_24h,
+            low: ti.low_24h,
+            vol: ti.vol_ccy_24h,
         }
     }
 }
