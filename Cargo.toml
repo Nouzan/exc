@@ -18,7 +18,7 @@ repository = "https://github.com/Nouzan/exc"
 keywords = ["exchange", "tower"]
 readme = "README.md"
 description = "The abstraction layer of exchanges."
-rust-version = "1.66.1"
+rust-version = "1.70.0"
 
 [workspace.dependencies]
 exc-symbol = { version = "0.7.0-nightly", path = "./exc-symbol", default-features = false }
