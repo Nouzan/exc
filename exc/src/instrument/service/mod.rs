@@ -101,7 +101,10 @@ impl Service<InstrumentsRequest> for Inner {
                 ServiceState::Running(handle) => {
                     if handle.is_finished() {
                         tracing::trace!("running; found finished");
-                        let ServiceState::Running(handle) = std::mem::take(&mut self.svc_state) else { unreachable!() };
+                        let ServiceState::Running(handle) = std::mem::take(&mut self.svc_state)
+                        else {
+                            unreachable!()
+                        };
                         self.svc_state = ServiceState::Closing(handle);
                     } else {
                         tracing::trace!("running; ready");
