@@ -20,6 +20,7 @@ http = ["hyper/client", "hyper/http1", "dep:http"]
 retry = ["tower/retry", "tokio/time", "humantime"]
 
 [dependencies]
+exc-symbol = { workspace = true }
 anyhow = { workspace = true }
 cfg-if = { workspace = true }
 thiserror = { workspace = true }

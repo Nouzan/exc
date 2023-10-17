@@ -2,9 +2,6 @@
 
 #![deny(missing_docs)]
 
-/// Symbol.
-pub mod symbol;
-
 /// Core services.
 pub mod service;
 
@@ -23,6 +20,11 @@ pub mod retry;
 
 /// Other utils.
 pub mod util;
+
+/// Exc Symbol.
+pub mod symbol {
+    pub use exc_symbol::*;
+}
 
 pub use self::error::ExchangeError;
 pub use self::service::{Adaptor, Exc, ExcLayer, ExcService, IntoExc, Request};
