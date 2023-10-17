@@ -35,7 +35,7 @@ impl Worker {
 
     pub(super) fn poll_init(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), ExchangeError>> {
         let Some(fut) = self.init.as_mut() else {
-            return Poll::Ready(Ok(()))
+            return Poll::Ready(Ok(()));
         };
         fut.poll_unpin(cx)
     }

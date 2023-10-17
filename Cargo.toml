@@ -1,5 +1,13 @@
 [workspace]
-members = ["exc-core", "exc", "exc-okx", "exc-binance", "examples"]
+members = [
+    "exc",
+    "exc-core",
+    "exc-symbol",
+    "exc-okx",
+    "exc-binance",
+    "examples",
+]
+resolver = "2"
 
 [workspace.package]
 version = "0.7.0-nightly"
@@ -13,6 +21,7 @@ description = "The abstraction layer of exchanges."
 rust-version = "1.66.1"
 
 [workspace.dependencies]
+exc-symbol = { version = "0.7.0-nightly", path = "./exc-symbol", default-features = false }
 exc-core = { version = "0.7.0-nightly", path = "./exc-core", default-features = false }
 exc-binance = { version = "0.7.0-nightly", path = "./exc-binance", default-features = false }
 exc-okx = { version = "0.7.0-nightly", path = "./exc-okx", default-features = false }
