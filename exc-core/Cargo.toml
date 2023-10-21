@@ -11,7 +11,7 @@ rust-version.workspace = true
 readme = "./README.md"
 
 [features]
-default = ["websocket", "http", "retry", "rustls-tls"]
+default = []
 native-tls = ["tokio-tungstenite?/native-tls", "hyper-tls"]
 rustls-tls = ["tokio-tungstenite?/rustls-tls-webpki-roots", "hyper-rustls"]
 websocket = ["tokio-tungstenite", "dep:http", "tokio/net"]
@@ -76,8 +76,8 @@ optional = true
 
 # dev
 [dev-dependencies]
-exc = { workspace = true }
 rust_decimal_macros = { workspace = true }
+wasm-bindgen-test = { workspace = true }
 
 [package.metadata.docs.rs]
 all-features = true

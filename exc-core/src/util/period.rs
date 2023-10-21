@@ -12,7 +12,7 @@ const WEEK_OFFSET: Duration = Duration::from_secs(4 * 24 * 3600);
 /// Truncate the ts.
 /// # Example
 /// ```
-/// use exc::util::trunc;
+/// use exc_core::util::trunc;
 /// use time::macros::datetime;
 /// use std::time::Duration;
 ///
@@ -172,7 +172,7 @@ pub trait PeriodExt {
     /// # Example 1
     /// ```
     /// use indicator::Period;
-    /// use exc::util::PeriodExt;
+    /// use exc_core::util::PeriodExt;
     /// use time::macros::{datetime, offset};
     ///
     /// let period = Period::weeks(offset!(+8), 1);
@@ -195,7 +195,7 @@ pub trait PeriodExt {
     /// # Example 2
     /// ```
     /// use indicator::Period;
-    /// use exc::util::PeriodExt;
+    /// use exc_core::util::PeriodExt;
     /// use time::macros::{datetime, offset};
     ///
     /// let period = Period::weeks(offset!(+8), 1);
@@ -219,7 +219,7 @@ pub trait PeriodExt {
     /// # Example 3
     /// ```
     /// use indicator::Period;
-    /// use exc::util::PeriodExt;
+    /// use exc_core::util::PeriodExt;
     /// use time::macros::{datetime, offset};
     ///
     /// let period = Period::weeks(offset!(+8), 1);
