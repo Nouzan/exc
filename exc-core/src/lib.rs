@@ -27,5 +27,5 @@ pub mod symbol {
 }
 
 pub use self::error::ExchangeError;
-pub use self::service::{Adaptor, Exc, ExcLayer, ExcService, IntoExc, Request};
+pub use self::service::{Adaptor, Exc, ExcLayer, ExcService, ExcServiceExt, IntoExc, Request};
 pub use positions::prelude::{Asset, Instrument, ParseAssetError, ParseSymbolError, Str, Symbol};

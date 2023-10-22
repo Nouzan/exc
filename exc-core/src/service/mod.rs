@@ -19,7 +19,7 @@ pub mod adapt;
 pub use layer::ExcLayer;
 pub use {
     adapt::Adaptor,
-    traits::{ExcService, IntoExc, Request},
+    traits::{ExcService, ExcServiceExt, IntoExc, Request},
 };
 
 use self::adapt::{Adapt, AdaptLayer, AdaptService};
