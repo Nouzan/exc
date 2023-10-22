@@ -16,6 +16,20 @@ pub trait ExcService<R>: Service<R, Response = R::Response, Error = ExchangeErro
 where
     R: Request,
 {
+}
+
+impl<S, R> ExcService<R> for S
+where
+    S: Service<R, Response = R::Response, Error = ExchangeError>,
+    R: Request,
+{
+}
+
+/// Extension trait for [`ExcService`].
+pub trait ExcServiceExt<R>: ExcService<R>
+where
+    R: Request,
+{
     /// Apply a layer of which the result service is still a [`ExcService`].
     fn apply<L, R2>(self, layer: &L) -> L::Service
     where
@@ -38,9 +52,9 @@ where
     }
 }
 
-impl<S, R> ExcService<R> for S
+impl<S, R> ExcServiceExt<R> for S
 where
-    S: Service<R, Response = R::Response, Error = ExchangeError>,
+    S: ExcService<R>,
     R: Request,
 {
 }

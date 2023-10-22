@@ -28,7 +28,7 @@ pub use util::{
 pub mod prelude {
     pub use crate::core::{
         types::{Period, Place, PlaceOrderOptions},
-        Adaptor, Exc, ExcService, ExchangeError, Request,
+        Adaptor, Exc, ExcService, ExcServiceExt, ExchangeError, Request,
     };
     pub use crate::util::{
         book::SubscribeBidAskService,
