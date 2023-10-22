@@ -17,9 +17,12 @@ pub mod traits;
 pub mod adapt;
 
 pub use layer::ExcLayer;
-pub use traits::{Adaptor, ExcService, IntoExc, Request};
+pub use {
+    adapt::Adaptor,
+    traits::{ExcService, IntoExc, Request},
+};
 
-use self::adapt::{AdaptLayer, Adapted};
+use self::adapt::{Adapt, AdaptLayer, AdaptService};
 
 /// The core service wrapper of this crate, which implements
 /// [`ExcService<T>`] *if* the request type of the underlying
@@ -99,12 +102,10 @@ where
     }
 
     /// Adapt the request type of the underlying channel to the target type `R`.
-    pub fn into_adapted<R>(self) -> Exc<Adapted<C, Req, R>, R>
+    pub fn into_adapted<R>(self) -> Exc<Adapt<C, Req, R>, R>
     where
         R: Request,
-        R::Response: Send + 'static,
-        Req: Adaptor<R>,
-        C::Future: Send + 'static,
+        C: AdaptService<Req, R>,
     {
         self.into_layered(&AdaptLayer::default())
     }

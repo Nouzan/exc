@@ -15,7 +15,7 @@ default = []
 native-tls = ["tokio-tungstenite?/native-tls", "hyper-tls"]
 rustls-tls = ["tokio-tungstenite?/rustls-tls-webpki-roots", "hyper-rustls"]
 websocket = ["tokio-tungstenite", "dep:http", "tokio/net"]
-driven = ["tokio/sync", "tokio/rt", "pin-project-lite"]
+driven = ["tokio/sync", "tokio/rt"]
 http = ["hyper/client", "hyper/http1", "dep:http"]
 retry = ["tower/retry", "tokio/time", "humantime"]
 
@@ -41,6 +41,7 @@ num-traits = { workspace = true }
 positions = { workspace = true, features = ["serde"] }
 either = { workspace = true }
 tokio-stream = { workspace = true }
+pin-project-lite = { workspace = true }
 humantime = { workspace = true, optional = true }
 derive_more = "0.99"
 
@@ -53,10 +54,6 @@ workspace = true
 optional = true
 
 [dependencies.tokio]
-workspace = true
-optional = true
-
-[dependencies.pin-project-lite]
 workspace = true
 optional = true
 
