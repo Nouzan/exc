@@ -1,4 +1,4 @@
-use super::adapt::{AdaptLayer, Adapted};
+use super::adapt::{Adapt, AdaptLayer, AdaptService};
 use crate::{Exc, ExchangeError};
 use tower::{util::MapErr, Layer, Service};
 
@@ -8,36 +8,10 @@ pub trait Request: Sized {
     type Response;
 }
 
-/// An adaptor for request.
-pub trait Adaptor<R: Request>: Request {
-    /// Convert from request.
-    fn from_request(req: R) -> Result<Self, ExchangeError>;
-
-    /// Convert into response.
-    fn into_response(resp: Self::Response) -> Result<R::Response, ExchangeError>;
-}
-
-impl<T, R, E> Adaptor<R> for T
-where
-    T: Request,
-    R: Request,
-    T: TryFrom<R, Error = E>,
-    T::Response: TryInto<R::Response, Error = E>,
-    ExchangeError: From<E>,
-{
-    fn from_request(req: R) -> Result<Self, ExchangeError>
-    where
-        Self: Sized,
-    {
-        Ok(Self::try_from(req)?)
-    }
-
-    fn into_response(resp: Self::Response) -> Result<<R as Request>::Response, ExchangeError> {
-        Ok(resp.try_into()?)
-    }
-}
-
-/// An alias of [`Service`] with the required bounds.
+/// An alias of [`Service`] that requires the input type to be a [`Request`],
+/// and the error type to be [`ExchangeError`].
+///
+/// Basically, [`Request`] is just indicating that the input type has a fixed response type.
 pub trait ExcService<R>: Service<R, Response = R::Response, Error = ExchangeError>
 where
     R: Request,
@@ -54,13 +28,11 @@ where
     }
 
     /// Adapt the request type to the given.
-    fn adapt<R2>(self) -> Adapted<Self, R, R2>
+    fn adapt<R2>(self) -> Adapt<Self, R, R2>
     where
         Self: Sized,
         R2: Request,
-        R2::Response: Send + 'static,
-        R: Adaptor<R2>,
-        Self::Future: Send + 'static,
+        Self: AdaptService<R, R2>,
     {
         self.apply(&AdaptLayer::default())
     }
