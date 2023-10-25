@@ -20,6 +20,9 @@ pub mod endpoint;
 /// Service.
 pub mod service;
 
+/// Exchange.
+pub mod exchange;
+
 pub use self::error::Error;
 pub use self::http::request::{MarginOp, SpotOptions};
 pub use self::service::Binance;

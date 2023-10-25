@@ -52,7 +52,7 @@ features = ["derive"]
 [dependencies.exc-core]
 workspace = true
 default-features = false
-features = ["websocket", "http", "retry", "limit"]
+features = ["websocket", "http", "retry", "limit", "poll"]
 
 [dependencies.hyper]
 workspace = true
