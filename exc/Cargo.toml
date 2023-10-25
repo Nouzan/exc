@@ -19,6 +19,7 @@ default = [
     "limit",
     "buffer",
     "instrument",
+    "poll",
 ]
 native-tls = [
     "exc-core/native-tls",
@@ -40,6 +41,7 @@ retry = ["exc-core/retry"]
 limit = ["exc-core/limit", "tower/limit"]
 buffer = ["tower/buffer"]
 instrument = ["limit", "buffer"]
+poll = ["exc-core/poll"]
 
 [dependencies]
 anyhow = { workspace = true }

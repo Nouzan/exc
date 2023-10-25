@@ -19,6 +19,7 @@ driven = ["tokio/sync", "tokio/rt"]
 http = ["hyper/client", "hyper/http1", "dep:http", "exc-service/http"]
 retry = ["exc-service/retry"]
 limit = ["exc-service/limit"]
+poll = ["tokio/time"]
 
 [dependencies]
 exc-symbol = { workspace = true }
