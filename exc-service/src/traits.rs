@@ -55,6 +55,31 @@ where
         self.apply(&AdaptLayer::default())
     }
 
+    /// Apply a rate-limit layer to the service.
+    fn rate_limited(self, num: u64, per: std::time::Duration) -> tower::limit::RateLimit<Self>
+    where
+        Self: Sized,
+    {
+        use tower::limit::RateLimitLayer;
+        self.apply(&RateLimitLayer::new(num, per))
+    }
+
+    /// Apply a retry layer to the service.
+    #[cfg(feature = "retry")]
+    fn retry(
+        self,
+        max_duration: std::time::Duration,
+    ) -> tower::retry::Retry<crate::retry::Always, Self>
+    where
+        R: Clone,
+        Self: Sized + Clone,
+    {
+        use crate::retry::Always;
+        use tower::retry::RetryLayer;
+
+        self.apply(&RetryLayer::new(Always::with_max_duration(max_duration)))
+    }
+
     /// Create a boxed [`ExcService`].
     fn boxed(self) -> BoxExcService<R>
     where
