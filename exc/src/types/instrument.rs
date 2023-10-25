@@ -7,7 +7,8 @@ use rust_decimal::Decimal;
 /// Get instrument request.
 #[derive(Debug, Clone)]
 pub struct GetInstrument {
-    pub(crate) symbol: Either<Symbol, Str>,
+    /// Symbol.
+    pub symbol: Either<Symbol, Str>,
 }
 
 impl Request for GetInstrument {

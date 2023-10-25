@@ -12,10 +12,11 @@ rust-version.workspace = true
 
 [features]
 retry = ["tower/retry", "humantime", "tokio/time", "tracing"]
+limit = ["tower/limit"]
 http = ["hyper"]
 
 [dependencies]
-tower = { workspace = true }
+tower = { workspace = true, default-features = false, features = ["util"] }
 futures = { workspace = true }
 pin-project-lite = { workspace = true }
 thiserror = { workspace = true }

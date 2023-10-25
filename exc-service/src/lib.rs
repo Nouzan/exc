@@ -3,11 +3,8 @@
 //! Define the [`Request`] and [`ExcService`] traits, and provide some useful helper traits.
 
 use futures::{future::BoxFuture, FutureExt};
-use std::{marker::PhantomData, time::Duration};
-use tower::{
-    limit::{RateLimit, RateLimitLayer},
-    Layer, Service, ServiceExt,
-};
+use std::marker::PhantomData;
+use tower::{Layer, Service, ServiceExt};
 
 /// Exchange Error.
 pub mod error;
@@ -91,7 +88,13 @@ where
     }
 
     /// Apply rate-limit layer to the channel.
-    pub fn into_rate_limited(self, num: u64, per: Duration) -> Exc<RateLimit<C>, Req> {
+    #[cfg(feature = "limit")]
+    pub fn into_rate_limited(
+        self,
+        num: u64,
+        per: std::time::Duration,
+    ) -> Exc<tower::limit::RateLimit<C>, Req> {
+        use tower::limit::RateLimitLayer;
         self.into_layered(&RateLimitLayer::new(num, per))
     }
 

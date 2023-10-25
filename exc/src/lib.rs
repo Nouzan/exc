@@ -2,6 +2,7 @@
 #![deny(missing_docs)]
 
 /// Instruments Layer.
+#[cfg(feature = "instrument")]
 pub mod instrument;
 
 /// Types.
