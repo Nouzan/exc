@@ -28,7 +28,7 @@ pub mod retry;
 pub use layer::ExcLayer;
 pub use {
     adapt::Adaptor,
-    traits::{ExcService, ExcServiceExt, IntoExc, Request},
+    traits::{BoxExcService, ExcService, ExcServiceExt, IntoExc, Request},
 };
 
 use self::adapt::{Adapt, AdaptLayer, AdaptService};
