@@ -20,6 +20,10 @@ pub mod key;
 /// Utils
 pub mod utils;
 
+/// Exchange.
+pub mod exchange;
+
+pub use exchange::OkxExchange;
 pub use service::{Okx, OkxRequest, OkxResponse};
 
 #[macro_use]
