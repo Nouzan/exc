@@ -24,16 +24,13 @@ use exc_core::{
         QueryCandles, QueryFirstCandles, QueryLastCandles, SubscribeBidAsk, SubscribeTickers,
         SubscribeTrades,
     },
+    util::trade_bid_ask::{TradeBidAsk, TradeBidAskLayer},
     Adaptor, Exc, ExcService, Request,
 };
 use tower::Layer;
 
-use self::{
-    fetch_candles::{
-        FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward,
-        FetchCandlesForwardLayer,
-    },
-    subscribe_tickers::{TradeBidAsk, TradeBidAskServiceLayer},
+use self::fetch_candles::{
+    FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward, FetchCandlesForwardLayer,
 };
 
 pub use exc_core::util::*;
@@ -54,7 +51,7 @@ where
         C::Future: Send + 'static,
         Req: Adaptor<SubscribeTrades> + Adaptor<SubscribeBidAsk> + 'static,
     {
-        Exc::new(TradeBidAskServiceLayer::default().layer(self.into_exc()))
+        Exc::new(TradeBidAskLayer::default().layer(self.into_exc()))
     }
 
     /// Convert into a [`SubscribeTickersService`](crate::SubscribeTickersService).
@@ -67,7 +64,7 @@ where
         Req: Adaptor<SubscribeTrades> + Adaptor<SubscribeBidAsk> + 'static,
     {
         Exc::new(
-            TradeBidAskServiceLayer::default()
+            TradeBidAskLayer::default()
                 .accept_bid_ask_ts()
                 .layer(self.into_exc()),
         )
