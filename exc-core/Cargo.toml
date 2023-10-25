@@ -18,6 +18,7 @@ websocket = ["tokio-tungstenite", "dep:http", "tokio/net"]
 driven = ["tokio/sync", "tokio/rt"]
 http = ["hyper/client", "hyper/http1", "dep:http", "exc-service/http"]
 retry = ["exc-service/retry"]
+limit = ["exc-service/limit"]
 
 [dependencies]
 exc-symbol = { workspace = true }
@@ -29,12 +30,7 @@ anyhow = { workspace = true }
 cfg-if = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-tower = { workspace = true, features = [
-    "util",
-    "buffer",
-    "limit",
-    "ready-cache",
-] }
+tower = { workspace = true, features = ["util"], default-features = false }
 futures = { workspace = true }
 serde = { workspace = true }
 time = { workspace = true, features = ["serde-well-known", "macros"] }

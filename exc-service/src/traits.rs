@@ -56,6 +56,7 @@ where
     }
 
     /// Apply a rate-limit layer to the service.
+    #[cfg(feature = "limit")]
     fn rate_limited(self, num: u64, per: std::time::Duration) -> tower::limit::RateLimit<Self>
     where
         Self: Sized,

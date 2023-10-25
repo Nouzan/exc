@@ -55,7 +55,7 @@ rust_decimal_macros = "1.27.0"
 num-traits = "0.2.15"
 
 # async
-tower = "0.4.13"
+tower = { version = "0.4.13", default-features = false }
 tower-make = "0.3.0"
 futures = "0.3.25"
 futures-util = "0.3.25"

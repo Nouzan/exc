@@ -13,7 +13,10 @@ keywords = ["exchange", "tower", "binance"]
 [features]
 default = ["rustls-tls"]
 native-tls = ["exc-core/native-tls", "tokio-tungstenite/native-tls"]
-rustls-tls = ["exc-core/rustls-tls", "tokio-tungstenite/rustls-tls-webpki-roots"]
+rustls-tls = [
+    "exc-core/rustls-tls",
+    "tokio-tungstenite/rustls-tls-webpki-roots",
+]
 ci = []
 
 [dependencies]
@@ -27,7 +30,7 @@ serde_with = { workspace = true }
 async-stream = { workspace = true }
 tokio-tower = { workspace = true }
 pin-project-lite = { workspace = true }
-rust_decimal = { workspace = true, features = ["serde-with-float"]}
+rust_decimal = { workspace = true, features = ["serde-with-float"] }
 
 # sign
 hmac = { workspace = true }
@@ -49,7 +52,7 @@ features = ["derive"]
 [dependencies.exc-core]
 workspace = true
 default-features = false
-features = ["websocket", "http", "retry"]
+features = ["websocket", "http", "retry", "limit"]
 
 [dependencies.hyper]
 workspace = true

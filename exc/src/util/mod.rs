@@ -20,18 +20,19 @@ pub mod trading;
 pub mod reconnect;
 
 use exc_core::{
-    types::{
-        QueryCandles, QueryFirstCandles, QueryLastCandles, SubscribeBidAsk, SubscribeTickers,
-        SubscribeTrades,
-    },
+    types::{SubscribeBidAsk, SubscribeTickers, SubscribeTrades},
     util::trade_bid_ask::{TradeBidAsk, TradeBidAskLayer},
     Adaptor, Exc, ExcService, Request,
 };
 use tower::Layer;
 
+#[cfg(feature = "buffer")]
 use self::fetch_candles::{
     FetchCandlesBackward, FetchCandlesBackwardLayer, FetchCandlesForward, FetchCandlesForwardLayer,
 };
+
+#[cfg(feature = "buffer")]
+use exc_core::types::{QueryCandles, QueryFirstCandles, QueryLastCandles};
 
 pub use exc_core::util::*;
 
@@ -73,6 +74,7 @@ where
     /// Convert into a [`FetchCandlesService`](crate::FetchCandlesService)
     /// # Panic
     /// Panic if `limit` is zero.
+    #[cfg(feature = "buffer")]
     fn into_fetch_candles_forward(
         self,
         limit: usize,
@@ -88,6 +90,7 @@ where
     /// Convert into a [`FetchCandlesService`](crate::FetchCandlesService)
     /// # Panic
     /// Panic if `limit` is zero.
+    #[cfg(feature = "buffer")]
     fn into_fetch_candles_forward_with_bound(
         self,
         limit: usize,
@@ -104,6 +107,7 @@ where
     /// Convert into a [`FetchCandlesService`](crate::FetchCandlesService)
     /// # Panic
     /// Panic if `limit` is zero.
+    #[cfg(feature = "buffer")]
     fn into_fetch_candles_backward(
         self,
         limit: usize,
@@ -119,6 +123,7 @@ where
     /// Convert into a [`FetchCandlesService`](crate::FetchCandlesService)
     /// # Panic
     /// Panic if `limit` is zero.
+    #[cfg(feature = "buffer")]
     fn into_fetch_candles_backward_with_bound(
         self,
         limit: usize,
