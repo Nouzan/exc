@@ -5,7 +5,8 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{symbol::ExcSymbol, ExchangeError, Request, Str};
+use crate::{symbol::ExcSymbol, Str};
+use exc_service::{ExchangeError, Request};
 
 /// Parse Instrument Meta Error.
 #[derive(Debug, Error)]

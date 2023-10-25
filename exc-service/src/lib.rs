@@ -1,3 +1,7 @@
+#![deny(missing_docs)]
+
+//! Define the [`Request`] and [`ExcService`] traits, and provide some useful helper traits.
+
 use futures::{future::BoxFuture, FutureExt};
 use std::{marker::PhantomData, time::Duration};
 use tower::{
@@ -5,7 +9,8 @@ use tower::{
     Layer, Service, ServiceExt,
 };
 
-use crate::ExchangeError;
+/// Exchange Error.
+pub mod error;
 
 /// Layer.
 pub mod layer;
@@ -16,6 +21,10 @@ pub mod traits;
 /// The adapt layer.
 pub mod adapt;
 
+#[cfg(feature = "retry")]
+/// Retry utils.
+pub mod retry;
+
 pub use layer::ExcLayer;
 pub use {
     adapt::Adaptor,
@@ -23,6 +32,7 @@ pub use {
 };
 
 use self::adapt::{Adapt, AdaptLayer, AdaptService};
+pub use self::error::ExchangeError;
 
 /// The core service wrapper of this crate, which implements
 /// [`ExcService<T>`] *if* the request type of the underlying

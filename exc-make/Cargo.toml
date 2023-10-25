@@ -1,0 +1,17 @@
+[package]
+name = "exc-make"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+readme.workspace = true
+description.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+exc-service = { workspace = true }
+exc-types = { workspace = true }
+futures = { workspace = true }
+tower-make = { workspace = true }

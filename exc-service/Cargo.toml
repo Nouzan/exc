@@ -1,0 +1,26 @@
+[package]
+name = "exc-service"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+readme.workspace = true
+description.workspace = true
+rust-version.workspace = true
+
+[features]
+retry = ["tower/retry", "humantime", "tokio/time", "tracing"]
+http = ["hyper"]
+
+[dependencies]
+tower = { workspace = true }
+futures = { workspace = true }
+pin-project-lite = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+hyper = { workspace = true, optional = true }
+humantime = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }

@@ -16,11 +16,15 @@ native-tls = ["tokio-tungstenite?/native-tls", "hyper-tls"]
 rustls-tls = ["tokio-tungstenite?/rustls-tls-webpki-roots", "hyper-rustls"]
 websocket = ["tokio-tungstenite", "dep:http", "tokio/net"]
 driven = ["tokio/sync", "tokio/rt"]
-http = ["hyper/client", "hyper/http1", "dep:http"]
-retry = ["tower/retry", "tokio/time", "humantime"]
+http = ["hyper/client", "hyper/http1", "dep:http", "exc-service/http"]
+retry = ["exc-service/retry"]
 
 [dependencies]
 exc-symbol = { workspace = true }
+exc-service = { workspace = true }
+exc-types = { workspace = true }
+exc-make = { workspace = true }
+
 anyhow = { workspace = true }
 cfg-if = { workspace = true }
 thiserror = { workspace = true }
@@ -42,8 +46,6 @@ positions = { workspace = true, features = ["serde"] }
 either = { workspace = true }
 tokio-stream = { workspace = true }
 pin-project-lite = { workspace = true }
-humantime = { workspace = true, optional = true }
-derive_more = "0.99"
 
 [dependencies.tokio-tungstenite]
 workspace = true

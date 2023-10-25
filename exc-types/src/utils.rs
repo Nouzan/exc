@@ -1,4 +1,4 @@
-use crate::Request;
+use exc_service::Request;
 
 /// Force reconnect.
 #[derive(Debug, Clone, Copy, Default)]
