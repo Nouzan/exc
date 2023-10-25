@@ -4,7 +4,7 @@ use exc_core::exchange::{
     MakeCancelOrderOptions, MakeCheckOrderOptions, MakeExchange, MakeInstrumentsOptions,
     MakePlaceOrderOptions, MakeSubscribeOrdersOptions, MakeTickersOptions,
 };
-use exc_core::service::BoxExcService;
+use exc_core::service::BoxCloneExcService;
 use exc_core::types::{
     CancelOrder, GetOrder, PlaceOrder, SubscribeInstruments, SubscribeOrders, SubscribeTickers,
 };
@@ -29,7 +29,7 @@ impl OkxExchange {
 }
 
 impl Service<MakeInstrumentsOptions> for OkxExchange {
-    type Response = BoxExcService<SubscribeInstruments>;
+    type Response = BoxCloneExcService<SubscribeInstruments>;
 
     type Error = ExchangeError;
 
@@ -40,12 +40,12 @@ impl Service<MakeInstrumentsOptions> for OkxExchange {
     }
 
     fn call(&mut self, _req: MakeInstrumentsOptions) -> Self::Future {
-        ready(Ok(self.public.clone().adapt().boxed()))
+        ready(Ok(self.public.clone().adapt().boxed_clone()))
     }
 }
 
 impl Service<MakeTickersOptions> for OkxExchange {
-    type Response = BoxExcService<SubscribeTickers>;
+    type Response = BoxCloneExcService<SubscribeTickers>;
 
     type Error = ExchangeError;
 
@@ -56,12 +56,12 @@ impl Service<MakeTickersOptions> for OkxExchange {
     }
 
     fn call(&mut self, _req: MakeTickersOptions) -> Self::Future {
-        ready(Ok(self.public.clone().adapt().boxed()))
+        ready(Ok(self.public.clone().adapt().boxed_clone()))
     }
 }
 
 impl Service<MakePlaceOrderOptions> for OkxExchange {
-    type Response = BoxExcService<PlaceOrder>;
+    type Response = BoxCloneExcService<PlaceOrder>;
 
     type Error = ExchangeError;
 
@@ -72,12 +72,12 @@ impl Service<MakePlaceOrderOptions> for OkxExchange {
     }
 
     fn call(&mut self, _req: MakePlaceOrderOptions) -> Self::Future {
-        ready(Ok(self.private.clone().adapt().boxed()))
+        ready(Ok(self.private.clone().adapt().boxed_clone()))
     }
 }
 
 impl Service<MakeCancelOrderOptions> for OkxExchange {
-    type Response = BoxExcService<CancelOrder>;
+    type Response = BoxCloneExcService<CancelOrder>;
 
     type Error = ExchangeError;
 
@@ -88,12 +88,12 @@ impl Service<MakeCancelOrderOptions> for OkxExchange {
     }
 
     fn call(&mut self, _req: MakeCancelOrderOptions) -> Self::Future {
-        ready(Ok(self.private.clone().adapt().boxed()))
+        ready(Ok(self.private.clone().adapt().boxed_clone()))
     }
 }
 
 impl Service<MakeCheckOrderOptions> for OkxExchange {
-    type Response = BoxExcService<GetOrder>;
+    type Response = BoxCloneExcService<GetOrder>;
 
     type Error = ExchangeError;
 
@@ -104,12 +104,12 @@ impl Service<MakeCheckOrderOptions> for OkxExchange {
     }
 
     fn call(&mut self, _req: MakeCheckOrderOptions) -> Self::Future {
-        ready(Ok(self.private.clone().adapt().boxed()))
+        ready(Ok(self.private.clone().adapt().boxed_clone()))
     }
 }
 
 impl Service<MakeSubscribeOrdersOptions> for OkxExchange {
-    type Response = BoxExcService<SubscribeOrders>;
+    type Response = BoxCloneExcService<SubscribeOrders>;
 
     type Error = ExchangeError;
 
@@ -120,7 +120,7 @@ impl Service<MakeSubscribeOrdersOptions> for OkxExchange {
     }
 
     fn call(&mut self, _req: MakeSubscribeOrdersOptions) -> Self::Future {
-        ready(Ok(self.private.clone().adapt().boxed()))
+        ready(Ok(self.private.clone().adapt().boxed_clone()))
     }
 }
 
