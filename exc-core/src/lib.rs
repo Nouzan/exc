@@ -18,7 +18,7 @@ pub use exc_types as types;
 /// Retry utils.
 pub use exc_service::retry;
 
-/// Other utils.
+/// Utils for creating [`ExcService`](exc_service::ExcService).
 pub mod util;
 
 /// Exc Symbol.
