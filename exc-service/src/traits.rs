@@ -1,6 +1,10 @@
 use super::adapt::{Adapt, AdaptLayer, AdaptService};
 use crate::{Exc, ExchangeError};
-use tower::{util::MapErr, Layer, Service};
+use futures::future::BoxFuture;
+use tower::{
+    util::{BoxService, MapErr},
+    Layer, Service,
+};
 
 /// Request and Response binding.
 pub trait Request: Sized {
@@ -50,6 +54,17 @@ where
     {
         self.apply(&AdaptLayer::default())
     }
+
+    /// Create a boxed [`ExcService`].
+    fn boxed(self) -> BoxExcService<R>
+    where
+        Self: Sized + Send + 'static,
+        Self::Future: Send + 'static,
+    {
+        BoxExcService {
+            inner: BoxService::new(self),
+        }
+    }
 }
 
 impl<S, R> ExcServiceExt<R> for S
@@ -82,4 +97,35 @@ where
     S::Error: Into<ExchangeError>,
     R: Request,
 {
+}
+
+/// Boxed [`ExcService`].
+#[derive(Debug)]
+pub struct BoxExcService<R>
+where
+    R: Request,
+{
+    inner: BoxService<R, R::Response, ExchangeError>,
+}
+
+impl<R> Service<R> for BoxExcService<R>
+where
+    R: Request,
+{
+    type Response = R::Response;
+
+    type Error = ExchangeError;
+
+    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), Self::Error>> {
+        Service::<R>::poll_ready(&mut self.inner, cx)
+    }
+
+    fn call(&mut self, req: R) -> Self::Future {
+        Service::<R>::call(&mut self.inner, req)
+    }
 }
