@@ -2,7 +2,7 @@ use super::adapt::{Adapt, AdaptLayer, AdaptService};
 use crate::{Exc, ExchangeError};
 use futures::future::BoxFuture;
 use tower::{
-    util::{BoxService, MapErr},
+    util::{BoxCloneService, BoxService, MapErr},
     Layer, Service,
 };
 
@@ -65,6 +65,17 @@ where
             inner: BoxService::new(self),
         }
     }
+
+    /// Create a boxed [`ExcService`] with [`Clone`].
+    fn boxed_clone(&self) -> BoxCloneExcService<R>
+    where
+        Self: Sized + Clone + Send + 'static,
+        Self::Future: Send + 'static,
+    {
+        BoxCloneExcService {
+            inner: BoxCloneService::new(self.clone()),
+        }
+    }
 }
 
 impl<S, R> ExcServiceExt<R> for S
@@ -109,6 +120,48 @@ where
 }
 
 impl<R> Service<R> for BoxExcService<R>
+where
+    R: Request,
+{
+    type Response = R::Response;
+
+    type Error = ExchangeError;
+
+    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), Self::Error>> {
+        Service::<R>::poll_ready(&mut self.inner, cx)
+    }
+
+    fn call(&mut self, req: R) -> Self::Future {
+        Service::<R>::call(&mut self.inner, req)
+    }
+}
+
+/// Boxed [`ExcService`] with [`Clone`].
+#[derive(Debug)]
+pub struct BoxCloneExcService<R>
+where
+    R: Request,
+{
+    inner: BoxCloneService<R, R::Response, ExchangeError>,
+}
+
+impl<R> Clone for BoxCloneExcService<R>
+where
+    R: Request,
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<R> Service<R> for BoxCloneExcService<R>
 where
     R: Request,
 {
