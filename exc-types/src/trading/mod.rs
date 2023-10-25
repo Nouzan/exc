@@ -6,6 +6,7 @@ pub mod order;
 
 use std::{collections::BTreeMap, fmt, sync::Arc};
 
+use exc_service::{ExchangeError, Request};
 use futures::{future::BoxFuture, stream::BoxStream};
 use indicator::{Tick, TickValue, Tickable};
 pub use order::{Order, OrderId, OrderKind, OrderState, OrderStatus, OrderTrade, TimeInForce};
@@ -13,7 +14,7 @@ pub use place::Place;
 use positions::Asset;
 use time::OffsetDateTime;
 
-use crate::{ExchangeError, Request, Str};
+use crate::Str;
 
 /// Options for order placement.
 #[derive(Debug, Clone)]

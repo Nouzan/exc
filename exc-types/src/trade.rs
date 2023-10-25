@@ -1,11 +1,12 @@
 use derive_more::Display;
+use exc_service::{ExchangeError, Request};
 use futures::stream::BoxStream;
 use indicator::{Tick, TickValue, Tickable};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
-use crate::{ExchangeError, Request, Str};
+use crate::Str;
 
 /// Trade Stream.
 pub type TradeStream = BoxStream<'static, Result<Trade, ExchangeError>>;

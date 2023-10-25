@@ -1,12 +1,13 @@
 use std::fmt;
 
+use crate::Str;
 use futures::stream::BoxStream;
 use indicator::{Tick, TickValue, Tickable};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
-use crate::{ExchangeError, Request, Str};
+use exc_service::{ExchangeError, Request};
 
 /// Best bid and ask Stream.
 pub type BidAskStream = BoxStream<'static, Result<BidAsk, ExchangeError>>;
