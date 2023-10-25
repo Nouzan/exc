@@ -1,7 +1,4 @@
-use exc_make::{
-    MakeCancelOrder, MakeCheckOrder, MakeInstruments, MakePlaceOrder, MakeSubscribeOrders,
-    MakeTickers,
-};
+pub use exc_make::*;
 
 /// Make a exchange service.
 pub trait MakeExchange: MakeInstruments + MakeTickers + MakeTrading {
