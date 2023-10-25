@@ -8,7 +8,7 @@ use std::{
 use tower_make::MakeService;
 
 /// Options for making a service to subscribe instruments.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MakeInstrumentsOptions {}
 
 /// Make a service to subscribe instruments.

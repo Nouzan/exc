@@ -8,7 +8,7 @@ use std::{
 use tower_make::MakeService;
 
 /// Options for making a service to subscribe tickers.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MakeTickersOptions {}
 
 /// Make a service to subscribe tickers.
