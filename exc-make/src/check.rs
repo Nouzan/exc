@@ -8,7 +8,7 @@ use std::{
 use tower_make::MakeService;
 
 /// Options for making a service to check orders.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MakeCheckOrderOptions {}
 
 /// Make a service to check orders.

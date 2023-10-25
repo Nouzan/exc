@@ -8,7 +8,7 @@ use std::{
 use tower_make::MakeService;
 
 /// Options for making a service to Cancel orders.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MakeCancelOrderOptions {}
 
 /// Make a service to cancel orders.
