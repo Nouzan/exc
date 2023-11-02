@@ -384,6 +384,17 @@ mod test {
         Ok(())
     }
 
+    async fn do_test_trading_status(api: Binance) -> anyhow::Result<()> {
+        let res = api
+            .oneshot(Request::with_rest_payload(
+                request::account::TradingStatus { symbol: None },
+            ))
+            .await?
+            .into_response::<response::Unknown>()?;
+        println!("{res}");
+        Ok(())
+    }
+
     #[tokio::test]
     async fn test_exchange_info() -> anyhow::Result<()> {
         let apis = [
@@ -446,6 +457,16 @@ mod test {
                 };
                 do_test_delete_listen_key(api, listen_key).await?;
             }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_trading_status() -> anyhow::Result<()> {
+        if let Ok(key) = var("BINANCE_KEY") {
+            let key = serde_json::from_str::<BinanceKey>(&key)?;
+            let api = Binance::usd_margin_futures().private(key.clone()).connect();
+            do_test_trading_status(api).await?;
         }
         Ok(())
     }
