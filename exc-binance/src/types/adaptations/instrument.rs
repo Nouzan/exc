@@ -96,8 +96,8 @@ impl Adaptor<FetchInstruments> for Request {
                                     min_size = Some(min_qty.normalize());
                                     size_tick = Some(step_size.normalize());
                                 }
-                                SymbolFilter::MinNotional { notional } => {
-                                    min_value = Some(notional.normalize());
+                                SymbolFilter::Notional { min_notional } => {
+                                    min_value = Some(min_notional.normalize());
                                 }
                                 _ => {}
                             }
