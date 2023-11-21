@@ -5,7 +5,10 @@ use crate::{
 };
 use async_stream::stream;
 use exc_core::{
-    types::{ticker::SubscribeTickers, PlaceOrder},
+    types::{
+        ticker::{SubscribeStatistics, SubscribeTickers},
+        PlaceOrder,
+    },
     ExchangeError,
 };
 use futures::stream::{empty, BoxStream, StreamExt};
@@ -124,6 +127,15 @@ impl TryFrom<SubscribeTickers> for Request {
     type Error = ExchangeError;
 
     fn try_from(value: SubscribeTickers) -> Result<Self, Self::Error> {
+        let inst = value.instrument;
+        Ok(Self::subscribe_tickers(&inst))
+    }
+}
+
+impl TryFrom<SubscribeStatistics> for Request {
+    type Error = ExchangeError;
+
+    fn try_from(value: SubscribeStatistics) -> Result<Self, Self::Error> {
         let inst = value.instrument;
         Ok(Self::subscribe_tickers(&inst))
     }

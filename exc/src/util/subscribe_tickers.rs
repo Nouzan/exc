@@ -8,10 +8,10 @@ use tower::{Layer, Service, ServiceExt};
 
 use crate::{
     core::types::{
-        ticker::{SubscribeTickers, Ticker, TickerStream},
-        SubscribeBidAsk, SubscribeTrades,
+        ticker::{SubscribeStatistics, SubscribeTickers, Ticker, TickerStream},
+        StatisticStream, SubscribeBidAsk, SubscribeTrades,
     },
-    ExcService, ExchangeError,
+    ExcService, ExchangeError, SubscribeTradesService,
 };
 
 use super::book::SubscribeBidAskService;
@@ -30,6 +30,27 @@ where
     /// Subscribe tickers.
     fn subscribe_tickers(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TickerStream>> {
         ServiceExt::<SubscribeTickers>::oneshot(self, SubscribeTickers::new(inst)).boxed()
+    }
+}
+
+/// Subscribe Statistic service.
+pub trait SubscribeStatisticsService {
+    /// Subscribe statistics.
+    fn subscribe_statistics(&mut self, inst: &str)
+        -> BoxFuture<'_, crate::Result<StatisticStream>>;
+}
+
+impl<S> SubscribeStatisticsService for S
+where
+    S: ExcService<SubscribeStatistics> + Send,
+    S::Future: Send,
+{
+    /// Subscribe statisticss.
+    fn subscribe_statistics(
+        &mut self,
+        inst: &str,
+    ) -> BoxFuture<'_, crate::Result<StatisticStream>> {
+        ServiceExt::oneshot(self, SubscribeStatistics::new(inst)).boxed()
     }
 }
 
@@ -88,16 +109,13 @@ where
     }
 
     fn call(&mut self, req: SubscribeTickers) -> Self::Future {
-        let trade = Service::<SubscribeTrades>::call(
-            &mut self.svc,
-            SubscribeTrades {
-                instrument: req.instrument.clone(),
-            },
-        );
         let mut svc = self.svc.clone();
         let ignore_bid_ask_ts = self.ignore_bid_ask_ts;
         async move {
-            let trades = trade.await?.map_ok(Either::Left);
+            let trades = svc
+                .subscribe_trades(&req.instrument)
+                .await?
+                .map_ok(Either::Left);
             let bid_asks = svc
                 .subscribe_bid_ask(&req.instrument)
                 .await?

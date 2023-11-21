@@ -35,7 +35,7 @@ pub mod prelude {
         fetch_candles::{FetchCandlesService, FetchCandlesServiceExt},
         instrument::{FetchInstrumentsService, SubscribeInstrumentsService},
         reconnect::ReconnectService,
-        subscribe_tickers::SubscribeTickersService,
+        subscribe_tickers::{SubscribeStatisticsService, SubscribeTickersService},
         trade::SubscribeTradesService,
         trading::{CheckOrderService, SubscribeOrdersService, TradingService},
         ExcExt,

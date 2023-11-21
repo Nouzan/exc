@@ -75,3 +75,49 @@ impl Tickable for Ticker {
         TickValue::new(self.ts, self)
     }
 }
+
+/// Statistic Stream.
+pub type StatisticStream = BoxStream<'static, Result<Statistic, ExchangeError>>;
+
+/// Subscribe tickers.
+#[derive(Debug, Clone)]
+pub struct SubscribeStatistics {
+    /// Instrument.
+    pub instrument: Str,
+}
+
+impl SubscribeStatistics {
+    /// Create a new [`SubscribeStatistic`] request.
+    pub fn new(inst: impl AsRef<str>) -> Self {
+        Self {
+            instrument: Str::new(inst),
+        }
+    }
+}
+
+impl Request for SubscribeStatistics {
+    type Response = StatisticStream;
+}
+
+/// Statistic.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Display)]
+#[display(fmt = "ts={ts}, close={close}, open={open:?}, high={high:?}, low={low:?}, vol={vol:?}")]
+pub struct Statistic {
+    /// Timestamp.
+    #[serde(with = "time::serde::rfc3339")]
+    pub ts: OffsetDateTime,
+    /// Last traded price.
+    pub close: Decimal,
+    /// Open price in the past 24 hours
+    #[serde(default)]
+    pub open: Decimal,
+    /// Highest price in the past 24 hours
+    #[serde(default)]
+    pub high: Decimal,
+    /// Lowest price in the past 24 hours
+    #[serde(default)]
+    pub low: Decimal,
+    /// 24h trading volume.
+    #[serde(default)]
+    pub vol: Decimal,
+}

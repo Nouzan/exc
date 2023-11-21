@@ -23,7 +23,9 @@ pub use book::{BidAsk, BidAskStream, SubscribeBidAsk};
 pub use candle::{
     Candle, CandleStream, Period, PeriodKind, QueryCandles, QueryFirstCandles, QueryLastCandles,
 };
-pub use ticker::{SubscribeTickers, Ticker, TickerStream};
+pub use ticker::{
+    Statistic, StatisticStream, SubscribeStatistics, SubscribeTickers, Ticker, TickerStream,
+};
 pub use trade::{SubscribeTrades, Trade, TradeStream};
 pub use trading::{
     CancelOrder, Canceled, GetOrder, Order, OrderId, OrderKind, OrderState, OrderStatus,

@@ -1,7 +1,7 @@
 use crate::{error::OkxError, websocket::types::messages::event::Change};
 
 use super::super::messages::event::{Event, ResponseKind};
-use exc_core::types::ticker::Ticker;
+use exc_core::types::ticker::{Statistic, Ticker};
 use serde::Deserialize;
 
 /// Server Frame.
@@ -50,6 +50,14 @@ impl ServerFrame {
 }
 
 impl TryFrom<ServerFrame> for Vec<Result<Ticker, OkxError>> {
+    type Error = OkxError;
+
+    fn try_from(value: ServerFrame) -> Result<Self, Self::Error> {
+        value.inner.try_into()
+    }
+}
+
+impl TryFrom<ServerFrame> for Vec<Result<Statistic, OkxError>> {
     type Error = OkxError;
 
     fn try_from(value: ServerFrame) -> Result<Self, Self::Error> {
