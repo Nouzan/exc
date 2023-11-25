@@ -65,7 +65,7 @@ version = "0.5.0"
 optional = true
 
 [dependencies.hyper-rustls]
-version = "0.23.0"
+version = "0.24.2"
 default-features = false
 features = ["webpki-tokio", "http1"]
 optional = true
