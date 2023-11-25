@@ -44,7 +44,7 @@ derive_more = "0.99"
 
 # serde
 serde = { version = "1.0.151", features = ["derive"] }
-serde_with = "2.1.0"
+serde_with = "3.4.0"
 serde_json = "1.0.91"
 
 # data
