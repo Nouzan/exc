@@ -51,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
     api.ready().await?;
     let resp = api
         .call(Request::Http(RestRequest::from(Payload::new(
-            Ping::default(),
+            Ping,
         ))))
         .await?;
     tracing::info!("ping response: {resp:?}");

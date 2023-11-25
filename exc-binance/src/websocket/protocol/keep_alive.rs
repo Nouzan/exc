@@ -60,7 +60,7 @@ where
         match futures::ready!(this.inner.as_mut().poll_ready(cx)) {
             Ok(()) => {
                 if let PingState::WaitReady(msg) = this.state {
-                    let msg = Message::Pong(msg.drain(..).collect());
+                    let msg = Message::Pong(std::mem::take(msg));
                     *this.state = PingState::WaitSent;
                     tracing::trace!("keep-alive; {:?}", this.state);
                     if let Err(err) = this.inner.start_send(msg) {
@@ -124,7 +124,7 @@ where
                             *this.close = true;
                             return Poll::Ready(Some(Err(err)));
                         }
-                        let msg = Message::Pong(msg.drain(..).collect());
+                        let msg = Message::Pong(std::mem::take(msg));
                         *this.state = PingState::WaitSent;
                         tracing::trace!("keep-alive; {:?}", this.state);
                         if let Err(err) = this.inner.as_mut().start_send(msg) {
@@ -180,7 +180,7 @@ where
                                                     *this.close = true;
                                                     return Poll::Ready(Some(Err(err)));
                                                 }
-                                                let msg = Message::Pong(msg.drain(..).collect());
+                                                let msg = Message::Pong(std::mem::take(msg));
                                                 *this.state = PingState::WaitSent;
                                                 tracing::trace!("keep-alive; {:?}", this.state);
                                                 if let Err(err) =

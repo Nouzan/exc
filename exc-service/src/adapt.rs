@@ -63,10 +63,10 @@ where
     type AdaptedResponse: Future<Output = Result<R::Response, ExchangeError>>;
 
     /// Adapt the request.
-    fn from_request(&mut self, req: R) -> Result<Req, ExchangeError>;
+    fn adapt_from_request(&mut self, req: R) -> Result<Req, ExchangeError>;
 
     /// Adapt the response future
-    fn into_response(&mut self, res: Self::Future) -> Self::AdaptedResponse;
+    fn adapt_into_response(&mut self, res: Self::Future) -> Self::AdaptedResponse;
 }
 
 pin_project! {
@@ -104,7 +104,7 @@ where
         match this.fut.try_poll(cx) {
             std::task::Poll::Ready(Ok(ok)) => match this.f.take() {
                 Some(f) => std::task::Poll::Ready((f)(ok)),
-                None => return std::task::Poll::Pending,
+                None => std::task::Poll::Pending,
             },
             std::task::Poll::Ready(Err(err)) => std::task::Poll::Ready(Err(err)),
             std::task::Poll::Pending => std::task::Poll::Pending,
@@ -122,11 +122,11 @@ where
     type AdaptedResponse =
         AndThen<Self::Future, fn(Req::Response) -> Result<R::Response, ExchangeError>>;
 
-    fn from_request(&mut self, req: R) -> Result<Req, ExchangeError> {
+    fn adapt_from_request(&mut self, req: R) -> Result<Req, ExchangeError> {
         Req::from_request(req)
     }
 
-    fn into_response(&mut self, res: Self::Future) -> Self::AdaptedResponse {
+    fn adapt_into_response(&mut self, res: Self::Future) -> Self::AdaptedResponse {
         AndThen::new(res, Req::into_response)
     }
 }
@@ -227,11 +227,11 @@ where
     }
 
     fn call(&mut self, req: R) -> Self::Future {
-        let req = match self.0.from_request(req) {
+        let req = match self.0.adapt_from_request(req) {
             Ok(req) => req,
             Err(err) => return AdaptFuture::from_request_error(err),
         };
         let res = self.0.call(req);
-        AdaptFuture::into_response(self.0.into_response(res))
+        AdaptFuture::into_response(self.0.adapt_into_response(res))
     }
 }

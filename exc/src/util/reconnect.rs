@@ -22,6 +22,7 @@ where
     S: ExcService<Reconnect> + Send,
     S::Future: Send,
 {
+    #[allow(clippy::manual_try_fold)]
     fn reconnect(&mut self) -> BoxFuture<'_, Result<(), ExchangeError>>
     where
         Self: Sized,
