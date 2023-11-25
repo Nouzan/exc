@@ -63,6 +63,8 @@ impl OkxKey {
         timestamp: OffsetDateTime,
         use_unix_timestamp: bool,
     ) -> Result<Signature, SignError> {
+        use base64::{engine::general_purpose::STANDARD, Engine};
+
         let secret = self.secretkey.as_str();
         let timestamp = timestamp.replace_millisecond(timestamp.millisecond())?;
         let timestamp = if use_unix_timestamp {
@@ -77,7 +79,7 @@ impl OkxKey {
         mac.update(raw_sign.as_bytes());
 
         Ok(Signature {
-            signature: Str::new(base64::encode(mac.finalize().into_bytes())),
+            signature: Str::new(STANDARD.encode(mac.finalize().into_bytes())),
             timestamp: Str::new(timestamp),
         })
     }

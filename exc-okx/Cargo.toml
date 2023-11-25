@@ -34,7 +34,7 @@ rust_decimal = { workspace = true }
 serde_json = { workspace = true }
 hmac = { workspace = true }
 sha2 = { workspace = true }
-base64 = "0.13.0"
+base64 = "0.21.5"
 atomic-waker = "1.0.0"
 serde_qs = "0.12.0"
 
