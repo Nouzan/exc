@@ -21,5 +21,5 @@ indicator = { workspace = true }
 positions = { workspace = true, features = ["serde"] }
 rust_decimal = { workspace = true }
 serde = { workspace = true }
-time = { workspace = true }
+time = { workspace = true, features = ["serde-well-known"] }
 num-traits = { workspace = true }
