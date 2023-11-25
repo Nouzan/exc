@@ -50,9 +50,7 @@ async fn main() -> anyhow::Result<()> {
     drop(stream);
     api.ready().await?;
     let resp = api
-        .call(Request::Http(RestRequest::from(Payload::new(
-            Ping,
-        ))))
+        .call(Request::Http(RestRequest::from(Payload::new(Ping))))
         .await?;
     tracing::info!("ping response: {resp:?}");
     tokio::time::sleep(Duration::from_secs(2)).await;
