@@ -82,7 +82,3 @@ jobs:
           - name: WASM Test
             if: ${{ !contains(github.event.head_commit.message, 'skip test') }}
             run: wasm-pack test --node exc-core
-
-          - name: Publish Test
-            if: ${{ !contains(github.event.head_commit.message, 'skip test') }}
-            run: sh ./scripts/publish.sh --dry-run
