@@ -8,4 +8,8 @@ pub mod trade_bid_ask;
 #[cfg(feature = "poll")]
 pub mod poll_instruments;
 
+/// Fetch candles.
+#[cfg(feature = "fetch-candles")]
+pub mod fetch_candles;
+
 pub use period::{trunc, PeriodExt};

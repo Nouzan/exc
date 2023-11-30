@@ -20,6 +20,7 @@ http = ["hyper/client", "hyper/http1", "dep:http", "exc-service/http"]
 retry = ["exc-service/retry"]
 limit = ["exc-service/limit"]
 poll = ["tokio/time"]
+fetch-candles = ["tower/buffer"]
 
 [dependencies]
 exc-symbol = { workspace = true }

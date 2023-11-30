@@ -20,6 +20,7 @@ default = [
     "buffer",
     "instrument",
     "poll",
+    "fetch-candles",
 ]
 native-tls = [
     "exc-core/native-tls",
@@ -42,6 +43,7 @@ limit = ["exc-core/limit", "tower/limit"]
 buffer = ["tower/buffer"]
 instrument = ["limit", "buffer"]
 poll = ["exc-core/poll"]
+fetch-candles = ["exc-core/fetch-candles"]
 
 [dependencies]
 anyhow = { workspace = true }
