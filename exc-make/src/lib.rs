@@ -8,6 +8,9 @@ pub mod instruments;
 /// Make a service to subscribe tickers.
 pub mod tickers;
 
+/// Make a service to fetch candles.
+pub mod candles;
+
 /// Make a service to place orders.
 pub mod place;
 
@@ -22,6 +25,7 @@ pub mod orders;
 
 pub use self::{
     cancel::{MakeCancelOrder, MakeCancelOrderOptions},
+    candles::{MakeFetchCandles, MakeFetchCandlesOptions},
     check::{MakeCheckOrder, MakeCheckOrderOptions},
     instruments::{MakeInstruments, MakeInstrumentsOptions},
     orders::{MakeSubscribeOrders, MakeSubscribeOrdersOptions},
