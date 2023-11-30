@@ -40,17 +40,17 @@ pub enum SymbolType {
 
 impl ExcSymbol {
     /// Margin tag.
-    pub const MARGIN: &str = "";
+    pub const MARGIN: &'static str = "";
     /// Futures tag.
-    pub const FUTURES: &str = "F";
+    pub const FUTURES: &'static str = "F";
     /// Perpetual tag.
-    pub const PERPETUAL: &str = "P";
+    pub const PERPETUAL: &'static str = "P";
     /// Options tag.
-    pub const OPTIONS: &str = "O";
+    pub const OPTIONS: &'static str = "O";
     /// Put options tag.
-    pub const PUT: &str = "P";
+    pub const PUT: &'static str = "P";
     /// Call options tag.
-    pub const CALL: &str = "C";
+    pub const CALL: &'static str = "C";
     /// Seperate tag.
     pub const SEP: char = '-';
 
