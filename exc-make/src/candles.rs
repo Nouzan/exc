@@ -9,7 +9,12 @@ use tower_make::MakeService;
 
 /// Options for making a service to fetch candles.
 #[derive(Debug, Default)]
-pub struct MakeFetchCandlesOptions {}
+pub struct MakeFetchCandlesOptions {
+    /// Rate limit.
+    pub rate_limit: Option<(u64, std::time::Duration)>,
+    /// Batch limit.
+    pub batch_limit: Option<usize>,
+}
 
 /// Make a service to subscribe instruments.
 pub trait MakeFetchCandles {

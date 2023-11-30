@@ -1,14 +1,19 @@
 use crate::Binance;
 use exc_core::{
     exchange::{
-        MakeCancelOrderOptions, MakeCheckOrderOptions, MakeExchange, MakeInstrumentsOptions,
-        MakePlaceOrderOptions, MakeSubscribeOrdersOptions, MakeTickersOptions,
+        MakeCancelOrderOptions, MakeCheckOrderOptions, MakeExchange, MakeFetchCandlesOptions,
+        MakeInstrumentsOptions, MakePlaceOrderOptions, MakeSubscribeOrdersOptions,
+        MakeTickersOptions,
     },
-    service::BoxCloneExcService,
+    service::{BoxCloneExcService, BoxExcService},
     types::{
-        CancelOrder, GetOrder, PlaceOrder, SubscribeInstruments, SubscribeOrders, SubscribeTickers,
+        CancelOrder, GetOrder, PlaceOrder, QueryCandles, SubscribeInstruments, SubscribeOrders,
+        SubscribeTickers,
     },
-    util::{poll_instruments::PollInstrumentsLayer, trade_bid_ask::TradeBidAskLayer},
+    util::{
+        fetch_candles::FetchCandlesForwardLayer, poll_instruments::PollInstrumentsLayer,
+        trade_bid_ask::TradeBidAskLayer,
+    },
     ExcServiceExt, ExchangeError, IntoExc,
 };
 use futures::future::{ready, Ready};
@@ -138,6 +143,34 @@ impl Service<MakeSubscribeOrdersOptions> for BinanceExchange {
 
     fn call(&mut self, _req: MakeSubscribeOrdersOptions) -> Self::Future {
         ready(Ok(self.inner.clone().adapt().boxed_clone()))
+    }
+}
+
+impl Service<MakeFetchCandlesOptions> for BinanceExchange {
+    type Response = BoxExcService<QueryCandles>;
+
+    type Error = ExchangeError;
+
+    type Future = Ready<Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, req: MakeFetchCandlesOptions) -> Self::Future {
+        let MakeFetchCandlesOptions {
+            rate_limit,
+            batch_limit,
+        } = req;
+        let (num, per) = rate_limit.unwrap_or((200, Duration::from_secs(60)));
+        let limit = batch_limit.unwrap_or(1000);
+        ready(Ok(self
+            .inner
+            .clone()
+            .rate_limited(num, per)
+            .adapt()
+            .apply(&FetchCandlesForwardLayer::with_default_bound(limit))
+            .boxed()))
     }
 }
 

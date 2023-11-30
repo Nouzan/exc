@@ -1,13 +1,16 @@
 use std::task::{Context, Poll};
+use std::time::Duration;
 
 use exc_core::exchange::{
-    MakeCancelOrderOptions, MakeCheckOrderOptions, MakeExchange, MakeInstrumentsOptions,
-    MakePlaceOrderOptions, MakeSubscribeOrdersOptions, MakeTickersOptions,
+    MakeCancelOrderOptions, MakeCheckOrderOptions, MakeExchange, MakeFetchCandlesOptions,
+    MakeInstrumentsOptions, MakePlaceOrderOptions, MakeSubscribeOrdersOptions, MakeTickersOptions,
 };
-use exc_core::service::BoxCloneExcService;
+use exc_core::service::{BoxCloneExcService, BoxExcService};
 use exc_core::types::{
-    CancelOrder, GetOrder, PlaceOrder, SubscribeInstruments, SubscribeOrders, SubscribeTickers,
+    CancelOrder, GetOrder, PlaceOrder, QueryCandles, SubscribeInstruments, SubscribeOrders,
+    SubscribeTickers,
 };
+use exc_core::util::fetch_candles::FetchCandlesBackwardLayer;
 use exc_core::{ExcServiceExt, ExchangeError};
 use futures::future::{ready, Ready};
 use tower::Service;
@@ -121,6 +124,34 @@ impl Service<MakeSubscribeOrdersOptions> for OkxExchange {
 
     fn call(&mut self, _req: MakeSubscribeOrdersOptions) -> Self::Future {
         ready(Ok(self.private.clone().adapt().boxed_clone()))
+    }
+}
+
+impl Service<MakeFetchCandlesOptions> for OkxExchange {
+    type Response = BoxExcService<QueryCandles>;
+
+    type Error = ExchangeError;
+
+    type Future = Ready<Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, req: MakeFetchCandlesOptions) -> Self::Future {
+        let MakeFetchCandlesOptions {
+            rate_limit,
+            batch_limit,
+        } = req;
+        let (num, per) = rate_limit.unwrap_or((19, Duration::from_secs(1)));
+        let limit = batch_limit.unwrap_or(100);
+        ready(Ok(self
+            .public
+            .clone()
+            .rate_limited(num, per)
+            .adapt()
+            .apply(&FetchCandlesBackwardLayer::with_default_bound(limit))
+            .boxed()))
     }
 }
 

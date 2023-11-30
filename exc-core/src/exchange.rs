@@ -1,7 +1,7 @@
 pub use exc_make::*;
 
 /// Make a exchange service.
-pub trait MakeExchange: MakeInstruments + MakeTickers + MakeTrading {
+pub trait MakeExchange: MakeInstruments + MakeTickers + MakeTrading + MakeFetchCandles {
     /// Name of the exchange.
     fn name(&self) -> &str;
 }
