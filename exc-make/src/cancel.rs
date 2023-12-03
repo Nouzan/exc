@@ -24,6 +24,14 @@ pub trait MakeCancelOrder {
 
     /// Create a new service to cancel orders.
     fn make_cancel_order(&mut self, options: MakeCancelOrderOptions) -> Self::Future;
+
+    /// Convert to a [`Service`](tower_service::Service).
+    fn as_make_cancel_order_service(&mut self) -> AsService<'_, Self>
+    where
+        Self: Sized,
+    {
+        AsService { make: self }
+    }
 }
 
 impl<M> MakeCancelOrder for M
@@ -49,3 +57,10 @@ where
         self.make_service(options).map_err(Into::into)
     }
 }
+
+crate::create_as_service!(
+    MakeCancelOrder,
+    MakeCancelOrderOptions,
+    make_cancel_order,
+    "Service returns by [`MakeCancelOrder::as_make_cancel_order_service`]."
+);

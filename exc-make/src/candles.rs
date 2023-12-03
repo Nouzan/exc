@@ -29,6 +29,14 @@ pub trait MakeFetchCandles {
 
     /// Create a new service to fetch candles.
     fn make_fetch_candles(&mut self, options: MakeFetchCandlesOptions) -> Self::Future;
+
+    /// Convert to a [`Service`](tower_service::Service).
+    fn as_make_fetch_candles_service(&mut self) -> AsService<'_, Self>
+    where
+        Self: Sized,
+    {
+        AsService { make: self }
+    }
 }
 
 impl<M> MakeFetchCandles for M
@@ -54,3 +62,10 @@ where
         self.make_service(options).map_err(Into::into)
     }
 }
+
+crate::create_as_service!(
+    MakeFetchCandles,
+    MakeFetchCandlesOptions,
+    make_fetch_candles,
+    "Service returns by [`MakeFetchCandles::as_make_fetch_candles_service`]."
+);

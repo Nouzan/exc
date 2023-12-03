@@ -24,6 +24,14 @@ pub trait MakeSubscribeOrders {
 
     /// Create a new service to subscribe orders.
     fn make_subscribe_orders(&mut self, options: MakeSubscribeOrdersOptions) -> Self::Future;
+
+    /// Convert to a [`Service`](tower_service::Service).
+    fn as_make_subscribe_orders_service(&mut self) -> AsService<'_, Self>
+    where
+        Self: Sized,
+    {
+        AsService { make: self }
+    }
 }
 
 impl<M> MakeSubscribeOrders for M
@@ -49,3 +57,10 @@ where
         self.make_service(options).map_err(Into::into)
     }
 }
+
+crate::create_as_service!(
+    MakeSubscribeOrders,
+    MakeSubscribeOrdersOptions,
+    make_subscribe_orders,
+    "Service returns by [`MakeSubscribeOrders::as_make_subscribe_orders_service`]."
+);

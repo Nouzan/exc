@@ -24,6 +24,14 @@ pub trait MakeCheckOrder {
 
     /// Create a new service to check orders.
     fn make_check_order(&mut self, options: MakeCheckOrderOptions) -> Self::Future;
+
+    /// Convert to a [`Service`](tower_service::Service).
+    fn as_make_check_order_service(&mut self) -> AsService<'_, Self>
+    where
+        Self: Sized,
+    {
+        AsService { make: self }
+    }
 }
 
 impl<M> MakeCheckOrder for M
@@ -49,3 +57,10 @@ where
         self.make_service(options).map_err(Into::into)
     }
 }
+
+crate::create_as_service!(
+    MakeCheckOrder,
+    MakeCheckOrderOptions,
+    make_check_order,
+    "Service returns by [`MakeCheckOrder::as_make_check_order_service`]."
+);

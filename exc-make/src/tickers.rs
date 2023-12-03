@@ -24,6 +24,14 @@ pub trait MakeTickers {
 
     /// Create a new service to subscribe tickers.
     fn make_tickers(&mut self, options: MakeTickersOptions) -> Self::Future;
+
+    /// Convert to a [`Service`](tower_service::Service).
+    fn as_make_tickers_service(&mut self) -> AsService<'_, Self>
+    where
+        Self: Sized,
+    {
+        AsService { make: self }
+    }
 }
 
 impl<M> MakeTickers for M
@@ -49,3 +57,10 @@ where
         self.make_service(options).map_err(Into::into)
     }
 }
+
+crate::create_as_service!(
+    MakeTickers,
+    MakeTickersOptions,
+    make_tickers,
+    "Service returns by [`MakeTickers::as_make_tickers_service`]."
+);

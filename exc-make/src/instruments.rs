@@ -24,6 +24,14 @@ pub trait MakeInstruments {
 
     /// Create a new service to subscribe instruments.
     fn make_instruments(&mut self, options: MakeInstrumentsOptions) -> Self::Future;
+
+    /// Convert to a [`Service`](tower_service::Service).
+    fn as_make_instruments_service(&mut self) -> AsService<'_, Self>
+    where
+        Self: Sized,
+    {
+        AsService { make: self }
+    }
 }
 
 impl<M> MakeInstruments for M
@@ -49,3 +57,10 @@ where
         self.make_service(options).map_err(Into::into)
     }
 }
+
+crate::create_as_service!(
+    MakeInstruments,
+    MakeInstrumentsOptions,
+    make_instruments,
+    "Service returns by [`MakeInstruments::as_make_instruments_service`]."
+);

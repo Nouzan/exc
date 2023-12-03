@@ -15,3 +15,4 @@ exc-service = { workspace = true }
 exc-types = { workspace = true }
 futures = { workspace = true }
 tower-make = { workspace = true }
+tower-service = { workspace = true }

@@ -24,6 +24,14 @@ pub trait MakePlaceOrder {
 
     /// Create a new service to place orders.
     fn make_place_order(&mut self, options: MakePlaceOrderOptions) -> Self::Future;
+
+    /// Convert to a [`Service`](tower_service::Service).
+    fn as_make_place_order_service(&mut self) -> AsService<'_, Self>
+    where
+        Self: Sized,
+    {
+        AsService { make: self }
+    }
 }
 
 impl<M> MakePlaceOrder for M
@@ -49,3 +57,10 @@ where
         self.make_service(options).map_err(Into::into)
     }
 }
+
+crate::create_as_service!(
+    MakePlaceOrder,
+    MakePlaceOrderOptions,
+    make_place_order,
+    "Service returns by [`MakePlaceOrder::as_make_place_order_service`]."
+);
