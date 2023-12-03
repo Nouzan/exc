@@ -1,13 +1,7 @@
 pub use exc_make::*;
-use exc_types::SubscribeInstruments;
-use tower::Service;
 
 /// Make a exchange service.
-pub trait MakeExchange: MakeInstruments + MakeTickers + MakeTrading + MakeFetchCandles
-where
-    <Self as MakeInstruments>::Service: Send + 'static,
-    <<Self as MakeInstruments>::Service as Service<SubscribeInstruments>>::Future: Send + 'static,
-{
+pub trait MakeExchange: MakeInstruments + MakeTickers + MakeTrading + MakeFetchCandles {
     /// Name of the exchange.
     fn name(&self) -> &str;
 }
