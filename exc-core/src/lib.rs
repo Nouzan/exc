@@ -2,9 +2,6 @@
 
 #![deny(missing_docs)]
 
-/// Core services.
-pub use exc_service as service;
-
 /// The definition of an exchange.
 pub mod exchange;
 
@@ -28,5 +25,6 @@ pub use self::service::{
     traits::{AsService, IntoService},
     Adaptor, Exc, ExcLayer, ExcService, ExcServiceExt, IntoExc, Request,
 };
-pub use exc_service::{error::InstrumentError, ExchangeError, SendExcService};
+pub use exc_service::{self as service, error::InstrumentError, ExchangeError, SendExcService};
+
 pub use positions::prelude::{Asset, Instrument, ParseAssetError, ParseSymbolError, Str, Symbol};
