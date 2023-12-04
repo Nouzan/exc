@@ -13,6 +13,10 @@ use std::{
     task::{Context, Poll},
 };
 
+/// Sendable [`ExcService`].
+#[cfg(feature = "send")]
+pub mod send;
+
 /// Request and Response binding.
 pub trait Request: Sized {
     /// Response type.

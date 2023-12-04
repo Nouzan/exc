@@ -1,4 +1,4 @@
-use exc_service::{ExcService, ExchangeError, Request};
+use exc_service::{ExchangeError, Request, SendExcService};
 use exc_types::SubscribeInstruments;
 use futures::{future::MapErr, TryFutureExt};
 use std::{
@@ -14,7 +14,7 @@ pub struct MakeInstrumentsOptions {}
 /// Make a service to subscribe instruments.
 pub trait MakeInstruments {
     /// Service to subscribe instruments.
-    type Service: ExcService<SubscribeInstruments>;
+    type Service: SendExcService<SubscribeInstruments>;
 
     /// The future of the service.
     type Future: Future<Output = Result<Self::Service, ExchangeError>>;
@@ -42,7 +42,7 @@ where
         Response = <SubscribeInstruments as Request>::Response,
         Error = ExchangeError,
     >,
-    M::Service: ExcService<SubscribeInstruments>,
+    M::Service: SendExcService<SubscribeInstruments>,
     M::MakeError: Into<ExchangeError>,
 {
     type Service = M::Service;

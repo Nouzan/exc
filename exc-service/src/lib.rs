@@ -32,6 +32,9 @@ pub use {
 use self::adapt::{Adapt, AdaptLayer, AdaptService};
 pub use self::error::ExchangeError;
 
+#[cfg(feature = "send")]
+pub use self::traits::send::SendExcService;
+
 /// The core service wrapper of this crate, which implements
 /// [`ExcService<T>`] *if* the request type of the underlying
 /// service implements [`Adaptor<T>`].

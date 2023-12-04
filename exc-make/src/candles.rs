@@ -1,4 +1,4 @@
-use exc_service::{ExcService, ExchangeError, Request};
+use exc_service::{ExchangeError, Request, SendExcService};
 use exc_types::QueryCandles;
 use futures::{future::MapErr, TryFutureExt};
 use std::{
@@ -19,7 +19,7 @@ pub struct MakeFetchCandlesOptions {
 /// Make a service to subscribe instruments.
 pub trait MakeFetchCandles {
     /// Service to fetch candles.
-    type Service: ExcService<QueryCandles>;
+    type Service: SendExcService<QueryCandles>;
 
     /// The future of the service.
     type Future: Future<Output = Result<Self::Service, ExchangeError>>;
@@ -47,7 +47,7 @@ where
         Response = <QueryCandles as Request>::Response,
         Error = ExchangeError,
     >,
-    M::Service: ExcService<QueryCandles>,
+    M::Service: SendExcService<QueryCandles>,
     M::MakeError: Into<ExchangeError>,
 {
     type Service = M::Service;

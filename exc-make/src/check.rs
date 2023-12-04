@@ -1,4 +1,4 @@
-use exc_service::{ExcService, ExchangeError, Request};
+use exc_service::{ExchangeError, Request, SendExcService};
 use exc_types::GetOrder;
 use futures::{future::MapErr, TryFutureExt};
 use std::{
@@ -14,7 +14,7 @@ pub struct MakeCheckOrderOptions {}
 /// Make a service to check orders.
 pub trait MakeCheckOrder {
     /// Service to check orders.
-    type Service: ExcService<GetOrder>;
+    type Service: SendExcService<GetOrder>;
 
     /// The future of the service.
     type Future: Future<Output = Result<Self::Service, ExchangeError>>;
@@ -42,7 +42,7 @@ where
         Response = <GetOrder as Request>::Response,
         Error = ExchangeError,
     >,
-    M::Service: ExcService<GetOrder>,
+    M::Service: SendExcService<GetOrder>,
     M::MakeError: Into<ExchangeError>,
 {
     type Service = M::Service;

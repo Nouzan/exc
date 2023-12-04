@@ -15,6 +15,10 @@ retry = ["tower/retry", "humantime", "tokio/time", "tracing"]
 limit = ["tower/limit"]
 http = ["hyper"]
 
+# Add [`SendExcSerivce`] which is a [`ExcService`] that is `Send`.
+# as a workaround for https://github.com/rust-lang/rust/issues/20671
+send = []
+
 [dependencies]
 tower = { workspace = true, default-features = false, features = ["util"] }
 futures = { workspace = true }
