@@ -19,6 +19,7 @@ where
 {
     /// Subscribe tickers.
     fn subscribe_tickers(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TickerStream>> {
-        ServiceExt::<SubscribeTickers>::oneshot(self, SubscribeTickers::new(inst)).boxed()
+        ServiceExt::<SubscribeTickers>::oneshot(self.as_service(), SubscribeTickers::new(inst))
+            .boxed()
     }
 }

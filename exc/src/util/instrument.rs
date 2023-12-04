@@ -28,7 +28,7 @@ where
         tag: &str,
     ) -> BoxFuture<'_, crate::Result<InstrumentStream>> {
         ServiceExt::<SubscribeInstruments>::oneshot(
-            self,
+            self.as_service(),
             SubscribeInstruments { tag: Str::new(tag) },
         )
         .boxed()
@@ -48,8 +48,11 @@ where
 {
     /// Fetch instruments filter by a given tag.
     fn fetch_instruments(&mut self, tag: &str) -> BoxFuture<'_, crate::Result<InstrumentStream>> {
-        ServiceExt::<FetchInstruments>::oneshot(self, FetchInstruments { tag: Str::new(tag) })
-            .boxed()
+        ServiceExt::<FetchInstruments>::oneshot(
+            self.as_service(),
+            FetchInstruments { tag: Str::new(tag) },
+        )
+        .boxed()
     }
 }
 

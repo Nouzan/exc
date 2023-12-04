@@ -1,4 +1,5 @@
 use async_stream::try_stream;
+use exc_service::ExcServiceExt;
 use futures::{future::BoxFuture, FutureExt, StreamExt};
 use std::ops::Bound;
 use tower::{Layer, Service, ServiceExt};
@@ -8,7 +9,7 @@ use crate::{
         candle::{CandleStream, QueryCandles, QueryLastCandles},
         QueryFirstCandles,
     },
-    ExcService, ExchangeError,
+    ExcService, ExchangeError, IntoService,
 };
 
 use std::num::NonZeroUsize;
@@ -50,7 +51,7 @@ where
 
     fn layer(&self, inner: S) -> Self::Service {
         FetchCandlesBackward {
-            svc: Buffer::new(inner, self.bound),
+            svc: Buffer::new(inner.into_service(), self.bound),
             limit: self.limit,
         }
     }
@@ -61,7 +62,7 @@ pub struct FetchCandlesBackward<S>
 where
     S: ExcService<QueryLastCandles> + 'static,
 {
-    svc: Buffer<S, QueryLastCandles>,
+    svc: Buffer<IntoService<S, QueryLastCandles>, QueryLastCandles>,
     limit: NonZeroUsize,
 }
 
@@ -145,7 +146,7 @@ where
 
     fn layer(&self, inner: S) -> Self::Service {
         FetchCandlesForward {
-            svc: Buffer::new(inner, self.bound),
+            svc: Buffer::new(inner.into_service(), self.bound),
             limit: self.limit,
         }
     }
@@ -156,7 +157,7 @@ pub struct FetchCandlesForward<S>
 where
     S: ExcService<QueryFirstCandles> + 'static,
 {
-    svc: Buffer<S, QueryFirstCandles>,
+    svc: Buffer<IntoService<S, QueryFirstCandles>, QueryFirstCandles>,
     limit: NonZeroUsize,
 }
 

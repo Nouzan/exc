@@ -33,8 +33,11 @@ where
         start: Bound<OffsetDateTime>,
         end: Bound<OffsetDateTime>,
     ) -> BoxFuture<'_, crate::Result<CandleStream>> {
-        ServiceExt::<QueryCandles>::oneshot(self, QueryCandles::new(inst, period, (start, end)))
-            .boxed()
+        ServiceExt::<QueryCandles>::oneshot(
+            self.as_service(),
+            QueryCandles::new(inst, period, (start, end)),
+        )
+        .boxed()
     }
 }
 

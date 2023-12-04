@@ -4,7 +4,7 @@ use std::{marker::PhantomData, sync::Arc, task::Poll};
 use crate::core::ExcService;
 use crate::{core::types::instrument::SubscribeInstruments, ExchangeError};
 use exc_core::types::instrument::FetchInstruments;
-use exc_core::ExcLayer;
+use exc_core::{ExcLayer, ExcServiceExt};
 use futures::{
     future::{ready, BoxFuture},
     FutureExt, TryFutureExt,
@@ -158,12 +158,12 @@ impl Service<InstrumentsRequest> for Instruments {
 
     #[inline]
     fn poll_ready(&mut self, cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready(cx)
+        Service::poll_ready(&mut self.inner, cx)
     }
 
     #[inline]
     fn call(&mut self, req: InstrumentsRequest) -> Self::Future {
-        self.inner.call(req)
+        Service::call(&mut self.inner, req)
     }
 }
 
@@ -244,27 +244,32 @@ where
     S::Future: Send + 'static,
     Req: crate::Request + 'static,
     L1::Service: ExcService<FetchInstruments> + Send + 'static,
-    <L1::Service as Service<FetchInstruments>>::Future: Send,
+    <L1::Service as ExcService<FetchInstruments>>::Future: Send,
     L2::Service: ExcService<SubscribeInstruments> + Send + 'static,
-    <L2::Service as Service<SubscribeInstruments>>::Future: Send,
+    <L2::Service as ExcService<SubscribeInstruments>>::Future: Send,
 {
     type Service = Instruments;
 
     fn layer(&self, svc: S) -> Self::Service {
         let fetch = ServiceBuilder::default()
             .rate_limit(self.opts.fetch_rate_limit.0, self.opts.fetch_rate_limit.1)
+            .layer_fn(|svc: L1::Service| svc.into_service())
             .layer(&self.fetch_instruments)
-            .service(svc.clone())
-            .boxed();
+            .service(svc.clone());
         let subscribe = ServiceBuilder::default()
             .rate_limit(
                 self.opts.subscribe_rate_limit.0,
                 self.opts.subscribe_rate_limit.1,
             )
+            .layer_fn(|svc: L2::Service| svc.into_service())
             .layer(&self.subscribe_instruments)
-            .service(svc)
-            .boxed();
-        let svc = Inner::new(&self.opts, subscribe, fetch);
+            .service(svc);
+
+        let svc = Inner::new(
+            &self.opts,
+            ServiceExt::boxed(subscribe),
+            ServiceExt::boxed(fetch),
+        );
         let inner = ServiceBuilder::default()
             .buffer(self.opts.buffer_bound)
             .service(svc)

@@ -24,6 +24,9 @@ pub mod util;
 /// Exc Symbol.
 pub use exc_symbol as symbol;
 
-pub use self::service::{Adaptor, Exc, ExcLayer, ExcService, ExcServiceExt, IntoExc, Request};
+pub use self::service::{
+    traits::{AsService, IntoService},
+    Adaptor, Exc, ExcLayer, ExcService, ExcServiceExt, IntoExc, Request,
+};
 pub use exc_service::{error::InstrumentError, ExchangeError};
 pub use positions::prelude::{Asset, Instrument, ParseAssetError, ParseSymbolError, Str, Symbol};

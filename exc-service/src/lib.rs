@@ -5,6 +5,7 @@
 use futures::{future::BoxFuture, FutureExt};
 use std::marker::PhantomData;
 use tower::{Layer, Service, ServiceExt};
+use traits::IntoService;
 
 /// Exchange Error.
 pub mod error;
@@ -83,8 +84,8 @@ where
     }
 
     /// Make a request using the underlying channel directly.
-    pub async fn request(&mut self, request: Req) -> Result<C::Response, C::Error> {
-        ServiceExt::<Req>::oneshot(&mut self.channel, request).await
+    pub async fn request(&mut self, request: Req) -> Result<Req::Response, ExchangeError> {
+        ServiceExt::<Req>::oneshot(self.channel.as_service(), request).await
     }
 
     /// Apply rate-limit layer to the channel.
@@ -93,7 +94,7 @@ where
         self,
         num: u64,
         per: std::time::Duration,
-    ) -> Exc<tower::limit::RateLimit<C>, Req> {
+    ) -> Exc<tower::limit::RateLimit<IntoService<C, Req>>, Req> {
         use tower::limit::RateLimitLayer;
         self.into_layered(&RateLimitLayer::new(num, per))
     }
@@ -103,7 +104,7 @@ where
     pub fn into_retry(
         self,
         max_duration: std::time::Duration,
-    ) -> Exc<tower::retry::Retry<crate::retry::Always, C>, Req>
+    ) -> Exc<tower::retry::Retry<crate::retry::Always, IntoService<C, Req>>, Req>
     where
         Req: Clone,
         C: Clone,
@@ -115,10 +116,10 @@ where
     }
 
     /// Adapt the request type of the underlying channel to the target type `R`.
-    pub fn into_adapted<R>(self) -> Exc<Adapt<C, Req, R>, R>
+    pub fn into_adapted<R>(self) -> Exc<Adapt<IntoService<C, Req>, Req, R>, R>
     where
         R: Request,
-        C: AdaptService<Req, R>,
+        IntoService<C, Req>: AdaptService<Req, R>,
     {
         self.into_layered(&AdaptLayer::default())
     }
@@ -126,12 +127,12 @@ where
     /// Apply a layer to the underlying channel.
     pub fn into_layered<T, R>(self, layer: &T) -> Exc<T::Service, R>
     where
-        T: Layer<C>,
+        T: Layer<IntoService<C, Req>>,
         R: Request,
         T::Service: ExcService<R>,
     {
         Exc {
-            channel: layer.layer(self.channel),
+            channel: layer.layer(self.channel.into_service()),
             _req: PhantomData,
         }
     }

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use async_stream::stream;
-use exc_service::{ExcService, ExchangeError};
+use exc_service::{ExcService, ExcServiceExt, ExchangeError};
 use exc_types::{FetchInstruments, SubscribeInstruments};
 use futures::{
     future::{ready, Ready},
@@ -46,7 +46,12 @@ where
                 interval.tick().await;
             }
         };
-        let stream = self.inner.clone().call_all(req).try_flatten();
+        let stream = self
+            .inner
+            .clone()
+            .into_service()
+            .call_all(req)
+            .try_flatten();
         ready(Ok(stream.boxed()))
     }
 }
