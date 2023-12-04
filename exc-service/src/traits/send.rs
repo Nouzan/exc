@@ -10,12 +10,12 @@ use std::{
 };
 
 /// An alias of [`ExcService`] with [`Send`] and `'static` bounds.
-pub trait SendExcService<R>: Send
+pub trait SendExcService<R>: Send + 'static
 where
     R: Request,
 {
     /// The future response value.
-    type Future: Future<Output = Result<R::Response, ExchangeError>>;
+    type Future: Future<Output = Result<R::Response, ExchangeError>> + Send + 'static;
 
     /// See [`Service::poll_ready`] for more details.
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), ExchangeError>>;
@@ -48,7 +48,7 @@ where
 
 impl<S, R> SendExcService<R> for S
 where
-    S: ExcService<R> + Send,
+    S: ExcService<R> + Send + 'static,
     R: Request,
     S::Future: Send + 'static,
 {
