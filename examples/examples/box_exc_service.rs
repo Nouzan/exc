@@ -2,7 +2,10 @@ use std::{ops::RangeBounds, str::FromStr, time::Duration};
 
 use clap::Parser;
 use exc::{
-    core::types::{Candle, SubscribeTickers, SubscribeTrades, Ticker, Trade},
+    core::{
+        types::{Candle, SubscribeTickers, SubscribeTrades, Ticker, Trade},
+        IntoService,
+    },
     prelude::*,
     types::instrument::InstrumentMeta,
     util::instrument::PollInstrumentsLayer,
@@ -48,7 +51,7 @@ impl Exchange {
         let trade_svc =
             exc::Okx::endpoint()
                 .connect_exc()
-                .into_layered(&layer_fn(|svc: exc::Okx| {
+                .into_layered(&layer_fn(|svc: IntoService<_, _>| {
                     svc
                         // We use the `adapt` method to convert the request type to `SubscribeTickers`.
                         .adapt::<SubscribeTickers>()

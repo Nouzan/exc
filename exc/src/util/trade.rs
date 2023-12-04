@@ -16,6 +16,6 @@ where
     S::Future: Send,
 {
     fn subscribe_trades(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<TradeStream>> {
-        ServiceExt::oneshot(self, SubscribeTrades::new(inst)).boxed()
+        ServiceExt::oneshot(self.as_service(), SubscribeTrades::new(inst)).boxed()
     }
 }

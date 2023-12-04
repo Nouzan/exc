@@ -52,20 +52,20 @@ where
     S: Clone + Send + 'static,
     S: ExcService<SubscribeTrades>,
     S: ExcService<SubscribeBidAsk>,
-    <S as Service<SubscribeTrades>>::Future: Send,
-    <S as Service<SubscribeBidAsk>>::Future: Send,
+    <S as ExcService<SubscribeTrades>>::Future: Send,
+    <S as ExcService<SubscribeBidAsk>>::Future: Send,
 {
     type Response = TickerStream;
     type Error = ExchangeError;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Service::<SubscribeTrades>::poll_ready(&mut self.svc, cx)
+        Service::<SubscribeTrades>::poll_ready(&mut self.svc.as_service(), cx)
     }
 
     fn call(&mut self, req: SubscribeTickers) -> Self::Future {
         let trade = Service::<SubscribeTrades>::call(
-            &mut self.svc,
+            &mut self.svc.as_service(),
             SubscribeTrades {
                 instrument: req.instrument.clone(),
             },

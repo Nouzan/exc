@@ -32,6 +32,7 @@ rustls-tls = [
     "exc-okx?/rustls-tls",
     "exc-binance?/rustls-tls",
 ]
+
 okx = ["exc-okx"]
 okx-prefer-client-id = ["okx", "exc-okx/prefer-client-id"]
 binance = ["exc-binance"]

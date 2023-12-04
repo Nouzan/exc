@@ -5,7 +5,7 @@ use exc_core::{
     Str,
 };
 use futures::{future::BoxFuture, FutureExt, TryFutureExt};
-use tower::{Service, ServiceExt};
+use tower::ServiceExt;
 
 use crate::core::types::trading::{CancelOrder, GetOrder, OrderId, Place, PlaceOrder};
 
@@ -40,8 +40,8 @@ pub trait TradingService {
 impl<S> TradingService for S
 where
     S: ExcService<PlaceOrder> + ExcService<CancelOrder> + Send,
-    <S as Service<PlaceOrder>>::Future: Send,
-    <S as Service<CancelOrder>>::Future: Send,
+    <S as ExcService<PlaceOrder>>::Future: Send,
+    <S as ExcService<CancelOrder>>::Future: Send,
 {
     /// Place an order with options.
     fn place_with_opts(
@@ -50,7 +50,7 @@ where
         opts: &PlaceOrderOptions,
     ) -> BoxFuture<'_, crate::Result<Placed>> {
         let req = (*place).into_request(opts);
-        ServiceExt::<PlaceOrder>::oneshot(self, req)
+        ServiceExt::<PlaceOrder>::oneshot(self.as_service(), req)
             .try_flatten()
             .boxed()
     }
@@ -69,7 +69,7 @@ where
 
     /// Cancel an order.
     fn cancel(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, crate::Result<Canceled>> {
-        ServiceExt::<CancelOrder>::oneshot(self, CancelOrder::new(inst, id.clone()))
+        ServiceExt::<CancelOrder>::oneshot(self.as_service(), CancelOrder::new(inst, id.clone()))
             .try_flatten()
             .boxed()
     }
@@ -88,7 +88,7 @@ where
 {
     fn check(&mut self, inst: &str, id: &OrderId) -> BoxFuture<'_, crate::Result<OrderUpdate>> {
         ServiceExt::oneshot(
-            self,
+            self.as_service(),
             GetOrder {
                 instrument: Str::new(inst),
                 id: id.clone(),
@@ -111,7 +111,8 @@ where
     S::Future: Send,
 {
     fn subscribe_orders(&mut self, inst: &str) -> BoxFuture<'_, crate::Result<OrderStream>> {
-        ServiceExt::<SubscribeOrders>::oneshot(self, SubscribeOrders::new(inst)).boxed()
+        ServiceExt::<SubscribeOrders>::oneshot(self.as_service(), SubscribeOrders::new(inst))
+            .boxed()
     }
 }
 

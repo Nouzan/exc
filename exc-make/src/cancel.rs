@@ -1,4 +1,4 @@
-use exc_service::{ExcService, ExchangeError, Request};
+use exc_service::{ExchangeError, Request, SendExcService};
 use exc_types::CancelOrder;
 use futures::{future::MapErr, TryFutureExt};
 use std::{
@@ -14,7 +14,7 @@ pub struct MakeCancelOrderOptions {}
 /// Make a service to cancel orders.
 pub trait MakeCancelOrder {
     /// Service to cancel orders.
-    type Service: ExcService<CancelOrder>;
+    type Service: SendExcService<CancelOrder>;
 
     /// The future of the service.
     type Future: Future<Output = Result<Self::Service, ExchangeError>>;
@@ -42,7 +42,7 @@ where
         Response = <CancelOrder as Request>::Response,
         Error = ExchangeError,
     >,
-    M::Service: ExcService<CancelOrder>,
+    M::Service: SendExcService<CancelOrder>,
     M::MakeError: Into<ExchangeError>,
 {
     type Service = M::Service;

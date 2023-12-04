@@ -1,4 +1,4 @@
-use exc_service::{ExcService, ExchangeError, Request};
+use exc_service::{ExchangeError, Request, SendExcService};
 use exc_types::SubscribeOrders;
 use futures::{future::MapErr, TryFutureExt};
 use std::{
@@ -14,7 +14,7 @@ pub struct MakeSubscribeOrdersOptions {}
 /// Make a service to subscribe orders.
 pub trait MakeSubscribeOrders {
     /// Service to subscribe orders.
-    type Service: ExcService<SubscribeOrders>;
+    type Service: SendExcService<SubscribeOrders>;
 
     /// The future of the service.
     type Future: Future<Output = Result<Self::Service, ExchangeError>>;
@@ -42,7 +42,7 @@ where
         Response = <SubscribeOrders as Request>::Response,
         Error = ExchangeError,
     >,
-    M::Service: ExcService<SubscribeOrders>,
+    M::Service: SendExcService<SubscribeOrders>,
     M::MakeError: Into<ExchangeError>,
 {
     type Service = M::Service;

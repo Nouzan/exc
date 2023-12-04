@@ -11,7 +11,7 @@ description.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-exc-service = { workspace = true }
+exc-service = { workspace = true, features = ["send"] }
 exc-types = { workspace = true }
 futures = { workspace = true }
 tower-make = { workspace = true }
