@@ -1,7 +1,7 @@
 use exc_service::{ExcService, ExchangeError, Request};
 use exc_types::{FetchInstruments, SubscribeInstruments};
 use futures::{future::BoxFuture, FutureExt, StreamExt};
-use tower::{Layer, Service};
+use tower::{Layer, Service, ServiceExt};
 
 /// Fetch-Then-Subscribe instruments service.
 #[derive(Debug, Clone, Copy)]
@@ -37,7 +37,7 @@ where
         async move {
             let fetched = fetched.await?;
             let subscribed = Service::<SubscribeInstruments>::call(
-                &mut svc.as_service(),
+                svc.as_service().ready().await?,
                 SubscribeInstruments {
                     tag: req.tag.clone(),
                 },
