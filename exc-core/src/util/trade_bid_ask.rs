@@ -7,7 +7,7 @@ use exc_types::{SubscribeBidAsk, SubscribeTickers, SubscribeTrades, Ticker, Tick
 use futures::{future::BoxFuture, FutureExt, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
 use time::OffsetDateTime;
-use tower::{Layer, Service};
+use tower::{Layer, Service, ServiceExt};
 
 /// Trade-Bid-Ask layer.
 pub struct TradeBidAskLayer {
@@ -74,12 +74,16 @@ where
         let ignore_bid_ask_ts = self.ignore_bid_ask_ts;
         async move {
             let trades = trade.await?.map_ok(Either::Left);
-            let bid_asks = svc
-                .call(SubscribeBidAsk {
+            let mut svc = svc.as_service();
+            let svc = svc.ready().await?;
+            let bid_asks = Service::call(
+                svc,
+                SubscribeBidAsk {
                     instrument: req.instrument,
-                })
-                .await?
-                .map_ok(Either::Right);
+                },
+            )
+            .await?
+            .map_ok(Either::Right);
             let stream = tokio_stream::StreamExt::merge(trades, bid_asks);
             let stream = try_stream! {
                 let mut ticker = Ticker {
