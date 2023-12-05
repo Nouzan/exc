@@ -11,9 +11,10 @@ use exc_core::types::{
     SubscribeTickers,
 };
 use exc_core::util::fetch_candles::FetchCandlesBackwardLayer;
-use exc_core::{ExcServiceExt, ExchangeError};
+use exc_core::util::fetch_instruments_first::FetchThenSubscribeInstrumentsLayer;
+use exc_core::{ExcServiceExt, ExchangeError, IntoExc};
 use futures::future::{ready, Ready};
-use tower::Service;
+use tower::{Layer, Service};
 
 use crate::service::Okx;
 
@@ -43,7 +44,9 @@ impl Service<MakeInstrumentsOptions> for OkxExchange {
     }
 
     fn call(&mut self, _req: MakeInstrumentsOptions) -> Self::Future {
-        ready(Ok(self.public.clone().adapt().boxed_clone()))
+        ready(Ok(FetchThenSubscribeInstrumentsLayer
+            .layer(self.public.clone().into_exc())
+            .boxed_clone()))
     }
 }
 
