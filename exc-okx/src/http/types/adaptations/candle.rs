@@ -1,4 +1,5 @@
 use exc_core::types::candle::{Candle, QueryLastCandles};
+use exc_core::types::CandleStream;
 use exc_core::Adaptor;
 use exc_core::ExchangeError;
 use std::ops::RangeBounds;
@@ -12,7 +13,6 @@ use crate::utils::{
     timestamp::{end_bound_to_millis, start_bound_to_millis},
 };
 use async_stream::stream;
-use futures::StreamExt;
 
 use super::HttpRequest;
 
@@ -58,6 +58,6 @@ impl Adaptor<QueryLastCandles> for HttpRequest {
             }
             }
                 };
-        Ok(stream.boxed())
+        Ok(CandleStream::new_backward(stream))
     }
 }

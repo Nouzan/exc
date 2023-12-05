@@ -1,5 +1,5 @@
 use derive_more::Display;
-use futures::stream::BoxStream;
+use futures::{stream::BoxStream, Stream, StreamExt};
 pub use indicator::{window::mode::tumbling::period::PeriodKind, Period};
 use indicator::{Tick, TickValue, Tickable};
 use positions::prelude::Str;
@@ -14,7 +14,52 @@ use time::OffsetDateTime;
 use exc_service::{ExchangeError, Request};
 
 /// Candle Stream.
-pub type CandleStream = BoxStream<'static, Result<Candle, ExchangeError>>;
+pub struct CandleStream {
+    forward: bool,
+    stream: BoxStream<'static, Result<Candle, ExchangeError>>,
+}
+
+impl CandleStream {
+    /// Create a new candle stream that produce candles forward.
+    pub fn new_forward(
+        stream: impl Stream<Item = Result<Candle, ExchangeError>> + Send + 'static,
+    ) -> Self {
+        Self {
+            forward: true,
+            stream: stream.boxed(),
+        }
+    }
+
+    /// Create a new candle stream that produce candles backward.
+    pub fn new_backward(
+        stream: impl Stream<Item = Result<Candle, ExchangeError>> + Send + 'static,
+    ) -> Self {
+        Self {
+            forward: false,
+            stream: stream.boxed(),
+        }
+    }
+
+    /// Is forward.
+    pub fn is_forward(&self) -> bool {
+        self.forward
+    }
+}
+
+impl Stream for CandleStream {
+    type Item = Result<Candle, ExchangeError>;
+
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        self.stream.poll_next_unpin(cx)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.stream.size_hint()
+    }
+}
 
 /// Query candles.
 #[derive(Debug, Clone)]

@@ -2,8 +2,10 @@ use crate::{
     http::{request, response},
     Request,
 };
-use exc_core::{types, Adaptor, ExchangeError};
-use futures::StreamExt;
+use exc_core::{
+    types::{self, CandleStream},
+    Adaptor, ExchangeError,
+};
 use std::{ops::RangeBounds, time::Duration};
 use time::UtcOffset;
 
@@ -91,6 +93,6 @@ impl Adaptor<types::QueryFirstCandles> for Request {
                     volume: c.5.normalize(),
                 })
             });
-        Ok(futures::stream::iter(candles).boxed())
+        Ok(CandleStream::new_forward(futures::stream::iter(candles)))
     }
 }

@@ -90,24 +90,25 @@ where
         let mut svc = self.svc.clone();
         async move {
         let stream = try_stream!{
-        loop {
-            tracing::trace!("query candles: {query}");
-            if query.query().is_empty() { break; }
-            let mut stream = (&mut svc).oneshot(query.clone()).await.map_err(ExchangeError::Layer)?;
-            let mut next = None;
-            while let Some(c) = stream.next().await {
-            let c = c?;
-            next = Some(c.ts);
-            yield c;
+            loop {
+                tracing::trace!("query candles: {query}");
+                if query.query().is_empty() { break; }
+                let mut stream = (&mut svc).oneshot(query.clone()).await.map_err(ExchangeError::Layer)?;
+                debug_assert!(!stream.is_forward());
+                let mut next = None;
+                while let Some(c) = stream.next().await {
+                    let c = c?;
+                    next = Some(c.ts);
+                    yield c;
+                }
+                if let Some(next) = next {
+                    query.query.end = Bound::Excluded(next);
+                } else {
+                    break;
+                }
             }
-            if let Some(next) = next {
-            query.query.end = Bound::Excluded(next);
-            } else {
-            break;
-            }
-        }
         };
-        Ok(stream.boxed())
+        Ok(CandleStream::new_backward(stream))
     }.boxed()
     }
 }
@@ -185,24 +186,25 @@ where
         let mut svc = self.svc.clone();
         async move {
         let stream = try_stream!{
-        loop {
-            tracing::trace!("query candles: {query}");
-            if query.query().is_empty() { break; }
-            let mut stream = (&mut svc).oneshot(query.clone()).await.map_err(ExchangeError::Layer)?;
-            let mut next = None;
-            while let Some(c) = stream.next().await {
-            let c = c?;
-            next = Some(c.ts);
-            yield c;
+            loop {
+                tracing::trace!("query candles: {query}");
+                if query.query().is_empty() { break; }
+                let mut stream = (&mut svc).oneshot(query.clone()).await.map_err(ExchangeError::Layer)?;
+                debug_assert!(stream.is_forward());
+                let mut next = None;
+                while let Some(c) = stream.next().await {
+                    let c = c?;
+                    next = Some(c.ts);
+                    yield c;
+                }
+                if let Some(next) = next {
+                    query.query.start = Bound::Excluded(next);
+                } else {
+                    break;
+                }
             }
-            if let Some(next) = next {
-            query.query.start = Bound::Excluded(next);
-            } else {
-            break;
-            }
-        }
         };
-        Ok(stream.boxed())
+        Ok(CandleStream::new_forward(stream))
     }.boxed()
     }
 }
