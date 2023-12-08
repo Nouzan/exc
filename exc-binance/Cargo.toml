@@ -31,6 +31,7 @@ async-stream = { workspace = true }
 tokio-tower = { workspace = true }
 pin-project-lite = { workspace = true }
 rust_decimal = { workspace = true, features = ["serde-with-float"] }
+cfg-if = { workspace = true }
 
 # sign
 hmac = { workspace = true }
@@ -52,7 +53,15 @@ features = ["derive"]
 [dependencies.exc-core]
 workspace = true
 default-features = false
-features = ["websocket", "http", "retry", "limit", "poll"]
+features = [
+    "websocket",
+    "http",
+    "retry",
+    "limit",
+    "poll",
+    "fetch-candles",
+    "limit",
+]
 
 [dependencies.hyper]
 workspace = true

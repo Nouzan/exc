@@ -34,6 +34,7 @@ rust_decimal = { workspace = true }
 serde_json = { workspace = true }
 hmac = { workspace = true }
 sha2 = { workspace = true }
+cfg-if = { workspace = true }
 base64 = "0.21.5"
 atomic-waker = "1.0.0"
 serde_qs = "0.12.0"
@@ -45,7 +46,7 @@ features = ["derive"]
 [dependencies.exc-core]
 workspace = true
 default-features = false
-features = ["websocket", "driven", "http", "retry"]
+features = ["websocket", "driven", "http", "retry", "fetch-candles", "limit"]
 
 [dependencies.tower]
 workspace = true

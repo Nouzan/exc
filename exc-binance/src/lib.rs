@@ -2,31 +2,37 @@
 
 #![deny(missing_docs)]
 
-/// Error.
-pub mod error;
+cfg_if::cfg_if! {
+    if #[cfg(any(feature = "rustls-tls", feature = "native-tls"))] {
+        #[macro_use]
+        extern crate anyhow;
 
-/// Rest API support.
-pub mod http;
+        /// Types.
+        pub mod types;
 
-/// Websocket API support.
-pub mod websocket;
+        /// Error.
+        pub mod error;
 
-/// Types.
-pub mod types;
+        /// Websocket API support.
+        pub mod websocket;
 
-/// Endpoint.
-pub mod endpoint;
+        /// Rest API support.
+        pub mod http;
 
-/// Service.
-pub mod service;
+        /// Endpoint.
+        pub mod endpoint;
 
-/// Exchange.
-pub mod exchange;
+        /// Service.
+        pub mod service;
 
-pub use self::error::Error;
-pub use self::http::request::{MarginOp, SpotOptions};
-pub use self::service::Binance;
-pub use self::types::{request::Request, response::Response};
+        /// Exchange.
+        pub mod exchange;
 
-#[macro_use]
-extern crate anyhow;
+        pub use self::service::Binance;
+        pub use self::error::Error;
+        pub use self::http::request::{MarginOp, SpotOptions};
+        pub use self::types::{request::Request, response::Response};
+    } else {
+        compile_error!("Either feature 'rustls-tls' or 'native-tls' must be enabled");
+    }
+}

@@ -3,6 +3,10 @@ use hyper::client::Builder;
 /// Endpoint.
 #[derive(Debug, Default)]
 pub struct Endpoint {
+    #[cfg_attr(
+        not(any(feature = "native-tls", feature = "rustls-tls")),
+        allow(dead_code)
+    )]
     inner: Builder,
 }
 
