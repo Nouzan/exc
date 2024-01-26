@@ -1,16 +1,18 @@
 use crate::error::OkxError;
 
-use self::ticker::OkxTicker;
+use self::{book::OkxBook, ticker::OkxTicker, trade::OkxTrade};
 
 use super::Args;
-use exc_core::types::ticker::Ticker;
+use exc_core::types::{ticker::Ticker, BidAsk, Trade};
 pub use instrument::OkxInstrumentMeta;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
 
+mod book;
 mod instrument;
 mod ticker;
+mod trade;
 
 /// Order.
 pub mod order;
@@ -152,6 +154,54 @@ impl TryFrom<Event> for Vec<Result<Ticker, OkxError>> {
                 .map(|v| {
                     serde_json::from_value::<OkxTicker>(v)
                         .map(Ticker::from)
+                        .map_err(OkxError::from)
+                })
+                .collect()),
+            Event::Response(resp) => Err(OkxError::UnexpectedDataType(anyhow::anyhow!(
+                "response: {resp:?}"
+            ))),
+            Event::TradeResponse(resp) => Err(OkxError::UnexpectedDataType(anyhow::anyhow!(
+                "response: {resp:?}"
+            ))),
+        }
+    }
+}
+
+impl TryFrom<Event> for Vec<Result<Trade, OkxError>> {
+    type Error = OkxError;
+
+    fn try_from(event: Event) -> Result<Self, Self::Error> {
+        match event {
+            Event::Change(change) => Ok(change
+                .data
+                .into_iter()
+                .map(|v| {
+                    serde_json::from_value::<OkxTrade>(v)
+                        .map(Trade::from)
+                        .map_err(OkxError::from)
+                })
+                .collect()),
+            Event::Response(resp) => Err(OkxError::UnexpectedDataType(anyhow::anyhow!(
+                "response: {resp:?}"
+            ))),
+            Event::TradeResponse(resp) => Err(OkxError::UnexpectedDataType(anyhow::anyhow!(
+                "response: {resp:?}"
+            ))),
+        }
+    }
+}
+
+impl TryFrom<Event> for Vec<Result<BidAsk, OkxError>> {
+    type Error = OkxError;
+
+    fn try_from(event: Event) -> Result<Self, Self::Error> {
+        match event {
+            Event::Change(change) => Ok(change
+                .data
+                .into_iter()
+                .map(|v| {
+                    serde_json::from_value::<OkxBook>(v)
+                        .map(BidAsk::from)
                         .map_err(OkxError::from)
                 })
                 .collect()),

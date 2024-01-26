@@ -4,11 +4,12 @@ use exc_core::{
     types::{
         instrument::{InstrumentMeta, SubscribeInstruments},
         trading::{CancelOrder, OrderId, PlaceOrder},
-        Canceled, OrderUpdate, Placed, SubscribeOrders,
+        BidAsk, Canceled, OrderUpdate, Placed, SubscribeBidAsk, SubscribeOrders, SubscribeTrades,
+        Trade,
     },
     Adaptor, ExchangeError, Str,
 };
-use futures::{future::ready, stream::iter, FutureExt, StreamExt};
+use futures::{future::ready, stream::iter, FutureExt, StreamExt, TryStreamExt};
 use time::OffsetDateTime;
 
 use crate::error::OkxError;
@@ -247,5 +248,73 @@ impl Adaptor<CancelOrder> for Request {
             })
         }
         .boxed())
+    }
+}
+
+impl Adaptor<SubscribeTrades> for Request {
+    fn from_request(req: SubscribeTrades) -> Result<Self, ExchangeError> {
+        Ok(Self::subscribe_trades(&req.instrument))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeTrades as exc_core::Request>::Response, ExchangeError> {
+        match resp {
+            Response::Streaming(stream) => {
+                let stream = stream
+                    .skip(1)
+                    .flat_map(|frame| {
+                        let res: Result<Vec<Result<Trade, OkxError>>, OkxError> =
+                            frame.and_then(|f| f.inner.try_into());
+                        match res {
+                            Ok(tickers) => futures::stream::iter(tickers).left_stream(),
+                            Err(err) => {
+                                futures::stream::once(async move { Err(err) }).right_stream()
+                            }
+                        }
+                    })
+                    .map_err(ExchangeError::from)
+                    .boxed();
+                Ok(stream)
+            }
+            Response::Error(status) => Err(OkxError::Api(status).into()),
+            Response::Reconnected => Err(ExchangeError::Other(anyhow::anyhow!(
+                "invalid response kind"
+            ))),
+        }
+    }
+}
+
+impl Adaptor<SubscribeBidAsk> for Request {
+    fn from_request(req: SubscribeBidAsk) -> Result<Self, ExchangeError> {
+        Ok(Self::subscribe_bid_ask(&req.instrument))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeBidAsk as exc_core::Request>::Response, ExchangeError> {
+        match resp {
+            Response::Streaming(stream) => {
+                let stream = stream
+                    .skip(1)
+                    .flat_map(|frame| {
+                        let res: Result<Vec<Result<BidAsk, OkxError>>, OkxError> =
+                            frame.and_then(|f| f.inner.try_into());
+                        match res {
+                            Ok(tickers) => futures::stream::iter(tickers).left_stream(),
+                            Err(err) => {
+                                futures::stream::once(async move { Err(err) }).right_stream()
+                            }
+                        }
+                    })
+                    .map_err(ExchangeError::from)
+                    .boxed();
+                Ok(stream)
+            }
+            Response::Error(status) => Err(OkxError::Api(status).into()),
+            Response::Reconnected => Err(ExchangeError::Other(anyhow::anyhow!(
+                "invalid response kind"
+            ))),
+        }
     }
 }

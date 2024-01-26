@@ -36,6 +36,16 @@ impl Request {
         Self::subscribe(Args::subscribe_orders(inst))
     }
 
+    /// Subscribe trades.
+    pub fn subscribe_trades(inst: &str) -> Self {
+        Self::subscribe(Args::subscribe_trades(inst))
+    }
+
+    /// Subscribe bid/ask.
+    pub fn subscribe_bid_ask(inst: &str) -> Self {
+        Self::subscribe(Args::subscribe_bid_ask(inst))
+    }
+
     /// Subscribe to the given channel.
     pub fn subscribe(args: Args) -> Self {
         let (cb, rx) = Callback::new();
