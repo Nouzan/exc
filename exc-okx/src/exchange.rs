@@ -12,6 +12,7 @@ use exc_core::types::{
 };
 use exc_core::util::fetch_candles::FetchCandlesBackwardLayer;
 use exc_core::util::fetch_instruments_first::FetchThenSubscribeInstrumentsLayer;
+use exc_core::util::trade_bid_ask::TradeBidAskLayer;
 use exc_core::{ExcServiceExt, ExchangeError, IntoExc};
 use futures::future::{ready, Ready};
 use tower::{Layer, Service};
@@ -61,8 +62,17 @@ impl Service<MakeTickersOptions> for OkxExchange {
         Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, _req: MakeTickersOptions) -> Self::Future {
-        ready(Ok(self.public.clone().adapt().boxed_clone()))
+    fn call(&mut self, req: MakeTickersOptions) -> Self::Future {
+        if req.is_prefer_trade_bid_ask() {
+            let svc = self.public.clone().into_exc();
+            ready(Ok(ExcServiceExt::<crate::OkxRequest>::apply(
+                svc,
+                &TradeBidAskLayer::default(),
+            )
+            .boxed_clone()))
+        } else {
+            ready(Ok(self.public.clone().adapt().boxed_clone()))
+        }
     }
 }
 
