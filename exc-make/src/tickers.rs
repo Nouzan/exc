@@ -9,7 +9,22 @@ use tower_make::MakeService;
 
 /// Options for making a service to subscribe tickers.
 #[derive(Debug, Default)]
-pub struct MakeTickersOptions {}
+pub struct MakeTickersOptions {
+    prefer_trade_bid_ask: bool,
+}
+
+impl MakeTickersOptions {
+    /// Set whether to prefer use ticker from trade bid/ask.
+    pub fn prefer_trade_bid_ask(mut self, enable: bool) -> Self {
+        self.prefer_trade_bid_ask = enable;
+        self
+    }
+
+    /// Get whether to prefer use ticker from trade bid/ask.
+    pub fn is_prefer_trade_bid_ask(&self) -> bool {
+        self.prefer_trade_bid_ask
+    }
+}
 
 /// Make a service to subscribe tickers.
 pub trait MakeTickers {
