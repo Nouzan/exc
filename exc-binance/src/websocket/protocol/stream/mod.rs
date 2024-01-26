@@ -126,7 +126,7 @@ impl StreamState {
         match self.state {
             State::Idle => {
                 if let Op::Subscribe = frame.method {
-                    if let Some(name) = frame.params.get(0) {
+                    if let Some(name) = frame.params.first() {
                         if topics.contains_key(name) {
                             self.send_server_frame(Err(WsError::StreamSubscribed(name.clone())))?;
                             Ok(false)
