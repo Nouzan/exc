@@ -33,19 +33,17 @@ async fn main() -> anyhow::Result<()> {
         ))
         .init();
 
-    let handles = [
-        "btcusdt", "btcbusd", "ethusdt", "ethbusd", "busdusdt", "dogeusdt", "dogebusd",
-    ]
-    .into_iter()
-    .map(|inst| {
-        let inst = inst.to_string();
-        tokio::spawn(async move {
-            if let Err(err) = task(&inst).await {
-                tracing::error!("{inst}: {err}");
-            }
+    let handles = ["btcusdt", "ethusdt", "dogeusdt"]
+        .into_iter()
+        .map(|inst| {
+            let inst = inst.to_string();
+            tokio::spawn(async move {
+                if let Err(err) = task(&inst).await {
+                    tracing::error!("{inst}: {err}");
+                }
+            })
         })
-    })
-    .collect::<Vec<_>>();
+        .collect::<Vec<_>>();
 
     for h in handles {
         h.await?;
