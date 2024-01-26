@@ -14,9 +14,9 @@ pub struct MakeTickersOptions {
 }
 
 impl MakeTickersOptions {
-    /// Set whether to prefer use ticker from trade bid/ask.
-    pub fn prefer_trade_bid_ask(mut self, enable: bool) -> Self {
-        self.prefer_trade_bid_ask = enable;
+    /// Set whether to prefer use ticker from trade bid/ask. Default is `false`.
+    pub fn prefer_trade_bid_ask(mut self, flag: bool) -> Self {
+        self.prefer_trade_bid_ask = flag;
         self
     }
 
