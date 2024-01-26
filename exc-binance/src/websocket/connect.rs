@@ -35,7 +35,7 @@ impl BinanceWsHost {
     fn as_str(&self) -> &'static str {
         match self {
             Self::UsdMarginFutures => "wss://fstream.binance.com",
-            Self::UsdMarginFuturesPrivate => "wss://fstream-auth.binance.com",
+            Self::UsdMarginFuturesPrivate => "wss://fstream.binance.com",
             Self::Spot | Self::SpotPrivate => "wss://stream.binance.com:9443",
         }
     }
@@ -140,10 +140,10 @@ impl BinanceWsTarget {
             tracing::debug!("got listen key");
             uri.push('/');
             uri.push_str(listen_key.as_str());
-            if matches!(self.host, BinanceWsHost::UsdMarginFuturesPrivate) {
-                uri.push_str("&listenKey=");
-                uri.push_str(listen_key.as_str());
-            }
+            // if matches!(self.host, BinanceWsHost::UsdMarginFuturesPrivate) {
+            //     uri.push_str("&listenKey=");
+            //     uri.push_str(listen_key.as_str());
+            // }
             worker = Some(Self::refresh_key_worker(
                 provider,
                 listen_key,

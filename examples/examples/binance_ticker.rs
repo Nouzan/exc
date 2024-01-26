@@ -1,4 +1,5 @@
 use exc::prelude::*;
+use exc_binance::types::key::BinanceKey;
 use futures::StreamExt;
 use std::time::Duration;
 
@@ -13,14 +14,21 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let inst = std::env::var("INST")?;
+    let key = std::env::var("KEY")
+        .ok()
+        .map(|s| serde_json::from_str::<BinanceKey>(&s))
+        .transpose()?;
 
     let endpoint = std::env::var("ENDPOINT").unwrap_or_else(|_| String::from("binance-u"));
-    let endpoint = match endpoint.as_str() {
+    let mut endpoint = match endpoint.as_str() {
         "binance-u" => Binance::usd_margin_futures(),
         "binance-s" => Binance::spot(),
         _ => anyhow::bail!("unsupported"),
     };
 
+    if let Some(key) = key {
+        endpoint.private(key);
+    }
     let mut binance = endpoint.connect_exc().into_subscribe_tickers();
 
     let mut revision = 0;
