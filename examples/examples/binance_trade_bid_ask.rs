@@ -12,8 +12,8 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let mut binance = Binance::usd_margin_futures().connect_exc();
-    let mut trades = binance.subscribe_trades("btcbusd").await?;
-    let mut bid_ask = binance.subscribe_bid_ask("btcbusd").await?;
+    let mut trades = binance.subscribe_trades("btcusdt").await?;
+    let mut bid_ask = binance.subscribe_bid_ask("btcusdt").await?;
     tokio::spawn(async move {
         while let Some(t) = bid_ask.next().await {
             let t = t?;

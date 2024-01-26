@@ -22,40 +22,38 @@ async fn main() -> anyhow::Result<()> {
         .ws_rate_limit(2, Duration::from_secs(1))
         .connect_exc();
 
-    let handles = [
-        "btcbusd", "ethbusd", "bnbusdt", "ltcusdt", "btcusdt", "ethusdt", "bnbbusd", "ltcbusd",
-    ]
-    .into_iter()
-    .map(|inst| {
-        let mut client = exc
-            .clone()
-            .into_subscribe_tickers()
-            .into_retry(Duration::from_secs(30));
+    let handles = ["bnbusdt", "ltcusdt", "btcusdt", "ethusdt"]
+        .into_iter()
+        .map(|inst| {
+            let mut client = exc
+                .clone()
+                .into_subscribe_tickers()
+                .into_retry(Duration::from_secs(30));
 
-        tokio::spawn(async move {
-            loop {
-                tracing::info!("{inst}");
-                match { client.subscribe_tickers(inst).await } {
-                    Ok(mut stream) => {
-                        while let Some(c) = stream.next().await {
-                            match c {
-                                Ok(c) => tracing::info!("{inst}; {c}"),
-                                Err(err) => {
-                                    tracing::error!("{inst}; {err}");
+            tokio::spawn(async move {
+                loop {
+                    tracing::info!("{inst}");
+                    match { client.subscribe_tickers(inst).await } {
+                        Ok(mut stream) => {
+                            while let Some(c) = stream.next().await {
+                                match c {
+                                    Ok(c) => tracing::info!("{inst}; {c}"),
+                                    Err(err) => {
+                                        tracing::error!("{inst}; {err}");
+                                    }
                                 }
                             }
+                            tracing::warn!("{inst} stream is dead; reconnecting..");
                         }
-                        tracing::warn!("{inst} stream is dead; reconnecting..");
+                        Err(err) => {
+                            tracing::error!("{inst} request error: {err}; retrying..");
+                        }
                     }
-                    Err(err) => {
-                        tracing::error!("{inst} request error: {err}; retrying..");
-                    }
+                    tokio::time::sleep(Duration::from_secs(1)).await;
                 }
-                tokio::time::sleep(Duration::from_secs(1)).await;
-            }
+            })
         })
-    })
-    .collect::<Vec<_>>();
+        .collect::<Vec<_>>();
 
     tokio::time::sleep(Duration::from_secs(5)).await;
     exc.reconnect().await?;
