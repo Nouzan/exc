@@ -2,7 +2,8 @@ use exc_core::{
     types::{
         instrument::{FetchInstruments, SubscribeInstruments},
         utils::Reconnect,
-        CancelOrder, GetOrder, PlaceOrder, QueryLastCandles, SubscribeOrders, SubscribeTickers,
+        CancelOrder, GetOrder, PlaceOrder, QueryLastCandles, SubscribeBidAsk, SubscribeOrders,
+        SubscribeTickers, SubscribeTrades,
     },
     Adaptor, ExchangeError, Request,
 };
@@ -51,6 +52,34 @@ impl Adaptor<SubscribeTickers> for OkxRequest {
     ) -> Result<<SubscribeTickers as Request>::Response, ExchangeError> {
         let res = resp.ws()?;
         <WsRequest as Adaptor<SubscribeTickers>>::into_response(res)
+    }
+}
+
+impl Adaptor<SubscribeTrades> for OkxRequest {
+    fn from_request(req: SubscribeTrades) -> Result<Self, ExchangeError> {
+        let req = WsRequest::from_request(req)?;
+        Ok(Self::Ws(req))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeTrades as Request>::Response, ExchangeError> {
+        let res = resp.ws()?;
+        <WsRequest as Adaptor<SubscribeTrades>>::into_response(res)
+    }
+}
+
+impl Adaptor<SubscribeBidAsk> for OkxRequest {
+    fn from_request(req: SubscribeBidAsk) -> Result<Self, ExchangeError> {
+        let req = WsRequest::from_request(req)?;
+        Ok(Self::Ws(req))
+    }
+
+    fn into_response(
+        resp: Self::Response,
+    ) -> Result<<SubscribeBidAsk as Request>::Response, ExchangeError> {
+        let res = resp.ws()?;
+        <WsRequest as Adaptor<SubscribeBidAsk>>::into_response(res)
     }
 }
 
