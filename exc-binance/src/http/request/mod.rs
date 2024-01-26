@@ -399,7 +399,7 @@ mod test {
     #[tokio::test]
     async fn test_candle() -> anyhow::Result<()> {
         let apis = [
-            (Binance::usd_margin_futures().connect(), "btcbusd"),
+            (Binance::usd_margin_futures().connect(), "btcusdt"),
             (Binance::spot().connect(), "btcusdt"),
         ];
         for (api, inst) in apis {
