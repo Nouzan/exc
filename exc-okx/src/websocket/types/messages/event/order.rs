@@ -230,10 +230,12 @@ impl TryFrom<OkxOrder> for OrderUpdate {
         };
         let mut fees = HashMap::default();
         if let (fee, Some(fee_asset)) = (order.fee, order.fee_ccy) {
-            fees.insert(fee_asset, fee);
+            let f = fees.entry(fee_asset).or_default();
+            *f += fee;
         }
         if let (rebate, Some(rebate_asset)) = (order.rebate, order.rebate_ccy) {
-            fees.insert(rebate_asset, rebate);
+            let f = fees.entry(rebate_asset).or_default();
+            *f += rebate;
         }
         let trade = if let (Some(price), Some(size), Some(fee), Some(fee_asset)) = (
             order.fill_px,
