@@ -237,7 +237,7 @@ mod test {
     async fn test_aggregate_trade() -> anyhow::Result<()> {
         let mut api = Binance::usd_margin_futures().connect();
         let stream = (&mut api)
-            .oneshot(Request::subscribe(Name::agg_trade("btcbusd")))
+            .oneshot(Request::subscribe(Name::agg_trade("btcusdt")))
             .await?
             .into_stream::<AggTrade>()?;
         pin_mut!(stream);
@@ -250,7 +250,7 @@ mod test {
     async fn test_book_ticker() -> anyhow::Result<()> {
         let mut api = Binance::usd_margin_futures().connect();
         let stream = (&mut api)
-            .oneshot(Request::subscribe(Name::book_ticker("btcbusd")))
+            .oneshot(Request::subscribe(Name::book_ticker("btcusdt")))
             .await?
             .into_stream::<BookTicker>()?;
         pin_mut!(stream);
