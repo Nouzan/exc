@@ -35,6 +35,22 @@ impl Args {
         ]))
     }
 
+    /// Args for trades subscription.
+    pub fn subscribe_trades(inst: &str) -> Self {
+        Args(BTreeMap::from([
+            (Str::new_inline("channel"), Str::new_inline("trades")),
+            (Str::new_inline("instId"), Str::new(inst)),
+        ]))
+    }
+
+    /// Args for bid/ask subscription.
+    pub fn subscribe_bid_ask(inst: &str) -> Self {
+        Args(BTreeMap::from([
+            (Str::new_inline("channel"), Str::new_inline("bbo-tbt")),
+            (Str::new_inline("instId"), Str::new(inst)),
+        ]))
+    }
+
     pub(crate) fn to_tag(&self) -> String {
         const IGNORE_KEYS: [&str; 1] = ["uid"];
         let mut tag = String::from("sub");
