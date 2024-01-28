@@ -24,7 +24,7 @@ pub enum InstrumentMetaError<E> {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Display)]
 #[display(bound = "Num: std::fmt::Display")]
 #[display(
-    fmt = "name={name} inst={inst} rev={} unit={} pt={} st={} ms={} mv={}",
+    fmt = "name={name} inst={inst} rev={} unit={} pt={} st={} ms={} mv={} live={live}",
     "inst.is_prefer_reversed()",
     "attrs.unit",
     "attrs.price_tick",
@@ -41,6 +41,13 @@ pub struct InstrumentMeta<Num> {
     /// Attributes.
     #[serde(flatten)]
     attrs: Attributes<Num>,
+    /// Is live for trading.
+    #[serde(default = "live")]
+    live: bool,
+}
+
+fn live() -> bool {
+    true
 }
 
 /// Instrument Meta.
@@ -73,6 +80,7 @@ impl<Num> InstrumentMeta<Num> {
             name: Str::new(name),
             inst,
             attrs,
+            live: true,
         }
     }
 
@@ -94,6 +102,17 @@ impl<Num> InstrumentMeta<Num> {
     /// Get attributes.
     pub fn attrs(&self) -> &Attributes<Num> {
         &self.attrs
+    }
+
+    /// Get if the instrument is live for trading.
+    pub fn is_live(&self) -> bool {
+        self.live
+    }
+
+    /// Set whether the instrument is live for trading.
+    pub fn with_live(mut self, live: bool) -> Self {
+        self.live = live;
+        self
     }
 }
 

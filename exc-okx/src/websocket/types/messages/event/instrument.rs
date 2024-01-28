@@ -348,10 +348,9 @@ impl TryFrom<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
             min_size: common.min_sz,
             min_value: Decimal::ZERO,
         };
-        Ok(InstrumentMeta::new(
-            common.inst_id.as_str(),
-            meta.to_exc_symbol()?,
-            attrs,
-        ))
+        Ok(
+            InstrumentMeta::new(common.inst_id.as_str(), meta.to_exc_symbol()?, attrs)
+                .with_live(matches!(common.state, InstrumentState::Live)),
+        )
     }
 }
