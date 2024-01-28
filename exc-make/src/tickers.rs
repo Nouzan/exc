@@ -7,10 +7,25 @@ use std::{
 };
 use tower_make::MakeService;
 
+/// How to get the first trade.
+#[derive(Debug, Clone, Copy, Default)]
+pub enum FirstTrade {
+    /// Wait for the first trade.
+    #[default]
+    Wait,
+    /// Use bid for the first trade.
+    Bid,
+    /// Use ask for the first trade.
+    Ask,
+    /// Use first bid/ask for the first trade.
+    BidAsk,
+}
+
 /// Options for making a service to subscribe tickers.
 #[derive(Debug, Default)]
 pub struct MakeTickersOptions {
     prefer_trade_bid_ask: bool,
+    first_trade: FirstTrade,
 }
 
 impl MakeTickersOptions {
@@ -20,9 +35,21 @@ impl MakeTickersOptions {
         self
     }
 
+    /// Set how to get the first trade. Default is [`FirstTrade::Wait`].
+    /// Only works when [`MakeTickersOptions::prefer_trade_bid_ask`] is `true`.
+    pub fn set_first_trade(mut self, mode: FirstTrade) -> Self {
+        self.first_trade = mode;
+        self
+    }
+
     /// Get whether to prefer use ticker from trade bid/ask.
     pub fn is_prefer_trade_bid_ask(&self) -> bool {
         self.prefer_trade_bid_ask
+    }
+
+    /// Get how to get the first trade.
+    pub fn first_trade(&self) -> FirstTrade {
+        self.first_trade
     }
 }
 

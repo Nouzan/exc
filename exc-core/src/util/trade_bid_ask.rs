@@ -2,6 +2,7 @@ use std::task::{Context, Poll};
 
 use async_stream::try_stream;
 use either::Either;
+use exc_make::tickers::FirstTrade;
 use exc_service::{ExcService, ExchangeError};
 use exc_types::{SubscribeBidAsk, SubscribeTickers, SubscribeTrades, Ticker, TickerStream};
 use futures::{future::BoxFuture, FutureExt, StreamExt, TryStreamExt};
@@ -12,12 +13,14 @@ use tower::{Layer, Service, ServiceExt};
 /// Trade-Bid-Ask layer.
 pub struct TradeBidAskLayer {
     ignore_bid_ask_ts: bool,
+    first_trade: FirstTrade,
 }
 
 impl Default for TradeBidAskLayer {
     fn default() -> Self {
         Self {
             ignore_bid_ask_ts: true,
+            first_trade: FirstTrade::default(),
         }
     }
 }
@@ -28,6 +31,12 @@ impl TradeBidAskLayer {
         self.ignore_bid_ask_ts = false;
         self
     }
+
+    /// Set first trade mode.
+    pub fn first_trade(&mut self, mode: FirstTrade) -> &mut Self {
+        self.first_trade = mode;
+        self
+    }
 }
 
 impl<S> Layer<S> for TradeBidAskLayer {
@@ -36,6 +45,7 @@ impl<S> Layer<S> for TradeBidAskLayer {
         TradeBidAsk {
             svc: inner,
             ignore_bid_ask_ts: self.ignore_bid_ask_ts,
+            first_trade: self.first_trade,
         }
     }
 }
@@ -44,6 +54,7 @@ impl<S> Layer<S> for TradeBidAskLayer {
 #[derive(Debug, Clone, Copy)]
 pub struct TradeBidAsk<S> {
     ignore_bid_ask_ts: bool,
+    first_trade: FirstTrade,
     svc: S,
 }
 
@@ -72,6 +83,7 @@ where
         );
         let mut svc = self.svc.clone();
         let ignore_bid_ask_ts = self.ignore_bid_ask_ts;
+        let mode = self.first_trade;
         async move {
             let trades = trade.await?.map_ok(Either::Left);
             let mut svc = svc.as_service();
@@ -116,6 +128,36 @@ where
                             ticker.ask = bid_ask.ask.map(|a| a.0);
                             ticker.bid_size = bid_ask.bid.map(|b| b.1);
                             ticker.ask_size = bid_ask.ask.map(|a| a.1);
+                            if !trade_init {
+                                match mode {
+                                    FirstTrade::Wait => {},
+                                    FirstTrade::Bid => {
+                                        if let Some(bid) = bid_ask.bid {
+                                            ticker.last = bid.0;
+                                            ticker.buy = None;
+                                            trade_init = true;
+                                        }
+                                    },
+                                    FirstTrade::Ask => {
+                                        if let Some(ask) = bid_ask.ask {
+                                            ticker.last = ask.0;
+                                            ticker.buy = None;
+                                            trade_init = true;
+                                        }
+                                    },
+                                    FirstTrade::BidAsk => {
+                                        if let Some(bid) = ticker.bid {
+                                            ticker.last = bid;
+                                            ticker.buy = None;
+                                            trade_init = true;
+                                        } else if let Some(ask) = ticker.ask {
+                                            ticker.last = ask;
+                                            ticker.buy = None;
+                                            trade_init = true;
+                                        }
+                                    },
+                                }
+                            }
                         }
                     }
                     if trade_init {
