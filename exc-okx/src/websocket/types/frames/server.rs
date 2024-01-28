@@ -24,14 +24,32 @@ impl ServerFrame {
         )
     }
 
-    pub(crate) fn into_change(self) -> Option<Change> {
+    /// Get change if it is.
+    pub fn change(&self) -> Option<&Change> {
+        match &self.inner {
+            Event::Change(change) => Some(change),
+            _ => None,
+        }
+    }
+
+    /// Get response if it is.
+    pub fn response(&self) -> Option<&ResponseKind> {
+        match &self.inner {
+            Event::Response(resp) => Some(resp),
+            _ => None,
+        }
+    }
+
+    /// Convert to change.
+    pub fn into_change(self) -> Option<Change> {
         match self.inner {
             Event::Change(change) => Some(change),
             _ => None,
         }
     }
 
-    pub(crate) fn into_response(self) -> Option<ResponseKind> {
+    /// Convert to response.
+    pub fn into_response(self) -> Option<ResponseKind> {
         match self.inner {
             Event::Response(resp) => Some(resp),
             _ => None,
@@ -46,6 +64,16 @@ impl ServerFrame {
         T: for<'de> Deserialize<'de>,
     {
         Some(self.into_change()?.deserialize_data())
+    }
+
+    /// Deserialize change.
+    pub fn to_deserialized_changes<T>(
+        &self,
+    ) -> Option<impl Iterator<Item = Result<T, serde_json::Error>>>
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        Some(self.change()?.clone().deserialize_data())
     }
 }
 

@@ -17,11 +17,13 @@ use std::hash::Hash;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Args(pub BTreeMap<Str, Str>);
 
+const CHANNEL: Str = Str::new_inline("channel");
+
 impl Args {
     /// Args for tickers subscription.
     pub fn subscribe_tickers(inst: &str) -> Self {
         Args(BTreeMap::from([
-            (Str::new_inline("channel"), Str::new_inline("tickers")),
+            (CHANNEL, Str::new_inline("tickers")),
             (Str::new_inline("instId"), Str::new(inst)),
         ]))
     }
@@ -29,7 +31,7 @@ impl Args {
     /// Args for orders subscription.
     pub fn subscribe_orders(inst: &str) -> Self {
         Args(BTreeMap::from([
-            (Str::new_inline("channel"), Str::new_inline("orders")),
+            (CHANNEL, Str::new_inline("orders")),
             (Str::new_inline("instType"), Str::new_inline("ANY")),
             (Str::new_inline("instId"), Str::new(inst)),
         ]))
@@ -38,7 +40,7 @@ impl Args {
     /// Args for trades subscription.
     pub fn subscribe_trades(inst: &str) -> Self {
         Args(BTreeMap::from([
-            (Str::new_inline("channel"), Str::new_inline("trades")),
+            (CHANNEL, Str::new_inline("trades")),
             (Str::new_inline("instId"), Str::new(inst)),
         ]))
     }
@@ -46,9 +48,22 @@ impl Args {
     /// Args for bid/ask subscription.
     pub fn subscribe_bid_ask(inst: &str) -> Self {
         Args(BTreeMap::from([
-            (Str::new_inline("channel"), Str::new_inline("bbo-tbt")),
+            (CHANNEL, Str::new_inline("bbo-tbt")),
             (Str::new_inline("instId"), Str::new(inst)),
         ]))
+    }
+
+    /// Args for channel subscription.
+    pub fn subscribe_channel<'a>(
+        channel: &str,
+        args: impl IntoIterator<Item = (&'a str, &'a str)>,
+    ) -> Self {
+        let mut map = BTreeMap::new();
+        map.insert(CHANNEL, Str::new(channel));
+        for (k, v) in args {
+            map.insert(Str::new(k), Str::new(v));
+        }
+        Args(map)
     }
 
     pub(crate) fn to_tag(&self) -> String {
