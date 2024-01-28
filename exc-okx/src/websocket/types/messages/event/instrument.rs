@@ -335,7 +335,7 @@ impl TryFrom<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
 
     fn try_from(meta: OkxInstrumentMeta) -> Result<Self, Self::Error> {
         let unit = if let Some(contract) = meta.as_contract() {
-            contract.ct_val
+            contract.ct_val * contract.ct_mult
         } else {
             Decimal::ONE
         };
