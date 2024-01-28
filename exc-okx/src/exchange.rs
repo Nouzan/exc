@@ -67,7 +67,7 @@ impl Service<MakeTickersOptions> for OkxExchange {
             let svc = self.public.clone().into_exc();
             ready(Ok(ExcServiceExt::<crate::OkxRequest>::apply(
                 svc,
-                &TradeBidAskLayer::default(),
+                TradeBidAskLayer::default().first_trade(req.first_trade()),
             )
             .boxed_clone()))
         } else {
