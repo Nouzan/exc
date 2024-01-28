@@ -4,10 +4,11 @@ use self::{book::OkxBook, ticker::OkxTicker, trade::OkxTrade};
 
 use super::Args;
 use exc_core::types::{ticker::Ticker, BidAsk, Trade};
-pub use instrument::OkxInstrumentMeta;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
+
+pub use self::{instrument::OkxInstrumentMeta, options::OkxOptionSummary};
 
 mod book;
 mod instrument;
@@ -16,6 +17,9 @@ mod trade;
 
 /// Order.
 pub mod order;
+
+/// Options message.
+pub mod options;
 
 /// Message with code.
 #[derive(Debug, Clone, Serialize, Deserialize)]
