@@ -1,10 +1,10 @@
 use exc_core::types::instrument::{FetchInstruments, InstrumentMeta};
-use exc_core::{Adaptor, ExchangeError, Str};
-use serde::Deserialize;
+use exc_core::{Adaptor, ExchangeError};
 
 use crate::http::types::request::instruments::Instruments;
 use crate::http::types::request::Get;
 use crate::http::types::response::ResponseData;
+use crate::utils::inst_tag::parse_inst_tag;
 use async_stream::stream;
 use futures::StreamExt;
 
@@ -15,20 +15,7 @@ impl Adaptor<FetchInstruments> for HttpRequest {
     where
         Self: Sized,
     {
-        #[derive(Debug, Deserialize, Default)]
-        struct Params {
-            family: Option<Str>,
-            uly: Option<Str>,
-        }
-
-        let (tag, params) = req
-            .tag
-            .split_once('?')
-            .map(|(ty, params)| serde_qs::from_str::<Params>(params).map(|p| (Str::new(ty), p)))
-            .transpose()
-            .map_err(anyhow::Error::from)?
-            .unwrap_or_else(|| (req.tag, Params::default()));
-
+        let (tag, params) = parse_inst_tag(&req.tag)?;
         let req = Self::Get(Get::Instruments(Instruments {
             inst_type: tag,
             inst_family: params.family,
