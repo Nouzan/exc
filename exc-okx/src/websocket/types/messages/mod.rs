@@ -18,13 +18,14 @@ use std::hash::Hash;
 pub struct Args(pub BTreeMap<Str, Str>);
 
 const CHANNEL: Str = Str::new_inline("channel");
+const INST_ID: Str = Str::new_inline("instId");
 
 impl Args {
     /// Args for tickers subscription.
     pub fn subscribe_tickers(inst: &str) -> Self {
         Args(BTreeMap::from([
             (CHANNEL, Str::new_inline("tickers")),
-            (Str::new_inline("instId"), Str::new(inst)),
+            (INST_ID, Str::new(inst)),
         ]))
     }
 
@@ -33,7 +34,7 @@ impl Args {
         Args(BTreeMap::from([
             (CHANNEL, Str::new_inline("orders")),
             (Str::new_inline("instType"), Str::new_inline("ANY")),
-            (Str::new_inline("instId"), Str::new(inst)),
+            (INST_ID, Str::new(inst)),
         ]))
     }
 
@@ -41,7 +42,7 @@ impl Args {
     pub fn subscribe_trades(inst: &str) -> Self {
         Args(BTreeMap::from([
             (CHANNEL, Str::new_inline("trades")),
-            (Str::new_inline("instId"), Str::new(inst)),
+            (INST_ID, Str::new(inst)),
         ]))
     }
 
@@ -49,7 +50,15 @@ impl Args {
     pub fn subscribe_bid_ask(inst: &str) -> Self {
         Args(BTreeMap::from([
             (CHANNEL, Str::new_inline("bbo-tbt")),
-            (Str::new_inline("instId"), Str::new(inst)),
+            (INST_ID, Str::new(inst)),
+        ]))
+    }
+
+    /// Args for option summary subscription.
+    pub fn subscribe_option_summary(inst_family: &str) -> Self {
+        Args(BTreeMap::from([
+            (CHANNEL, Str::new_inline("opt-summary")),
+            (Str::new_inline("instFamily"), Str::new(inst_family)),
         ]))
     }
 
