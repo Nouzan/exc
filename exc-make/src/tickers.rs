@@ -26,6 +26,7 @@ pub enum FirstTrade {
 pub struct MakeTickersOptions {
     prefer_trade_bid_ask: bool,
     first_trade: FirstTrade,
+    accept_bid_ask_ts: bool,
 }
 
 impl MakeTickersOptions {
@@ -37,7 +38,7 @@ impl MakeTickersOptions {
 
     /// Set how to get the first trade. Default is [`FirstTrade::Wait`].
     /// Only works when [`MakeTickersOptions::prefer_trade_bid_ask`] is `true`.
-    pub fn set_first_trade(mut self, mode: FirstTrade) -> Self {
+    pub fn first_trade(mut self, mode: FirstTrade) -> Self {
         self.first_trade = mode;
         self
     }
@@ -48,8 +49,20 @@ impl MakeTickersOptions {
     }
 
     /// Get how to get the first trade.
-    pub fn first_trade(&self) -> FirstTrade {
+    pub fn get_first_trade(&self) -> FirstTrade {
         self.first_trade
+    }
+
+    /// Accept bid/ask ts. Default is `false`. Only works when
+    /// [`MakeTickersOptions::prefer_trade_bid_ask`] is `true`.
+    pub fn accept_bid_ask_ts(mut self, flag: bool) -> Self {
+        self.accept_bid_ask_ts = flag;
+        self
+    }
+
+    /// Get whether to accept bid/ask ts.
+    pub fn is_accept_bid_ask_ts(&self) -> bool {
+        self.accept_bid_ask_ts
     }
 }
 

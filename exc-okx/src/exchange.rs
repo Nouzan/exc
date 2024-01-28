@@ -65,11 +65,14 @@ impl Service<MakeTickersOptions> for OkxExchange {
     fn call(&mut self, req: MakeTickersOptions) -> Self::Future {
         if req.is_prefer_trade_bid_ask() {
             let svc = self.public.clone().into_exc();
-            ready(Ok(ExcServiceExt::<crate::OkxRequest>::apply(
-                svc,
-                TradeBidAskLayer::default().first_trade(req.first_trade()),
-            )
-            .boxed_clone()))
+            let mut layer = TradeBidAskLayer::default();
+            layer.first_trade(req.get_first_trade());
+            if req.is_accept_bid_ask_ts() {
+                layer.accept_bid_ask_ts();
+            }
+            ready(Ok(
+                ExcServiceExt::<crate::OkxRequest>::apply(svc, &layer).boxed_clone()
+            ))
         } else {
             ready(Ok(self.public.clone().adapt().boxed_clone()))
         }
