@@ -74,11 +74,14 @@ impl Service<MakeTickersOptions> for BinanceExchange {
 
     fn call(&mut self, req: MakeTickersOptions) -> Self::Future {
         let svc = self.inner.clone().into_exc();
-        ready(Ok(ExcServiceExt::<crate::Request>::apply(
-            svc,
-            TradeBidAskLayer::default().first_trade(req.first_trade()),
-        )
-        .boxed_clone()))
+        let mut layer = TradeBidAskLayer::default();
+        layer.first_trade(req.get_first_trade());
+        if req.is_accept_bid_ask_ts() {
+            layer.accept_bid_ask_ts();
+        }
+        ready(Ok(
+            ExcServiceExt::<crate::Request>::apply(svc, &layer).boxed_clone()
+        ))
     }
 }
 
