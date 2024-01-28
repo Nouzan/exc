@@ -41,6 +41,13 @@ pub struct InstrumentMeta<Num> {
     /// Attributes.
     #[serde(flatten)]
     attrs: Attributes<Num>,
+    /// Is live for trading.
+    #[serde(default = "live")]
+    live: bool,
+}
+
+fn live() -> bool {
+    true
 }
 
 /// Instrument Meta.
@@ -73,6 +80,7 @@ impl<Num> InstrumentMeta<Num> {
             name: Str::new(name),
             inst,
             attrs,
+            live: true,
         }
     }
 
@@ -94,6 +102,16 @@ impl<Num> InstrumentMeta<Num> {
     /// Get attributes.
     pub fn attrs(&self) -> &Attributes<Num> {
         &self.attrs
+    }
+
+    /// Get if the instrument is live for trading.
+    pub fn is_live(&self) -> bool {
+        self.live
+    }
+
+    /// Set whether the instrument is live for trading.
+    pub fn set_live(&mut self, live: bool) {
+        self.live = live;
     }
 }
 
