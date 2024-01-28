@@ -74,8 +74,16 @@ pub enum Response {
 }
 
 impl Response {
-    /// Convert into a result.
+    /// Convert into a streaming result.
+    #[deprecated(since = "0.7.2", note = "please use `into_stream` instead")]
     pub fn into_result(
+        self,
+    ) -> Result<BoxStream<'static, Result<ServerFrame, OkxError>>, StatusKind> {
+        self.into_stream()
+    }
+
+    /// Convert into a stream of [`ServerFrame`].
+    pub fn into_stream(
         self,
     ) -> Result<BoxStream<'static, Result<ServerFrame, OkxError>>, StatusKind> {
         match self {
@@ -89,7 +97,7 @@ impl Response {
     pub fn into_unary(
         self,
     ) -> Result<BoxFuture<'static, Result<ServerFrame, OkxError>>, StatusKind> {
-        let mut stream = self.into_result()?;
+        let mut stream = self.into_stream()?;
         Ok(async move {
             match stream.next().await {
                 Some(result) => result,

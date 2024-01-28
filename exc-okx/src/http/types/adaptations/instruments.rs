@@ -4,6 +4,7 @@ use exc_core::{Adaptor, ExchangeError};
 use crate::http::types::request::instruments::Instruments;
 use crate::http::types::request::Get;
 use crate::http::types::response::ResponseData;
+use crate::utils::inst_tag::parse_inst_tag;
 use async_stream::stream;
 use futures::StreamExt;
 
@@ -14,8 +15,11 @@ impl Adaptor<FetchInstruments> for HttpRequest {
     where
         Self: Sized,
     {
+        let (tag, params) = parse_inst_tag(&req.tag)?;
         let req = Self::Get(Get::Instruments(Instruments {
-            inst_type: req.tag,
+            inst_type: tag,
+            inst_family: params.family,
+            uly: params.uly,
             ..Default::default()
         }));
         Ok(req)
