@@ -24,7 +24,7 @@ pub enum InstrumentMetaError<E> {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Display)]
 #[display(bound = "Num: std::fmt::Display")]
 #[display(
-    fmt = "name={name} inst={inst} rev={} unit={} pt={} st={} ms={} mv={}",
+    fmt = "name={name} inst={inst} rev={} unit={} pt={} st={} ms={} mv={} live={live}",
     "inst.is_prefer_reversed()",
     "attrs.unit",
     "attrs.price_tick",
