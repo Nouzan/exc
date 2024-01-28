@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use exc_core::{
     types::{
         instrument::{InstrumentMeta, SubscribeInstruments},
@@ -7,12 +5,12 @@ use exc_core::{
         BidAsk, Canceled, OrderUpdate, Placed, SubscribeBidAsk, SubscribeOrders, SubscribeTrades,
         Trade,
     },
-    Adaptor, ExchangeError, Str,
+    Adaptor, ExchangeError,
 };
 use futures::{future::ready, stream::iter, FutureExt, StreamExt, TryStreamExt};
 use time::OffsetDateTime;
 
-use crate::error::OkxError;
+use crate::{error::OkxError, utils::inst_tag::parse_inst_tag};
 
 use super::{
     types::{
@@ -30,11 +28,8 @@ impl Adaptor<SubscribeInstruments> for Request {
     where
         Self: Sized,
     {
-        let tag = req.tag;
-        Ok(Self::subscribe(Args(BTreeMap::from([
-            (Str::new_inline("channel"), Str::new_inline("instruments")),
-            (Str::new_inline("instType"), tag),
-        ]))))
+        let (ty, _) = parse_inst_tag(&req.tag)?;
+        Ok(Self::subscribe(Args::subscribe_instruments(&ty)))
     }
 
     fn into_response(
