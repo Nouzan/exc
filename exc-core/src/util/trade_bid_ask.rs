@@ -146,12 +146,12 @@ where
                                         }
                                     },
                                     FirstTrade::BidAsk => {
-                                        if let Some(bid) = ticker.bid {
-                                            ticker.last = bid;
+                                        if let Some(bid) = bid_ask.bid {
+                                            ticker.last = bid.0;
                                             ticker.buy = None;
                                             trade_init = true;
-                                        } else if let Some(ask) = ticker.ask {
-                                            ticker.last = ask;
+                                        } else if let Some(ask) = bid_ask.ask {
+                                            ticker.last = ask.0;
                                             ticker.buy = None;
                                             trade_init = true;
                                         }
