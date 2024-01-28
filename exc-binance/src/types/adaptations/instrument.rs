@@ -74,7 +74,7 @@ impl Adaptor<FetchInstruments> for Request {
                             })
                             .ok()?,
                         attrs,
-                    )))
+                    ).with_live(symbol.is_live())))
                 }))
                 .boxed())
             }
@@ -122,7 +122,7 @@ impl Adaptor<FetchInstruments> for Request {
                             })
                             .ok()?,
                         attrs,
-                    )))
+                    ).with_live(symbol.is_live())))
                 }))
                 .boxed())
             }
