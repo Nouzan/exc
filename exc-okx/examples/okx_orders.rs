@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
         .call(OkxRequest::subscribe_orders("DOGE-USDT"))
         .await?
         .ws()?
-        .into_result()?
+        .into_stream()?
         .skip(1);
     while let Some(frame) = stream.next().await.transpose()? {
         for data in frame.into_deserialized_changes::<OkxOrder>().unwrap() {
