@@ -8,6 +8,8 @@ use crate::http::error::RestError;
 
 use super::Data;
 
+const TRADING: &str = "TRADING";
+
 /// Exchange info.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -74,6 +76,10 @@ pub(crate) struct SpotSymbol {
 impl SpotSymbol {
     pub(crate) fn to_exc_symbol(&self) -> Result<ExcSymbol, RestError> {
         Ok(ExcSymbol::spot(&self.base_asset, &self.quote_asset))
+    }
+
+    pub(crate) fn is_live(&self) -> bool {
+        self.status == TRADING
     }
 }
 
@@ -143,6 +149,10 @@ pub(crate) struct UFSymbol {
 }
 
 impl UFSymbol {
+    pub(crate) fn is_live(&self) -> bool {
+        self.status == TRADING
+    }
+
     pub(crate) fn to_exc_symbol(&self) -> Result<ExcSymbol, RestError> {
         match &self.contract_type {
             ContractType::Known(ty) => match ty {

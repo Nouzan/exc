@@ -110,8 +110,9 @@ impl<Num> InstrumentMeta<Num> {
     }
 
     /// Set whether the instrument is live for trading.
-    pub fn set_live(&mut self, live: bool) {
+    pub fn with_live(mut self, live: bool) -> Self {
         self.live = live;
+        self
     }
 }
 
