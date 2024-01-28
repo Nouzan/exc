@@ -12,6 +12,7 @@ use tower::Service;
 use crate::http::layer::OkxHttpApi;
 use crate::http::types::{request::HttpRequest, response::HttpResponse};
 use crate::websocket::transport::channel::Channel as WsChannel;
+use crate::websocket::types::messages::Args;
 use crate::websocket::{Request as WsRequest, Response as WsResponse};
 
 use self::endpoint::Endpoint;
@@ -33,6 +34,11 @@ impl OkxRequest {
     /// Subscribe to orders channel.
     pub fn subscribe_orders(inst: &str) -> Self {
         Self::Ws(WsRequest::subscribe_orders(inst))
+    }
+
+    /// Subscribe with the given args.
+    pub fn subscribe(args: Args) -> Self {
+        Self::Ws(WsRequest::subscribe(args))
     }
 }
 
