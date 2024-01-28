@@ -9,3 +9,6 @@ pub mod timestamp;
 
 /// Period.
 pub mod period;
+
+/// Parse Instrument Tag.
+pub mod inst_tag;

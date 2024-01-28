@@ -21,6 +21,14 @@ const CHANNEL: Str = Str::new_inline("channel");
 const INST_ID: Str = Str::new_inline("instId");
 
 impl Args {
+    /// Args for instruments subscription.
+    pub fn subscribe_instruments(inst_type: &str) -> Self {
+        Args(BTreeMap::from([
+            (Str::new_inline("channel"), Str::new_inline("instruments")),
+            (Str::new_inline("instType"), Str::new(inst_type)),
+        ]))
+    }
+
     /// Args for tickers subscription.
     pub fn subscribe_tickers(inst: &str) -> Self {
         Args(BTreeMap::from([
