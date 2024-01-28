@@ -69,12 +69,12 @@ impl Adaptor<FetchInstruments> for Request {
                         symbol
                             .to_exc_symbol()
                             .map_err(|err| {
-                                tracing::error!(%err, "cannot build exc symbol from {}", symbol.symbol);
+                                tracing::debug!(%err, "cannot build exc symbol from {}", symbol.symbol);
                                 err
                             })
                             .ok()?,
                         attrs,
-                    )))
+                    ).with_live(symbol.is_live())))
                 }))
                 .boxed())
             }
@@ -117,12 +117,12 @@ impl Adaptor<FetchInstruments> for Request {
                         symbol
                             .to_exc_symbol()
                             .map_err(|err| {
-                                tracing::error!(%err, "cannot build exc symbol from {}", symbol.symbol);
+                                tracing::debug!(%err, "cannot build exc symbol from {}", symbol.symbol);
                                 err
                             })
                             .ok()?,
                         attrs,
-                    )))
+                    ).with_live(symbol.is_live())))
                 }))
                 .boxed())
             }
