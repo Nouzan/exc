@@ -1,7 +1,7 @@
 use exc_core::{
     symbol::ExcSymbol,
     types::instrument::{Attributes, InstrumentMeta},
-    Asset, Str,
+    Asset, ParseAssetError, Str,
 };
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -97,25 +97,23 @@ impl OkxInstrumentMeta {
                 &contract.ct_val_ccy,
                 &contract.settle_ccy,
             )),
-            Self::Option(OptionMeta {
-                contract, common, ..
-            }) => {
-                let mut parts = common.inst_id.split('-').skip(2);
+            Self::Option(OptionMeta { common, .. }) => {
+                let mut parts = common.inst_id.split('-');
+                let base = parts
+                    .next()
+                    .map(|s| s.parse())
+                    .transpose()
+                    .map_err(|err: ParseAssetError| OkxError::ParseSymbol(err.into()))?;
+                let quote = parts
+                    .next()
+                    .map(|s| s.parse())
+                    .transpose()
+                    .map_err(|err: ParseAssetError| OkxError::ParseSymbol(err.into()))?;
                 let date = parts.next();
                 let price = parts.next();
                 parts.next().and_then(|ty| match ty {
-                    "c" | "C" => ExcSymbol::call_with_str(
-                        &contract.ct_val_ccy,
-                        &contract.settle_ccy,
-                        date?,
-                        price?,
-                    ),
-                    "p" | "P" => ExcSymbol::put_with_str(
-                        &contract.ct_val_ccy,
-                        &contract.settle_ccy,
-                        date?,
-                        price?,
-                    ),
+                    "c" | "C" => ExcSymbol::call_with_str(&base?, &quote?, date?, price?),
+                    "p" | "P" => ExcSymbol::put_with_str(&base?, &quote?, date?, price?),
                     _ => None,
                 })
             }
