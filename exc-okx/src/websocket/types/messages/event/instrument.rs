@@ -350,7 +350,8 @@ impl TryFrom<OkxInstrumentMeta> for InstrumentMeta<Decimal> {
         };
         Ok(
             InstrumentMeta::new(common.inst_id.as_str(), meta.to_exc_symbol()?, attrs)
-                .with_live(matches!(common.state, InstrumentState::Live)),
+                .with_live(matches!(common.state, InstrumentState::Live))
+                .with_expire(meta.expire_time()),
         )
     }
 }
