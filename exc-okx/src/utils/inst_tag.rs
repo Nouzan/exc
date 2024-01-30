@@ -5,9 +5,11 @@ use crate::error::OkxError;
 
 /// Instrument Tag Params.
 #[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct Params {
     /// Instrument family.
-    pub family: Option<Str>,
+    #[serde(alias = "family")]
+    pub inst_family: Option<Str>,
     /// Instrument underlying.
     pub uly: Option<Str>,
 }
