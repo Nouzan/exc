@@ -18,7 +18,7 @@ impl Adaptor<FetchInstruments> for HttpRequest {
         let (tag, params) = parse_inst_tag(&req.tag)?;
         let req = Self::Get(Get::Instruments(Instruments {
             inst_type: tag,
-            inst_family: params.family,
+            inst_family: params.inst_family,
             uly: params.uly,
             ..Default::default()
         }));
