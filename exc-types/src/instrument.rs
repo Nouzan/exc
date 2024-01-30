@@ -24,13 +24,14 @@ pub enum InstrumentMetaError<E> {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Display)]
 #[display(bound = "Num: std::fmt::Display")]
 #[display(
-    fmt = "name={name} inst={inst} rev={} unit={} pt={} st={} ms={} mv={} live={live}",
+    fmt = "name={name} inst={inst} rev={} unit={} pt={} st={} ms={} mv={} live={live} will_expire={}",
     "inst.is_prefer_reversed()",
     "attrs.unit",
     "attrs.price_tick",
     "attrs.size_tick",
     "attrs.min_size",
-    "attrs.min_value"
+    "attrs.min_value",
+    "expire.is_some()"
 )]
 #[serde(bound = "Num: num_traits::Zero + Serialize + for<'a> Deserialize<'a>")]
 pub struct InstrumentMeta<Num> {
@@ -44,6 +45,10 @@ pub struct InstrumentMeta<Num> {
     /// Is live for trading.
     #[serde(default = "live")]
     live: bool,
+    /// Expire time.
+    #[serde(default)]
+    #[serde(with = "time::serde::rfc3339::option")]
+    expire: Option<time::OffsetDateTime>,
 }
 
 fn live() -> bool {
@@ -81,6 +86,7 @@ impl<Num> InstrumentMeta<Num> {
             inst,
             attrs,
             live: true,
+            expire: None,
         }
     }
 
@@ -109,9 +115,20 @@ impl<Num> InstrumentMeta<Num> {
         self.live
     }
 
+    /// Get the expire time.
+    pub fn expire(&self) -> Option<&time::OffsetDateTime> {
+        self.expire.as_ref()
+    }
+
     /// Set whether the instrument is live for trading.
     pub fn with_live(mut self, live: bool) -> Self {
         self.live = live;
+        self
+    }
+
+    /// Set the expire time.
+    pub fn with_expire(mut self, expire: impl Into<Option<time::OffsetDateTime>>) -> Self {
+        self.expire = expire.into();
         self
     }
 }
