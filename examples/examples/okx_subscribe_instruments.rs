@@ -15,7 +15,7 @@ async fn main() -> anyhow::Result<()> {
         .ws_request_timeout(Duration::from_secs(5))
         .ws_connection_timeout(Duration::from_secs(5))
         .connect_exc();
-    let handles = ["SPOT", "FUTURES", "SWAP"]
+    let handles = ["SPOT", "FUTURES", "SWAP", "OPTION"]
         .iter()
         .map(|tag| {
             let tag = tag.to_string();
