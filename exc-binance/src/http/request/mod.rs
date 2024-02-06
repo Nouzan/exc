@@ -239,11 +239,19 @@ impl<T: Rest> RestRequest<T> {
         } else {
             hyper::Body::from(serde_urlencoded::to_string(&value)?)
         };
-        let mut request = Request::builder()
-            .method(self.payload.method(endpoint)?)
-            .uri(uri)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .body(body)?;
+        let method = self.payload.method(endpoint)?;
+
+        let mut builder = Request::builder().method(method.clone()).uri(uri);
+
+        // FIXME: This is required by binance european options for now.
+        if !matches!(
+            (endpoint, method),
+            (RestEndpoint::EuropeanOptions, Method::GET)
+        ) {
+            builder = builder.header("content-type", "application/x-www-form-urlencoded");
+        }
+
+        let mut request = builder.body(body)?;
         let headers = request.headers_mut();
         if let Some(key) = key {
             if self.payload.need_apikey() {
