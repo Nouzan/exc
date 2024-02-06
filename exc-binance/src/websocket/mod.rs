@@ -43,6 +43,14 @@ impl BinanceWebsocketApi {
     pub fn spot() -> WsEndpoint {
         WsEndpoint::new(BinanceWsHost::Spot, Name::new("miniTicker").inst("btcusdt"))
     }
+
+    /// Endpoint of European Options API.
+    pub fn european_options() -> WsEndpoint {
+        WsEndpoint::new(
+            BinanceWsHost::EuropeanOptions,
+            Name::new("index").inst("BTC-USDT"),
+        )
+    }
 }
 
 impl Service<WsRequest> for BinanceWebsocketApi {

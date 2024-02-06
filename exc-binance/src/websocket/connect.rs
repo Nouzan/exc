@@ -29,6 +29,7 @@ pub enum BinanceWsHost {
     UsdMarginFuturesPrivate,
     Spot,
     SpotPrivate,
+    EuropeanOptions,
 }
 
 impl BinanceWsHost {
@@ -37,6 +38,7 @@ impl BinanceWsHost {
             Self::UsdMarginFutures => "wss://fstream.binance.com",
             Self::UsdMarginFuturesPrivate => "wss://fstream.binance.com",
             Self::Spot | Self::SpotPrivate => "wss://stream.binance.com:9443",
+            Self::EuropeanOptions => "wss://nbstream.binance.com/eoptions",
         }
     }
 

@@ -13,6 +13,7 @@ impl Rest for Ping {
         match endpoint {
             RestEndpoint::Spot(_) => Ok("/api/v3/ping".to_string()),
             RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/ping".to_string()),
+            RestEndpoint::EuropeanOptions => Ok("/eapi/v1/ping".to_string()),
         }
     }
 

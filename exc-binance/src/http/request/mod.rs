@@ -169,6 +169,8 @@ pub enum RestEndpoint {
     /// Spot.
     /// Set it to `true` to enable margin trading.
     Spot(SpotOptions),
+    /// European options.
+    EuropeanOptions,
 }
 
 impl fmt::Display for RestEndpoint {
@@ -176,6 +178,7 @@ impl fmt::Display for RestEndpoint {
         match self {
             Self::UsdMarginFutures => write!(f, "binance-u"),
             Self::Spot(_) => write!(f, "binance-s"),
+            Self::EuropeanOptions => write!(f, "binance-e"),
         }
     }
 }
@@ -186,6 +189,7 @@ impl RestEndpoint {
         match self {
             Self::UsdMarginFutures => "https://fapi.binance.com",
             Self::Spot(_) => "https://api.binance.com",
+            Self::EuropeanOptions => "https://eapi.binance.com",
         }
     }
 }

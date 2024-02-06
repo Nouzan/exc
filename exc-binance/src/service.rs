@@ -126,6 +126,11 @@ impl Binance {
     pub fn spot_with_options(options: SpotOptions) -> Endpoint {
         Endpoint::spot_with_options(options)
     }
+
+    /// European options endpoint.
+    pub fn european_options() -> Endpoint {
+        Endpoint::european_options()
+    }
 }
 
 impl Service<Request> for Binance {

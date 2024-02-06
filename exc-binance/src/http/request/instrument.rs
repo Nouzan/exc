@@ -15,6 +15,7 @@ impl Rest for ExchangeInfo {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/exchangeInfo".to_string()),
             RestEndpoint::Spot(_) => Ok("/api/v3/exchangeInfo".to_string()),
+            RestEndpoint::EuropeanOptions => Ok("/eapi/v1/exchangeInfo".to_string()),
         }
     }
 

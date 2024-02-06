@@ -29,9 +29,11 @@ impl Rest for ListSubAccounts {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "`ListSubAccounts` only available on `binance-s`"
-            ))),
+            RestEndpoint::UsdMarginFutures | RestEndpoint::EuropeanOptions => {
+                Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
+                    "`ListSubAccounts` only available on `binance-s`"
+                )))
+            }
             RestEndpoint::Spot(_options) => Ok("/sapi/v1/sub-account/list".to_string()),
         }
     }
@@ -68,9 +70,11 @@ impl Rest for GetSubAccountAssets {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "`GetSubAccountAssets` only available on `binance-s`"
-            ))),
+            RestEndpoint::UsdMarginFutures | RestEndpoint::EuropeanOptions => {
+                Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
+                    "`GetSubAccountAssets` only available on `binance-s`"
+                )))
+            }
             RestEndpoint::Spot(_options) => Ok("/sapi/v3/sub-account/assets".to_string()),
         }
     }
@@ -107,9 +111,11 @@ impl Rest for GetSubAccountMargin {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "`GetSubAccountMargin` only available on `binance-s`"
-            ))),
+            RestEndpoint::UsdMarginFutures | RestEndpoint::EuropeanOptions => {
+                Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
+                    "`GetSubAccountMargin` only available on `binance-s`"
+                )))
+            }
             RestEndpoint::Spot(_options) => Ok("/sapi/v1/sub-account/margin/account".to_string()),
         }
     }
@@ -165,9 +171,11 @@ impl Rest for GetSubAccountFutures {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "`GetSubAccountFutures` only available on `binance-s`"
-            ))),
+            RestEndpoint::UsdMarginFutures | RestEndpoint::EuropeanOptions => {
+                Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
+                    "`GetSubAccountFutures` only available on `binance-s`"
+                )))
+            }
             RestEndpoint::Spot(_options) => Ok("/sapi/v2/sub-account/futures/account".to_string()),
         }
     }
@@ -223,9 +231,11 @@ impl Rest for GetSubAccountFuturesPositions {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "`GetSubAccountFuturesPositions` only available on `binance-s`"
-            ))),
+            RestEndpoint::UsdMarginFutures | RestEndpoint::EuropeanOptions => {
+                Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
+                    "`GetSubAccountFuturesPositions` only available on `binance-s`"
+                )))
+            }
             RestEndpoint::Spot(_options) => {
                 Ok("/sapi/v2/sub-account/futures/positionRisk".to_string())
             }
