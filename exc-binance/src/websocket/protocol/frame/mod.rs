@@ -182,6 +182,35 @@ impl ServerFrame {
             _ => Ok(self),
         }
     }
+
+    fn break_down(self) -> Vec<Self> {
+        match &self {
+            Self::Empty | Self::Response(_) => vec![self],
+            Self::Stream(f) => match &f.data {
+                StreamFrameKind::OptionsOrderUpdate(_) => {
+                    let Self::Stream(f) = self else {
+                        unreachable!()
+                    };
+                    let StreamFrameKind::OptionsOrderUpdate(update) = f.data else {
+                        unreachable!()
+                    };
+                    let stream = f.stream;
+                    update
+                        .order
+                        .into_iter()
+                        .map(|o| {
+                            let frame = StreamFrame {
+                                stream: stream.clone(),
+                                data: StreamFrameKind::OptionsOrder(o),
+                            };
+                            Self::Stream(frame)
+                        })
+                        .collect()
+                }
+                _ => vec![self],
+            },
+        }
+    }
 }
 
 /// Payload that with stream name.
@@ -193,6 +222,7 @@ pub trait Nameable {
 /// Stream frame kind.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
+#[non_exhaustive]
 pub enum StreamFrameKind {
     /// Aggregate trade.
     AggTrade(AggTrade),
@@ -204,6 +234,10 @@ pub enum StreamFrameKind {
     Depth(depth::Depth),
     /// Account event.
     AccountEvent(AccountEvent),
+    /// Options Order Update.
+    OptionsOrder(account::OptionsOrder),
+    /// Options Order Trade Update.
+    OptionsOrderUpdate(account::OptionsOrderUpdate),
     /// Unknwon.
     Unknwon(serde_json::Value),
 }
@@ -232,6 +266,8 @@ impl StreamFrame {
                 })
             }
             StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
+            StreamFrameKind::OptionsOrder(e) => Some(e.to_name()),
+            StreamFrameKind::OptionsOrderUpdate(_) => None,
             StreamFrameKind::Unknwon(_) => None,
         }
     }
@@ -239,6 +275,7 @@ impl StreamFrame {
 
 /// Trade frame.
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 pub enum TradeFrame {
     /// Aggregate trade.
     AggTrade(AggTrade),
@@ -281,6 +318,7 @@ impl TryFrom<TradeFrame> for exc_core::types::Trade {
 
 /// Depth frame.
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 pub enum DepthFrame {
     /// Book ticker.
     BookTicker(BookTicker),
@@ -339,9 +377,11 @@ where
         .and_then(|msg| {
             let f = serde_json::from_str::<ServerFrame>(&msg)
                 .map_err(WsError::from)
-                .and_then(ServerFrame::health);
+                .and_then(ServerFrame::health)
+                .map(|f| stream::iter(f.break_down().into_iter().map(Ok)));
             future::ready(f)
         })
+        .try_flatten()
 }
 
 #[cfg(test)]

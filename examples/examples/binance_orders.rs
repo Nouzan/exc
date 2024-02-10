@@ -30,6 +30,7 @@ async fn main() -> anyhow::Result<()> {
     let mut endpoint = match endpoint.as_str() {
         "binance-u" => Binance::usd_margin_futures(),
         "binance-s" => Binance::spot(),
+        "binance-e" => Binance::european_options(),
         _ => anyhow::bail!("unsupported"),
     };
 
