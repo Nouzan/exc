@@ -2,11 +2,14 @@ use exc_core::{types, Adaptor, ExchangeError};
 use futures::{StreamExt, TryStreamExt};
 use time::OffsetDateTime;
 
-use crate::{types::Name, websocket::protocol::frame::book_ticker::BookTicker, Request};
+use crate::{
+    websocket::{protocol::frame::book_ticker::BookTicker, request::WsRequest},
+    Request,
+};
 
 impl Adaptor<types::SubscribeBidAsk> for Request {
     fn from_request(req: types::SubscribeBidAsk) -> Result<Self, ExchangeError> {
-        Ok(Self::subscribe(Name::book_ticker(&req.instrument)))
+        Ok(WsRequest::dispatch_bid_ask(req).into())
     }
 
     fn into_response(resp: Self::Response) -> Result<types::BidAskStream, ExchangeError> {

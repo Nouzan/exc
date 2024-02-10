@@ -179,6 +179,7 @@ impl Service<BinanceWsTarget> for BinanceWsConnect {
 
     fn call(&mut self, req: BinanceWsTarget) -> Self::Future {
         let connect = WsConnector::default();
+        let endpoint = req.host;
         let res = req
             .into_uri(self.retry, self.interval, self.stop_refresing_after)
             .and_then(|(uri, worker)| {
@@ -193,6 +194,7 @@ impl Service<BinanceWsTarget> for BinanceWsConnect {
         async move {
             let (ws, worker) = res.await?;
             WsClient::with_websocket(
+                endpoint,
                 ws,
                 main_stream,
                 keep_alive_timeout,

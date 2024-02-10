@@ -32,3 +32,9 @@ impl Request {
         Self::Ws(WsRequest::main_stream(stream))
     }
 }
+
+impl From<WsRequest> for Request {
+    fn from(req: WsRequest) -> Self {
+        Self::Ws(req)
+    }
+}

@@ -7,6 +7,8 @@ use super::protocol::{
 use async_stream::stream;
 
 pub(crate) enum RequestKind {
+    DispatchTrades(exc_core::types::SubscribeTrades),
+    DispatchBidAsk(exc_core::types::SubscribeBidAsk),
     Multiplex(MultiplexRequest),
     Reconnect,
 }
@@ -16,6 +18,8 @@ impl RequestKind {
         match self {
             Self::Multiplex(req) => Self::Multiplex(req.timeout(duration)),
             Self::Reconnect => Self::Reconnect,
+            Self::DispatchTrades(req) => Self::DispatchTrades(req),
+            Self::DispatchBidAsk(req) => Self::DispatchBidAsk(req),
         }
     }
 }
@@ -60,6 +64,22 @@ impl WsRequest {
         Self {
             stream: false,
             inner: RequestKind::Reconnect,
+        }
+    }
+
+    /// Dispatch trades.
+    pub fn dispatch_trades(trades: exc_core::types::SubscribeTrades) -> Self {
+        Self {
+            stream: true,
+            inner: RequestKind::DispatchTrades(trades),
+        }
+    }
+
+    /// Dispatch bid ask.
+    pub fn dispatch_bid_ask(bid_ask: exc_core::types::SubscribeBidAsk) -> Self {
+        Self {
+            stream: true,
+            inner: RequestKind::DispatchBidAsk(bid_ask),
         }
     }
 }

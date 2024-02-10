@@ -57,11 +57,27 @@ impl Name {
         }
     }
 
+    /// Trade
+    pub fn trade(inst: &str) -> Self {
+        Self {
+            inst: Some(inst.to_string()),
+            channel: "trade".to_string(),
+        }
+    }
+
     /// Book ticker
     pub fn book_ticker(inst: &str) -> Self {
         Self {
             inst: Some(inst.to_string()),
             channel: "bookTicker".to_string(),
+        }
+    }
+
+    /// Depth
+    pub fn depth(inst: &str, levels: &str, rate: &str) -> Self {
+        Self {
+            inst: Some(inst.to_string()),
+            channel: format!("depth{levels}@{rate}"),
         }
     }
 

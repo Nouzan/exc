@@ -119,6 +119,7 @@ impl StreamState {
         topics: &mut HashMap<Name, usize>,
     ) -> Result<bool, WsError> {
         tracing::trace!(
+            ?frame,
             "stream {}: handling client frame, state={:?}",
             self.id,
             self.state
