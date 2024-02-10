@@ -224,7 +224,13 @@ impl StreamFrame {
             StreamFrameKind::AggTrade(f) => Some(f.to_name()),
             StreamFrameKind::Trade(f) => Some(f.to_name()),
             StreamFrameKind::BookTicker(f) => Some(f.to_name()),
-            StreamFrameKind::Depth(f) => Some(f.to_name()),
+            StreamFrameKind::Depth(_) => {
+                let (inst, channel) = self.stream.split_once('@')?;
+                Some(Name {
+                    inst: Some(inst.to_string()),
+                    channel: channel.to_string(),
+                })
+            }
             StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
             StreamFrameKind::Unknwon(_) => None,
         }

@@ -113,6 +113,7 @@ where
                     let event = event?;
                     match event {
                         Either::Left(trade) => {
+                            tracing::trace!("trade: {trade}");
                             ticker.ts = trade.ts;
                             ticker.last = trade.price;
                             ticker.size = trade.size;
@@ -120,6 +121,7 @@ where
                             trade_init = true;
                         },
                         Either::Right(bid_ask) => {
+                            tracing::trace!("bid_ask: {bid_ask}");
                             if !ignore_bid_ask_ts {
                                 ticker.ts = bid_ask.ts;
                             }

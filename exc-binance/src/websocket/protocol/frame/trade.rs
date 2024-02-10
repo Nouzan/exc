@@ -70,7 +70,8 @@ impl Trade {
 impl Nameable for Trade {
     fn to_name(&self) -> Name {
         Name {
-            inst: Some(self.symbol.to_lowercase()),
+            // FIXME: better way to determine the case (lower or upper).
+            inst: Some(self.symbol.clone()),
             channel: self.event.clone(),
         }
     }

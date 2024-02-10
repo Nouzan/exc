@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::websocket::error::WsError;
 
-use super::{Name, Nameable, StreamFrame, StreamFrameKind};
+use super::{StreamFrame, StreamFrameKind};
 
 /// Depth.
 #[derive(Debug, Clone, Deserialize)]
@@ -29,15 +29,6 @@ pub struct Depth {
     /// Asks.
     #[serde(rename = "a")]
     pub asks: Vec<(Decimal, Decimal)>,
-}
-
-impl Nameable for Depth {
-    fn to_name(&self) -> Name {
-        Name {
-            inst: Some(self.symbol.to_lowercase()),
-            channel: self.event.clone(),
-        }
-    }
 }
 
 impl TryFrom<StreamFrame> for Depth {
