@@ -34,7 +34,7 @@ pub struct Trade {
     pub symbol: String,
     /// Trade ID.
     #[serde(rename = "t")]
-    pub trade_id: i64,
+    pub trade_id: String,
     /// Price.
     #[serde(rename = "p")]
     pub price: Decimal,
@@ -43,10 +43,10 @@ pub struct Trade {
     pub size: Decimal,
     /// Buyer order ID.
     #[serde(rename = "b")]
-    pub buyer_order_id: i64,
+    pub buyer_order_id: Decimal,
     /// Seller order ID.
     #[serde(rename = "a")]
-    pub seller_order_id: i64,
+    pub seller_order_id: Decimal,
     /// Trade time (ms).
     #[serde(rename = "T")]
     pub trade_timestamp: i64,
