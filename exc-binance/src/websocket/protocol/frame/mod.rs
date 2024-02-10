@@ -20,6 +20,9 @@ pub mod trade;
 /// Book ticker.
 pub mod book_ticker;
 
+/// Depth.
+pub mod depth;
+
 /// Account.
 pub mod account;
 
@@ -197,6 +200,8 @@ pub enum StreamFrameKind {
     Trade(trade::Trade),
     /// Book ticker.
     BookTicker(BookTicker),
+    /// Depth.
+    Depth(depth::Depth),
     /// Account event.
     AccountEvent(AccountEvent),
     /// Unknwon.
@@ -219,6 +224,7 @@ impl StreamFrame {
             StreamFrameKind::AggTrade(f) => Some(f.to_name()),
             StreamFrameKind::Trade(f) => Some(f.to_name()),
             StreamFrameKind::BookTicker(f) => Some(f.to_name()),
+            StreamFrameKind::Depth(f) => Some(f.to_name()),
             StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
             StreamFrameKind::Unknwon(_) => None,
         }
@@ -262,6 +268,50 @@ impl TryFrom<TradeFrame> for exc_core::types::Trade {
                 price: trade.price.normalize(),
                 size: trade.size.normalize(),
                 buy: trade.is_taker_buy(),
+            }),
+        }
+    }
+}
+
+/// Depth frame.
+#[derive(Debug, Clone, Deserialize)]
+pub enum DepthFrame {
+    /// Book ticker.
+    BookTicker(BookTicker),
+    /// Depth.
+    Depth(depth::Depth),
+}
+
+impl TryFrom<StreamFrame> for DepthFrame {
+    type Error = WsError;
+
+    fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
+        match frame.data {
+            StreamFrameKind::BookTicker(t) => Ok(Self::BookTicker(t)),
+            StreamFrameKind::Depth(t) => Ok(Self::Depth(t)),
+            _ => Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}"))),
+        }
+    }
+}
+
+impl TryFrom<DepthFrame> for exc_core::types::BidAsk {
+    type Error = ExchangeError;
+
+    fn try_from(value: DepthFrame) -> Result<Self, Self::Error> {
+        match value {
+            DepthFrame::BookTicker(t) => Ok(exc_core::types::BidAsk {
+                ts: t
+                    .trade_timestamp
+                    .map(crate::types::adaptations::from_timestamp)
+                    .transpose()?
+                    .unwrap_or_else(time::OffsetDateTime::now_utc),
+                bid: Some((t.bid.normalize(), t.bid_size.normalize())),
+                ask: Some((t.ask.normalize(), t.ask_size.normalize())),
+            }),
+            DepthFrame::Depth(t) => Ok(exc_core::types::BidAsk {
+                ts: crate::types::adaptations::from_timestamp(t.trade_timestamp)?,
+                bid: t.bids.first().map(|b| (b.0.normalize(), b.1.normalize())),
+                ask: t.asks.first().map(|a| (a.0.normalize(), a.1.normalize())),
             }),
         }
     }
