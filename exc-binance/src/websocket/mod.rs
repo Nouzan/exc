@@ -48,7 +48,7 @@ impl BinanceWebsocketApi {
     pub fn european_options() -> WsEndpoint {
         WsEndpoint::new(
             BinanceWsHost::EuropeanOptions,
-            Name::new("index").inst("BTC-USDT"),
+            Name::new("index").inst("BTCUSDT"),
         )
     }
 }
