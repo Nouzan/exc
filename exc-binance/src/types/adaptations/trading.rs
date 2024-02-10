@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Neg};
 
-use exc_core::{types, Adaptor, ExchangeError};
+use exc_core::{types, Adaptor, ExchangeError, Str};
 use futures::{FutureExt, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
 use time::OffsetDateTime;
@@ -175,6 +175,64 @@ impl TryFrom<Order> for types::Order {
                     )))
                 }
             }
+            Order::EuropeanOptions(order) => {
+                let id = order
+                    .client_order_id
+                    .unwrap_or_else(|| Str::new(order.order_id.to_string()));
+                let mut size = order.quantity.normalize().abs();
+                match order.side {
+                    OrderSide::Buy => size.set_sign_positive(true),
+                    OrderSide::Sell => size.set_sign_positive(false),
+                }
+                let state = order
+                    .state
+                    .ok_or_else(|| ExchangeError::Other(anyhow::anyhow!("order is not ready")))?;
+                let kind = match order.order_type {
+                    trading::OrderType::Limit => match (order.post_only, state.time_in_force) {
+                        (false, TimeInForce::Gtc) => types::OrderKind::Limit(
+                            order.price.normalize(),
+                            types::TimeInForce::GoodTilCancelled,
+                        ),
+                        (false, TimeInForce::Fok) => types::OrderKind::Limit(
+                            order.price.normalize(),
+                            types::TimeInForce::FillOrKill,
+                        ),
+                        (false, TimeInForce::Ioc) => types::OrderKind::Limit(
+                            order.price.normalize(),
+                            types::TimeInForce::ImmediateOrCancel,
+                        ),
+                        (true, _) => types::OrderKind::PostOnly(order.price.normalize()),
+                        kind => {
+                            return Err(ExchangeError::Other(anyhow::anyhow!(
+                                "unsupported order kind: {kind:?}"
+                            )));
+                        }
+                    },
+                    trading::OrderType::Market => types::OrderKind::Market,
+                    other => {
+                        return Err(ExchangeError::Other(anyhow!(
+                            "unsupported order type: {other:?}"
+                        )));
+                    }
+                };
+                let mut filled = state.executed_qty.normalize().abs();
+                match order.side {
+                    OrderSide::Buy => filled.set_sign_positive(true),
+                    OrderSide::Sell => filled.set_sign_positive(false),
+                }
+                let state = types::OrderState {
+                    filled,
+                    cost: state.avg_price.normalize(),
+                    status: state.status.try_into()?,
+                    fees: HashMap::from([(state.quote_asset, state.fee.normalize().neg())]),
+                };
+                Ok(types::Order {
+                    id: types::OrderId::from(id),
+                    target: types::Place { size, kind },
+                    state,
+                    trade: None,
+                })
+            }
         }
     }
 }
@@ -196,7 +254,12 @@ impl Adaptor<types::PlaceOrder> for Request {
                     .map(super::from_timestamp)
                     .unwrap_or_else(|| Ok(OffsetDateTime::now_utc()))?,
                 id,
-                order: order.try_into().ok(),
+                order: order
+                    .try_into()
+                    .map_err(|err| {
+                        tracing::warn!(%err, "failed to convert order");
+                    })
+                    .ok(),
             })
         }
         .boxed())
@@ -210,6 +273,7 @@ impl Adaptor<types::CancelOrder> for Request {
                 symbol: req.instrument.to_uppercase(),
                 order_id: None,
                 orig_client_order_id: Some(req.id.as_str().to_string()),
+                client_order_id: None,
             },
         }))
     }
@@ -238,6 +302,7 @@ impl Adaptor<types::GetOrder> for Request {
                 symbol: req.instrument.to_uppercase(),
                 order_id: None,
                 orig_client_order_id: Some(req.id.as_str().to_string()),
+                client_order_id: None,
             },
         }))
     }

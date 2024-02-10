@@ -62,6 +62,7 @@ async fn main() -> anyhow::Result<()> {
                 symbol: symbol.to_string(),
                 order_id: Some(id),
                 orig_client_order_id: None,
+                client_order_id: None,
             },
         }))
         .await?
@@ -74,6 +75,7 @@ async fn main() -> anyhow::Result<()> {
                 symbol: symbol.to_string(),
                 order_id: Some(id),
                 orig_client_order_id: None,
+                client_order_id: None,
             },
         }))
         .await?

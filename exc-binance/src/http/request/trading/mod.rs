@@ -123,6 +123,9 @@ pub struct GetOrderInner {
     /// Client Id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub orig_client_order_id: Option<String>,
+    /// Client Id.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_order_id: Option<String>,
 }
 
 /// Cancel order.
@@ -161,12 +164,26 @@ impl Rest for CancelOrder {
         true
     }
 
-    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
-        Ok(serde_json::to_value(self)?)
+    fn serialize(&self, endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
+        Ok(serde_json::to_value(self.dispatch(endpoint)?)?)
     }
 
     fn to_payload(&self) -> super::Payload {
         super::Payload::new(self.clone())
+    }
+}
+
+impl CancelOrder {
+    fn dispatch(&self, endpoint: &RestEndpoint) -> Result<Self, RestError> {
+        match endpoint {
+            RestEndpoint::UsdMarginFutures => Ok(self.clone()),
+            RestEndpoint::EuropeanOptions => {
+                let mut req = self.clone();
+                req.inner.client_order_id = req.inner.orig_client_order_id.take();
+                Ok(req)
+            }
+            RestEndpoint::Spot(_) => Ok(self.clone()),
+        }
     }
 }
 
@@ -177,6 +194,20 @@ pub struct GetOrder {
     /// Inner.
     #[serde(flatten)]
     pub inner: GetOrderInner,
+}
+
+impl GetOrder {
+    fn dispatch(&self, endpoint: &RestEndpoint) -> Result<Self, RestError> {
+        match endpoint {
+            RestEndpoint::UsdMarginFutures => Ok(self.clone()),
+            RestEndpoint::EuropeanOptions => {
+                let mut req = self.clone();
+                req.inner.client_order_id = req.inner.orig_client_order_id.take();
+                Ok(req)
+            }
+            RestEndpoint::Spot(_) => Ok(self.clone()),
+        }
+    }
 }
 
 impl Rest for GetOrder {
@@ -206,8 +237,8 @@ impl Rest for GetOrder {
         true
     }
 
-    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
-        Ok(serde_json::to_value(self)?)
+    fn serialize(&self, endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
+        Ok(serde_json::to_value(self.dispatch(endpoint)?)?)
     }
 
     fn to_payload(&self) -> super::Payload {
