@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use exc_core::ExchangeError;
 use futures::{future, stream, Sink, SinkExt, Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
@@ -12,6 +13,9 @@ use self::{account::AccountEvent, agg_trade::AggTrade, book_ticker::BookTicker};
 
 /// Aggregate trade.
 pub mod agg_trade;
+
+/// Trade.
+pub mod trade;
 
 /// Book ticker.
 pub mod book_ticker;
@@ -189,6 +193,8 @@ pub trait Nameable {
 pub enum StreamFrameKind {
     /// Aggregate trade.
     AggTrade(AggTrade),
+    /// Trade.
+    Trade(trade::Trade),
     /// Book ticker.
     BookTicker(BookTicker),
     /// Account event.
@@ -211,9 +217,52 @@ impl StreamFrame {
     pub fn to_name(&self) -> Option<Name> {
         match &self.data {
             StreamFrameKind::AggTrade(f) => Some(f.to_name()),
+            StreamFrameKind::Trade(f) => Some(f.to_name()),
             StreamFrameKind::BookTicker(f) => Some(f.to_name()),
             StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
             StreamFrameKind::Unknwon(_) => None,
+        }
+    }
+}
+
+/// Trade frame.
+#[derive(Debug, Clone, Deserialize)]
+pub enum TradeFrame {
+    /// Aggregate trade.
+    AggTrade(AggTrade),
+    /// Trade.
+    Trade(trade::Trade),
+}
+
+impl TryFrom<StreamFrame> for TradeFrame {
+    type Error = WsError;
+
+    fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
+        match frame.data {
+            StreamFrameKind::AggTrade(trade) => Ok(Self::AggTrade(trade)),
+            StreamFrameKind::Trade(trade) => Ok(Self::Trade(trade)),
+            _ => Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}"))),
+        }
+    }
+}
+
+impl TryFrom<TradeFrame> for exc_core::types::Trade {
+    type Error = ExchangeError;
+
+    fn try_from(value: TradeFrame) -> Result<Self, Self::Error> {
+        match value {
+            TradeFrame::AggTrade(trade) => Ok(exc_core::types::Trade {
+                ts: crate::types::adaptations::from_timestamp(trade.trade_timestamp)?,
+                price: trade.price.normalize(),
+                size: trade.size.normalize(),
+                buy: !trade.buy_maker,
+            }),
+            TradeFrame::Trade(trade) => Ok(exc_core::types::Trade {
+                ts: crate::types::adaptations::from_timestamp(trade.trade_timestamp)?,
+                price: trade.price.normalize(),
+                size: trade.size.normalize(),
+                buy: trade.is_taker_buy(),
+            }),
         }
     }
 }
