@@ -6,7 +6,7 @@ use std::{
 };
 
 use clap::{clap_derive::ValueEnum, Parser};
-use exc::{binance::SpotOptions, core::types::OrderId, prelude::*};
+use exc::{binance::SpotOptions, core::types::OrderId, prelude::*, types::TimeInForce};
 use futures::StreamExt;
 use humantime::{format_duration, FormattedDuration};
 use rust_decimal::Decimal;
@@ -63,6 +63,8 @@ enum Op {
         name: String,
         price: Decimal,
         size: Decimal,
+        #[serde(default)]
+        ioc: bool,
     },
     PostOnly {
         name: String,
@@ -163,9 +165,25 @@ impl Env {
                         Err(err) => tracing::error!("[{idx}] market(rtt={}): {err}", rtt(begin)),
                     }
                 }
-                Op::Limit { name, price, size } => {
+                Op::Limit {
+                    name,
+                    price,
+                    size,
+                    ioc,
+                } => {
                     match exc
-                        .place(&inst, &Place::with_size(size).limit(price), Some(&name))
+                        .place(
+                            &inst,
+                            &Place::with_size(size).limit_with_tif(
+                                price,
+                                if ioc {
+                                    TimeInForce::ImmediateOrCancel
+                                } else {
+                                    TimeInForce::GoodTilCancelled
+                                },
+                            ),
+                            Some(&name),
+                        )
                         .await
                     {
                         Ok(placed) => {
