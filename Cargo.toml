@@ -13,7 +13,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.7.3-beta.0"
+version = "0.7.2"
 edition = "2021"
 authors = ["Nouzan <clobraindie@outlook.com>"]
 license = "MIT"
@@ -24,13 +24,13 @@ description = "The abstraction layer of exchanges."
 rust-version = "1.70.0"
 
 [workspace.dependencies]
-exc-symbol = { version = "0.7.3-beta.0", path = "./exc-symbol", default-features = false }
-exc-service = { version = "0.7.3-beta.0", path = "./exc-service", default-features = false }
-exc-types = { version = "0.7.3-beta.0", path = "./exc-types", default-features = false }
-exc-make = { version = "0.7.3-beta.0", path = "./exc-make", default-features = false }
-exc-core = { version = "0.7.3-beta.0", path = "./exc-core", default-features = false }
-exc-binance = { version = "0.7.3-beta.0", path = "./exc-binance", default-features = false }
-exc-okx = { version = "0.7.3-beta.0", path = "./exc-okx", default-features = false }
+exc-symbol = { version = "0.7.2", path = "./exc-symbol", default-features = false }
+exc-service = { version = "0.7.2", path = "./exc-service", default-features = false }
+exc-types = { version = "0.7.2", path = "./exc-types", default-features = false }
+exc-make = { version = "0.7.2", path = "./exc-make", default-features = false }
+exc-core = { version = "0.7.2", path = "./exc-core", default-features = false }
+exc-binance = { version = "0.7.2", path = "./exc-binance", default-features = false }
+exc-okx = { version = "0.7.2", path = "./exc-okx", default-features = false }
 exc = { path = "./exc", default-features = false }
 
 indicator = "0.4.0"
