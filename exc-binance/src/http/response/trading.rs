@@ -1,4 +1,4 @@
-use exc_core::{Asset, ExchangeError};
+use exc_core::{Asset, ExchangeError, Str};
 use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_with::serde_as;
@@ -16,6 +16,8 @@ use super::Data;
 pub enum Order {
     /// Usd-Margin Futures.
     UsdMarginFutures(UsdMarginFuturesOrder),
+    /// Options.
+    EuropeanOptions(OptionsOrder),
     /// Spot.
     Spot(SpotOrder),
 }
@@ -26,6 +28,7 @@ impl Order {
         match self {
             Self::UsdMarginFutures(order) => order.order_id,
             Self::Spot(order) => order.ack.order_id,
+            Self::EuropeanOptions(order) => order.order_id,
         }
     }
 
@@ -34,6 +37,7 @@ impl Order {
         match self {
             Self::UsdMarginFutures(order) => order.symbol.as_str(),
             Self::Spot(order) => order.ack.symbol.as_str(),
+            Self::EuropeanOptions(order) => order.symbol.as_str(),
         }
     }
 
@@ -43,6 +47,11 @@ impl Order {
         match self {
             Self::UsdMarginFutures(order) => order.client_order_id.as_str(),
             Self::Spot(order) => order.ack.client_order_id(),
+            Self::EuropeanOptions(order) => order
+                .client_order_id
+                .as_ref()
+                .map(|s| s.as_str())
+                .unwrap_or_default(),
         }
     }
 
@@ -51,6 +60,7 @@ impl Order {
         match self {
             Self::UsdMarginFutures(order) => Some(order.update_time),
             Self::Spot(order) => order.ack.transact_time,
+            Self::EuropeanOptions(order) => order.state.as_ref().map(|s| s.update_time),
         }
     }
 }
@@ -208,4 +218,60 @@ pub struct SpotFill {
     pub commission_asset: Asset,
     /// Trade id.
     pub trade_id: i64,
+}
+
+/// Options Order.
+#[serde_as]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OptionsOrder {
+    /// Order id.
+    pub(crate) order_id: i64,
+    /// Client id.
+    pub(crate) client_order_id: Option<Str>,
+    /// Symbol.
+    pub(crate) symbol: Str,
+    /// Price.
+    pub(crate) price: Decimal,
+    /// Size.
+    pub(crate) quantity: Decimal,
+    /// Side.
+    pub(crate) side: OrderSide,
+    /// Order type.
+    #[serde(rename = "type")]
+    pub(crate) order_type: OrderType,
+    /// Reduce only.
+    #[allow(unused)]
+    pub(crate) reduce_only: bool,
+    /// Post only.
+    pub(crate) post_only: bool,
+    /// Mmp.
+    #[allow(unused)]
+    pub(crate) mmp: bool,
+    /// State.
+    #[serde(flatten, default)]
+    pub(crate) state: Option<OptionsOrderState>,
+}
+
+/// Options Order State.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OptionsOrderState {
+    /// Create time.
+    #[allow(unused)]
+    pub(crate) create_time: i64,
+    /// Update time.
+    pub(crate) update_time: i64,
+    /// Filled size.
+    pub(crate) executed_qty: Decimal,
+    /// Average price.
+    pub(crate) avg_price: Decimal,
+    /// Quote asset.
+    pub(crate) quote_asset: Asset,
+    /// Fee.
+    pub(crate) fee: Decimal,
+    /// Time-In-Force.
+    pub(crate) time_in_force: TimeInForce,
+    /// Status.
+    pub(crate) status: Status,
 }

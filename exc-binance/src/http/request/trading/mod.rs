@@ -9,6 +9,9 @@ pub mod usd_margin_futures;
 /// Spot.
 pub mod spot;
 
+/// European options.
+pub mod european_options;
+
 /// Place order.
 #[derive(Debug, Clone)]
 pub struct PlaceOrder {
@@ -20,6 +23,9 @@ impl PlaceOrder {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(PlaceOrderKind::UsdMarginFutures(
                 usd_margin_futures::PlaceOrder::try_from(&self.inner)?,
+            )),
+            RestEndpoint::EuropeanOptions => Ok(PlaceOrderKind::EuropeanOptions(
+                european_options::PlaceOrder::try_from(&self.inner)?,
             )),
             RestEndpoint::Spot(options) => {
                 let mut req = spot::PlaceOrder::try_from(&self.inner)?;
@@ -47,6 +53,16 @@ impl PlaceOrder {
     }
 }
 
+/// Response type.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum RespType {
+    /// Ack.
+    Ack,
+    /// Result.
+    Result,
+}
+
 /// Place order kind.
 #[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
@@ -55,6 +71,8 @@ pub enum PlaceOrderKind {
     UsdMarginFutures(usd_margin_futures::PlaceOrder),
     /// Spot.
     Spot(spot::PlaceOrder),
+    /// European options.
+    EuropeanOptions(european_options::PlaceOrder),
 }
 
 impl Rest for PlaceOrder {
@@ -65,6 +83,7 @@ impl Rest for PlaceOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/order".to_string()),
+            RestEndpoint::EuropeanOptions => Ok("/eapi/v1/order".to_string()),
             RestEndpoint::Spot(options) => {
                 if options.margin.is_some() {
                     Ok("/sapi/v1/margin/order".to_string())
@@ -104,6 +123,9 @@ pub struct GetOrderInner {
     /// Client Id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub orig_client_order_id: Option<String>,
+    /// Client Id.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_order_id: Option<String>,
 }
 
 /// Cancel order.
@@ -123,6 +145,7 @@ impl Rest for CancelOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/order".to_string()),
+            RestEndpoint::EuropeanOptions => Ok("/eapi/v1/order".to_string()),
             RestEndpoint::Spot(options) => {
                 if options.margin.is_some() {
                     Ok("/sapi/v1/margin/order".to_string())
@@ -141,12 +164,26 @@ impl Rest for CancelOrder {
         true
     }
 
-    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
-        Ok(serde_json::to_value(self)?)
+    fn serialize(&self, endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
+        Ok(serde_json::to_value(self.dispatch(endpoint)?)?)
     }
 
     fn to_payload(&self) -> super::Payload {
         super::Payload::new(self.clone())
+    }
+}
+
+impl CancelOrder {
+    fn dispatch(&self, endpoint: &RestEndpoint) -> Result<Self, RestError> {
+        match endpoint {
+            RestEndpoint::UsdMarginFutures => Ok(self.clone()),
+            RestEndpoint::EuropeanOptions => {
+                let mut req = self.clone();
+                req.inner.client_order_id = req.inner.orig_client_order_id.take();
+                Ok(req)
+            }
+            RestEndpoint::Spot(_) => Ok(self.clone()),
+        }
     }
 }
 
@@ -159,6 +196,20 @@ pub struct GetOrder {
     pub inner: GetOrderInner,
 }
 
+impl GetOrder {
+    fn dispatch(&self, endpoint: &RestEndpoint) -> Result<Self, RestError> {
+        match endpoint {
+            RestEndpoint::UsdMarginFutures => Ok(self.clone()),
+            RestEndpoint::EuropeanOptions => {
+                let mut req = self.clone();
+                req.inner.client_order_id = req.inner.orig_client_order_id.take();
+                Ok(req)
+            }
+            RestEndpoint::Spot(_) => Ok(self.clone()),
+        }
+    }
+}
+
 impl Rest for GetOrder {
     fn method(&self, _endpoint: &RestEndpoint) -> Result<http::Method, RestError> {
         Ok(http::Method::GET)
@@ -167,6 +218,7 @@ impl Rest for GetOrder {
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/order".to_string()),
+            RestEndpoint::EuropeanOptions => Ok("/eapi/v1/order".to_string()),
             RestEndpoint::Spot(options) => {
                 if options.margin.is_some() {
                     Ok("/sapi/v1/margin/order".to_string())
@@ -185,8 +237,8 @@ impl Rest for GetOrder {
         true
     }
 
-    fn serialize(&self, _endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
-        Ok(serde_json::to_value(self)?)
+    fn serialize(&self, endpoint: &RestEndpoint) -> Result<serde_json::Value, RestError> {
+        Ok(serde_json::to_value(self.dispatch(endpoint)?)?)
     }
 
     fn to_payload(&self) -> super::Payload {

@@ -55,6 +55,12 @@ pub enum RestError {
     /// Missing date for futures.
     #[error("missing date for futures")]
     MissingDateForFutures,
+    /// Invalid date for options.
+    #[error("invalid date for options")]
+    InvalidDateForOptions,
+    /// Missing base asset for options.
+    #[error("missing base asset for options")]
+    MissingBaseAssetForOptions,
     /// Unknown contract type.
     #[error("unknown contract type: {0:?}")]
     UnknownContractType(String),

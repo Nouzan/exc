@@ -31,6 +31,7 @@ impl From<MarginOp> for exc_binance::MarginOp {
 enum Exchange {
     BinanceU,
     BinanceS,
+    BinanceE,
     Okx,
 }
 
@@ -224,6 +225,11 @@ async fn main() -> anyhow::Result<()> {
         Exchange::BinanceU => {
             let key = serde_json::from_str(&args.key)?;
             let exc = Binance::usd_margin_futures().private(key).connect_exc();
+            env.execute(exc, inst, execs).await?;
+        }
+        Exchange::BinanceE => {
+            let key = serde_json::from_str(&args.key)?;
+            let exc = Binance::european_options().private(key).connect_exc();
             env.execute(exc, inst, execs).await?;
         }
         Exchange::BinanceS => {

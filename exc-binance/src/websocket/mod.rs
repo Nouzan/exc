@@ -35,13 +35,24 @@ impl BinanceWebsocketApi {
     pub fn usd_margin_futures() -> WsEndpoint {
         WsEndpoint::new(
             BinanceWsHost::UsdMarginFutures,
-            Name::new("markPrice").inst("bnbusdt"),
+            Name::new("markPrice").with_inst("bnbusdt"),
         )
     }
 
     /// Endpoint of Spot API.
     pub fn spot() -> WsEndpoint {
-        WsEndpoint::new(BinanceWsHost::Spot, Name::new("miniTicker").inst("btcusdt"))
+        WsEndpoint::new(
+            BinanceWsHost::Spot,
+            Name::new("miniTicker").with_inst("btcusdt"),
+        )
+    }
+
+    /// Endpoint of European Options API.
+    pub fn european_options() -> WsEndpoint {
+        WsEndpoint::new(
+            BinanceWsHost::EuropeanOptions,
+            Name::new("index").with_inst("BTCUSDT"),
+        )
     }
 }
 

@@ -1,3 +1,4 @@
+use exc_core::{types, ExchangeError};
 use serde::{Deserialize, Serialize};
 
 /// Order side.
@@ -41,12 +42,14 @@ pub enum TimeInForce {
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Status {
     /// New.
+    #[serde(alias = "ACCEPTED")]
     New,
     /// Parttially filled.
     PartiallyFilled,
     /// Filled.
     Filled,
     /// Cancelled.
+    #[serde(alias = "REJECTED", alias = "CANCELLED")]
     Canceled,
     /// Expired.
     Expired,
@@ -54,6 +57,19 @@ pub enum Status {
     NewInsurance,
     /// New ADL.
     NewAdl,
+}
+
+impl TryFrom<Status> for types::OrderStatus {
+    type Error = ExchangeError;
+
+    fn try_from(status: Status) -> Result<Self, Self::Error> {
+        let status = match status {
+            Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
+            Status::Canceled | Status::Expired | Status::Filled => types::OrderStatus::Finished,
+            Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
+        };
+        Ok(status)
+    }
 }
 
 /// Order type.

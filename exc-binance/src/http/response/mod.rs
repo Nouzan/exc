@@ -48,6 +48,8 @@ pub type Unknown = serde_json::Value;
 pub enum Data {
     /// Candles.
     Candles(Vec<Candle>),
+    /// Options candles.
+    OptionsCandles(Vec<candle::OptionsCandle>),
     /// Exchange info.
     ExchangeInfo(ExchangeInfo),
     /// Listen key.

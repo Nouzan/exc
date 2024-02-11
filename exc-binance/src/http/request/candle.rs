@@ -81,6 +81,7 @@ impl Rest for QueryCandles {
         match endpoint {
             RestEndpoint::UsdMarginFutures => Ok(format!("/fapi/v1/klines?{qs}")),
             RestEndpoint::Spot(_) => Ok(format!("/api/v3/klines?{qs}")),
+            RestEndpoint::EuropeanOptions => Ok(format!("/eapi/v1/klines?{qs}")),
         }
     }
 

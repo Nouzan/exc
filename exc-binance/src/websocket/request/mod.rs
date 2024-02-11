@@ -7,6 +7,9 @@ use super::protocol::{
 use async_stream::stream;
 
 pub(crate) enum RequestKind {
+    DispatchSubscribe(Name),
+    DispatchTrades(exc_core::types::SubscribeTrades),
+    DispatchBidAsk(exc_core::types::SubscribeBidAsk),
     Multiplex(MultiplexRequest),
     Reconnect,
 }
@@ -16,6 +19,9 @@ impl RequestKind {
         match self {
             Self::Multiplex(req) => Self::Multiplex(req.timeout(duration)),
             Self::Reconnect => Self::Reconnect,
+            Self::DispatchTrades(req) => Self::DispatchTrades(req),
+            Self::DispatchBidAsk(req) => Self::DispatchBidAsk(req),
+            Self::DispatchSubscribe(req) => Self::DispatchSubscribe(req),
         }
     }
 }
@@ -27,8 +33,22 @@ pub struct WsRequest {
 }
 
 impl WsRequest {
-    /// Subscribe to a stream.
+    /// Subscribe to a stream. No matter whether the stream is main or sub.
+    pub fn subscribe_stream(name: Name) -> Self {
+        Self {
+            stream: true,
+            inner: RequestKind::DispatchSubscribe(name),
+        }
+    }
+
+    /// Subscribe to a sub stream.
+    #[deprecated(note = "Use `subscribe_stream` instead")]
     pub fn subscribe(stream: Name) -> Self {
+        Self::sub_stream(stream)
+    }
+
+    /// Subscribe to a sub stream.
+    pub fn sub_stream(stream: Name) -> Self {
         Self {
             stream: true,
             inner: RequestKind::Multiplex(MultiplexRequest::new(|token| {
@@ -60,6 +80,22 @@ impl WsRequest {
         Self {
             stream: false,
             inner: RequestKind::Reconnect,
+        }
+    }
+
+    /// Dispatch trades.
+    pub fn dispatch_trades(trades: exc_core::types::SubscribeTrades) -> Self {
+        Self {
+            stream: true,
+            inner: RequestKind::DispatchTrades(trades),
+        }
+    }
+
+    /// Dispatch bid ask.
+    pub fn dispatch_bid_ask(bid_ask: exc_core::types::SubscribeBidAsk) -> Self {
+        Self {
+            stream: true,
+            inner: RequestKind::DispatchBidAsk(bid_ask),
         }
     }
 }

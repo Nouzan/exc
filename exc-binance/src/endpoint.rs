@@ -45,6 +45,16 @@ impl Endpoint {
         }
     }
 
+    /// Endpoint for European options.
+    pub fn european_options() -> Self {
+        Self {
+            key: None,
+            http: (RestEndpoint::EuropeanOptions, HttpEndpoint::default()),
+            ws: BinanceWebsocketApi::european_options(),
+            buffer: CAP,
+        }
+    }
+
     /// Set websocket keep-alive timeout.
     pub fn ws_keep_alive_timeout(&mut self, timeout: Duration) -> &mut Self {
         self.ws.keep_alive_timeout(timeout);

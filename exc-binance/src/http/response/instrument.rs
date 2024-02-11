@@ -18,6 +18,8 @@ pub enum ExchangeInfo {
     UsdMarginFutures(UFExchangeInfo),
     /// Spot.
     Spot(SpotExchangeInfo),
+    /// European options.
+    EuropeanOptions(EuropeanExchangeInfo),
 }
 
 /// Usd-margin futures exchange info.
@@ -40,6 +42,17 @@ pub struct SpotExchangeInfo {
     #[serde(default)]
     pub(crate) assets: Vec<serde_json::Value>,
     pub(crate) symbols: Vec<SpotSymbol>,
+    pub(crate) timezone: String,
+}
+
+/// European options exchange info.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EuropeanExchangeInfo {
+    pub(crate) option_contracts: Vec<serde_json::Value>,
+    pub(crate) option_assets: Vec<serde_json::Value>,
+    pub(crate) option_symbols: Vec<OptionSymbol>,
+    pub(crate) rate_limits: Vec<RateLimit>,
     pub(crate) timezone: String,
 }
 
@@ -251,6 +264,75 @@ pub(crate) enum SymbolFilter {
         #[serde(rename = "multiplierDecimal")]
         multiplier_decimal: Decimal,
     },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct OptionSymbol {
+    pub(crate) contract_id: i64,
+    pub(crate) expiry_date: i64,
+    pub(crate) filters: Vec<Filter>,
+    pub(crate) id: i64,
+    pub(crate) symbol: String,
+    pub(crate) side: OptionSide,
+    pub(crate) strike_price: Decimal,
+    pub(crate) underlying: String,
+    pub(crate) unit: u32,
+    pub(crate) maker_fee_rate: Decimal,
+    pub(crate) taker_fee_rate: Decimal,
+    pub(crate) min_qty: Decimal,
+    pub(crate) max_qty: Decimal,
+    pub(crate) maintenance_margin: Decimal,
+    pub(crate) min_initial_margin: Decimal,
+    pub(crate) min_maintenance_margin: Decimal,
+    pub(crate) price_scale: u32,
+    pub(crate) quantity_scale: i64,
+    pub(crate) quote_asset: Asset,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub(crate) enum OptionSide {
+    Call,
+    Put,
+}
+
+impl OptionSymbol {
+    fn base(&self) -> Option<Asset> {
+        let (base, _) = self.symbol.split_once('-')?;
+        base.parse().ok()
+    }
+
+    pub(crate) fn expire_ts(&self) -> Result<time::OffsetDateTime, RestError> {
+        // Expiry date is in milliseconds.
+        time::OffsetDateTime::from_unix_timestamp_nanos(self.expiry_date as i128 * 1_000_000)
+            .map_err(|_| RestError::InvalidDateForOptions)
+    }
+
+    fn expiry_date(&self) -> Result<time::Date, RestError> {
+        let ts = self.expire_ts()?;
+        Ok(ts.date())
+    }
+
+    pub(crate) fn to_exc_symbol(&self) -> Result<ExcSymbol, RestError> {
+        let base = self
+            .base()
+            .ok_or_else(|| RestError::MissingBaseAssetForOptions)?;
+        let quote = &self.quote_asset;
+        let date = self.expiry_date()?;
+        let price = self.strike_price.normalize();
+        let symbol = match self.side {
+            OptionSide::Call => ExcSymbol::call(&base, quote, date, price),
+            OptionSide::Put => ExcSymbol::put(&base, quote, date, price),
+        }
+        .ok_or_else(|| RestError::InvalidDateForOptions)?;
+        Ok(symbol)
+    }
+
+    pub(crate) fn is_live(&self) -> bool {
+        // FIXME: Check if the option is live by comparing the expiry date with the current date.
+        true
+    }
 }
 
 impl TryFrom<Data> for ExchangeInfo {

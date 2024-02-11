@@ -126,6 +126,28 @@ impl Adaptor<FetchInstruments> for Request {
                 }))
                 .boxed())
             }
+            response::ExchangeInfo::EuropeanOptions(info) => {
+                Ok(stream::iter(info.option_symbols.into_iter().filter_map(|symbol| {
+                    let mut size_tick = None;
+                    for filter in symbol.filters.iter() {
+                        if let Filter::Symbol(SymbolFilter::LotSize { step_size, .. }) = filter {
+                            size_tick = Some(step_size.normalize());
+                        }
+                    }
+                    let Some(size_tick) = size_tick else {
+                        tracing::warn!("missing size tick for {}", symbol.symbol);
+                        return None;
+                    };
+                    let attrs = Attributes { reversed: false, unit: Decimal::from(symbol.unit), price_tick: Decimal::new(1, symbol.price_scale), size_tick, min_size: symbol.min_qty, min_value: Decimal::ZERO };
+                    let expire = symbol.expire_ts().map_err(|err| {
+                        tracing::warn!(%err, "cannot parse expire for {}", symbol.symbol);
+                    }).ok()?;
+                    let meta = InstrumentMeta::new(&symbol.symbol, symbol.to_exc_symbol().map_err(|err| {
+                        tracing::warn!(%err, "cannot build exc symbol from {}", symbol.symbol);
+                    }).ok()?, attrs).with_live(symbol.is_live()).with_expire(expire);
+                    Some(Ok(meta))
+                })).boxed())
+            }
         }
     }
 }

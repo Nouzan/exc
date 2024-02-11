@@ -119,6 +119,7 @@ impl StreamState {
         topics: &mut HashMap<Name, usize>,
     ) -> Result<bool, WsError> {
         tracing::trace!(
+            ?frame,
             "stream {}: handling client frame, state={:?}",
             self.id,
             self.state
@@ -345,6 +346,7 @@ impl ContextShared {
     }
 
     async fn handle_server_frame(self: &Arc<Self>, frame: ServerFrame) -> bool {
+        tracing::trace!("streaming; received a server frame: frame={frame:?}");
         let ctx = self.clone();
         let main = &ctx.main;
         let (streams, topics) = &mut (*ctx.streams.lock().unwrap());
@@ -371,6 +373,10 @@ impl ContextShared {
                             let good = stream.handle_stream_frame(frame);
                             let id = stream.id;
                             (id, good)
+                        })
+                        .or_else(|| {
+                            tracing::trace!("streaming; no stream found for {name:?}");
+                            None
                         })
                 }),
         };

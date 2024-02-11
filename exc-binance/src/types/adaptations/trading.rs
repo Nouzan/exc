@@ -1,7 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Neg};
 
-use either::Either;
-use exc_core::{types, Adaptor, ExchangeError};
+use exc_core::{types, Adaptor, ExchangeError, Str};
 use futures::{FutureExt, StreamExt, TryStreamExt};
 use rust_decimal::Decimal;
 use time::OffsetDateTime;
@@ -15,11 +14,9 @@ use crate::{
         trading::{self, OrderSide, Status, TimeInForce},
         Name,
     },
-    websocket::protocol::frame::account::{ExecutionReport, OrderType, OrderUpdate},
+    websocket::protocol::frame::account::OrderUpdateFrame,
     Request,
 };
-
-type OrderUpdateKind = Either<OrderUpdate, ExecutionReport>;
 
 impl Adaptor<types::SubscribeOrders> for Request {
     fn from_request(req: types::SubscribeOrders) -> Result<Self, ExchangeError> {
@@ -27,185 +24,10 @@ impl Adaptor<types::SubscribeOrders> for Request {
     }
 
     fn into_response(resp: Self::Response) -> Result<types::OrderStream, ExchangeError> {
-        let stream = resp.into_stream::<OrderUpdateKind>()?;
+        let stream = resp.into_stream::<OrderUpdateFrame>()?;
         Ok(stream
             .map_err(ExchangeError::from)
-            .and_then(|update| async move {
-                match update {
-                    Either::Left(update) => {
-                        let kind = match update.order_type {
-                            OrderType::Limit => match update.time_in_force {
-                                TimeInForce::Gtc => types::OrderKind::Limit(
-                                    update.price.normalize(),
-                                    types::TimeInForce::GoodTilCancelled,
-                                ),
-                                TimeInForce::Fok => types::OrderKind::Limit(
-                                    update.price.normalize(),
-                                    types::TimeInForce::FillOrKill,
-                                ),
-                                TimeInForce::Ioc => types::OrderKind::Limit(
-                                    update.price.normalize(),
-                                    types::TimeInForce::ImmediateOrCancel,
-                                ),
-                                TimeInForce::Gtx => {
-                                    types::OrderKind::PostOnly(update.price.normalize())
-                                }
-                            },
-                            OrderType::Market => types::OrderKind::Market,
-                            other => {
-                                return Err(ExchangeError::Other(anyhow!(
-                                    "unsupported order type: {other:?}"
-                                )));
-                            }
-                        };
-                        let mut filled = update.filled_size.abs().normalize();
-                        let mut size = update.size.abs().normalize();
-                        match update.side {
-                            OrderSide::Buy => {
-                                filled.set_sign_positive(true);
-                                size.set_sign_positive(true)
-                            }
-                            OrderSide::Sell => {
-                                filled.set_sign_positive(false);
-                                size.set_sign_positive(false)
-                            }
-                        }
-                        let status = match update.status {
-                            Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
-                            Status::Canceled | Status::Expired | Status::Filled => {
-                                types::OrderStatus::Finished
-                            }
-                            Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
-                        };
-                        let trade_size = update.last_trade_size.abs().normalize();
-                        let trade = if !trade_size.is_zero() {
-                            let mut trade = types::OrderTrade {
-                                price: update.last_trade_price.normalize(),
-                                size: if matches!(update.side, OrderSide::Buy) {
-                                    trade_size
-                                } else {
-                                    -trade_size
-                                },
-                                fee: Decimal::ZERO,
-                                fee_asset: None,
-                            };
-                            if let Some(asset) = update.fee_asset {
-                                trade.fee = -update.fee.normalize();
-                                trade.fee_asset = Some(asset);
-                            }
-                            Some(trade)
-                        } else {
-                            None
-                        };
-                        Ok(types::OrderUpdate {
-                            ts: super::from_timestamp(update.trade_ts)?,
-                            order: types::Order {
-                                id: types::OrderId::from(update.client_id),
-                                target: types::Place { size, kind },
-                                state: types::OrderState {
-                                    filled,
-                                    cost: if filled.is_zero() {
-                                        Decimal::ONE
-                                    } else {
-                                        update.cost
-                                    },
-                                    status,
-                                    fees: HashMap::default(),
-                                },
-                                trade,
-                            },
-                        })
-                    }
-                    Either::Right(update) => {
-                        let client_id = update.client_id().to_string();
-                        let kind = match update.order_type {
-                            OrderType::Limit => match update.time_in_force {
-                                TimeInForce::Gtc => types::OrderKind::Limit(
-                                    update.price.normalize(),
-                                    types::TimeInForce::GoodTilCancelled,
-                                ),
-                                TimeInForce::Fok => types::OrderKind::Limit(
-                                    update.price.normalize(),
-                                    types::TimeInForce::FillOrKill,
-                                ),
-                                TimeInForce::Ioc => types::OrderKind::Limit(
-                                    update.price.normalize(),
-                                    types::TimeInForce::ImmediateOrCancel,
-                                ),
-                                TimeInForce::Gtx => {
-                                    types::OrderKind::PostOnly(update.price.normalize())
-                                }
-                            },
-                            OrderType::Market => types::OrderKind::Market,
-                            OrderType::LimitMaker => {
-                                types::OrderKind::PostOnly(update.price.normalize())
-                            }
-                            other => {
-                                return Err(ExchangeError::Other(anyhow!(
-                                    "unsupported order type: {other:?}"
-                                )));
-                            }
-                        };
-                        let mut filled = update.filled_size.abs().normalize();
-                        let mut size = update.size.abs().normalize();
-                        match update.side {
-                            OrderSide::Buy => {
-                                filled.set_sign_positive(true);
-                                size.set_sign_positive(true)
-                            }
-                            OrderSide::Sell => {
-                                filled.set_sign_positive(false);
-                                size.set_sign_positive(false)
-                            }
-                        }
-                        let status = match update.status {
-                            Status::New | Status::PartiallyFilled => types::OrderStatus::Pending,
-                            Status::Canceled | Status::Expired | Status::Filled => {
-                                types::OrderStatus::Finished
-                            }
-                            Status::NewAdl | Status::NewInsurance => types::OrderStatus::Pending,
-                        };
-                        let trade_size = update.last_trade_size.abs().normalize();
-                        let trade = if !trade_size.is_zero() {
-                            let mut trade = types::OrderTrade {
-                                price: update.last_trade_price,
-                                size: if matches!(update.side, OrderSide::Buy) {
-                                    trade_size
-                                } else {
-                                    -trade_size
-                                },
-                                fee: Decimal::ZERO,
-                                fee_asset: None,
-                            };
-                            if let Some(asset) = update.fee_asset {
-                                trade.fee = -update.fee.normalize();
-                                trade.fee_asset = Some(asset);
-                            }
-                            Some(trade)
-                        } else {
-                            None
-                        };
-                        Ok(types::OrderUpdate {
-                            ts: super::from_timestamp(update.trade_ts)?,
-                            order: types::Order {
-                                id: types::OrderId::from(client_id),
-                                target: types::Place { size, kind },
-                                state: types::OrderState {
-                                    filled,
-                                    cost: if update.filled_size.is_zero() {
-                                        Decimal::ONE
-                                    } else {
-                                        (update.filled_quote_size / update.filled_size).normalize()
-                                    },
-                                    status,
-                                    fees: HashMap::default(),
-                                },
-                                trade,
-                            },
-                        })
-                    }
-                }
-            })
+            .and_then(|update| async move { update.try_into() })
             .boxed())
     }
 }
@@ -353,6 +175,64 @@ impl TryFrom<Order> for types::Order {
                     )))
                 }
             }
+            Order::EuropeanOptions(order) => {
+                let id = order
+                    .client_order_id
+                    .unwrap_or_else(|| Str::new(order.order_id.to_string()));
+                let mut size = order.quantity.normalize().abs();
+                match order.side {
+                    OrderSide::Buy => size.set_sign_positive(true),
+                    OrderSide::Sell => size.set_sign_positive(false),
+                }
+                let state = order
+                    .state
+                    .ok_or_else(|| ExchangeError::Other(anyhow::anyhow!("order is not ready")))?;
+                let kind = match order.order_type {
+                    trading::OrderType::Limit => match (order.post_only, state.time_in_force) {
+                        (false, TimeInForce::Gtc) => types::OrderKind::Limit(
+                            order.price.normalize(),
+                            types::TimeInForce::GoodTilCancelled,
+                        ),
+                        (false, TimeInForce::Fok) => types::OrderKind::Limit(
+                            order.price.normalize(),
+                            types::TimeInForce::FillOrKill,
+                        ),
+                        (false, TimeInForce::Ioc) => types::OrderKind::Limit(
+                            order.price.normalize(),
+                            types::TimeInForce::ImmediateOrCancel,
+                        ),
+                        (true, _) => types::OrderKind::PostOnly(order.price.normalize()),
+                        kind => {
+                            return Err(ExchangeError::Other(anyhow::anyhow!(
+                                "unsupported order kind: {kind:?}"
+                            )));
+                        }
+                    },
+                    trading::OrderType::Market => types::OrderKind::Market,
+                    other => {
+                        return Err(ExchangeError::Other(anyhow!(
+                            "unsupported order type: {other:?}"
+                        )));
+                    }
+                };
+                let mut filled = state.executed_qty.normalize().abs();
+                match order.side {
+                    OrderSide::Buy => filled.set_sign_positive(true),
+                    OrderSide::Sell => filled.set_sign_positive(false),
+                }
+                let state = types::OrderState {
+                    filled,
+                    cost: state.avg_price.normalize(),
+                    status: state.status.try_into()?,
+                    fees: HashMap::from([(state.quote_asset, state.fee.normalize().neg())]),
+                };
+                Ok(types::Order {
+                    id: types::OrderId::from(id),
+                    target: types::Place { size, kind },
+                    state,
+                    trade: None,
+                })
+            }
         }
     }
 }
@@ -374,7 +254,12 @@ impl Adaptor<types::PlaceOrder> for Request {
                     .map(super::from_timestamp)
                     .unwrap_or_else(|| Ok(OffsetDateTime::now_utc()))?,
                 id,
-                order: order.try_into().ok(),
+                order: order
+                    .try_into()
+                    .map_err(|err| {
+                        tracing::warn!(%err, "failed to convert order");
+                    })
+                    .ok(),
             })
         }
         .boxed())
@@ -388,6 +273,7 @@ impl Adaptor<types::CancelOrder> for Request {
                 symbol: req.instrument.to_uppercase(),
                 order_id: None,
                 orig_client_order_id: Some(req.id.as_str().to_string()),
+                client_order_id: None,
             },
         }))
     }
@@ -416,6 +302,7 @@ impl Adaptor<types::GetOrder> for Request {
                 symbol: req.instrument.to_uppercase(),
                 order_id: None,
                 orig_client_order_id: Some(req.id.as_str().to_string()),
+                client_order_id: None,
             },
         }))
     }

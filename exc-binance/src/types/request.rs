@@ -24,11 +24,17 @@ impl Request {
 
     /// Create a request to subscribe to a ws stream.
     pub fn subscribe(stream: Name) -> Self {
-        Self::Ws(WsRequest::subscribe(stream))
+        Self::Ws(WsRequest::subscribe_stream(stream))
     }
 
     /// Main stream subcribe.
     pub fn subcribe_main(stream: Name) -> Self {
         Self::Ws(WsRequest::main_stream(stream))
+    }
+}
+
+impl From<WsRequest> for Request {
+    fn from(req: WsRequest) -> Self {
+        Self::Ws(req)
     }
 }

@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use exc_core::ExchangeError;
 use futures::{future, stream, Sink, SinkExt, Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
@@ -13,8 +14,14 @@ use self::{account::AccountEvent, agg_trade::AggTrade, book_ticker::BookTicker};
 /// Aggregate trade.
 pub mod agg_trade;
 
+/// Trade.
+pub mod trade;
+
 /// Book ticker.
 pub mod book_ticker;
+
+/// Depth.
+pub mod depth;
 
 /// Account.
 pub mod account;
@@ -37,14 +44,16 @@ pub struct Name {
 }
 
 impl Name {
-    pub(crate) fn new(channel: &str) -> Self {
+    /// Create a new stream name.
+    pub fn new(channel: &str) -> Self {
         Self {
             inst: None,
             channel: channel.to_string(),
         }
     }
 
-    pub(crate) fn inst(mut self, inst: &str) -> Self {
+    /// Set instrument.
+    pub fn with_inst(mut self, inst: &str) -> Self {
         self.inst = Some(inst.to_string());
         self
     }
@@ -57,11 +66,27 @@ impl Name {
         }
     }
 
+    /// Trade
+    pub fn trade(inst: &str) -> Self {
+        Self {
+            inst: Some(inst.to_string()),
+            channel: "trade".to_string(),
+        }
+    }
+
     /// Book ticker
     pub fn book_ticker(inst: &str) -> Self {
         Self {
             inst: Some(inst.to_string()),
             channel: "bookTicker".to_string(),
+        }
+    }
+
+    /// Depth
+    pub fn depth(inst: &str, levels: &str, rate: &str) -> Self {
+        Self {
+            inst: Some(inst.to_string()),
+            channel: format!("depth{levels}@{rate}"),
         }
     }
 
@@ -72,7 +97,7 @@ impl Name {
 
     /// Order trade update.
     pub fn order_trade_update(inst: &str) -> Self {
-        Self::new("orderTradeUpdate").inst(inst)
+        Self::new("orderTradeUpdate").with_inst(inst)
     }
 }
 
@@ -159,6 +184,35 @@ impl ServerFrame {
             _ => Ok(self),
         }
     }
+
+    fn break_down(self) -> Vec<Self> {
+        match &self {
+            Self::Empty | Self::Response(_) => vec![self],
+            Self::Stream(f) => match &f.data {
+                StreamFrameKind::OptionsOrderUpdate(_) => {
+                    let Self::Stream(f) = self else {
+                        unreachable!()
+                    };
+                    let StreamFrameKind::OptionsOrderUpdate(update) = f.data else {
+                        unreachable!()
+                    };
+                    let stream = f.stream;
+                    update
+                        .order
+                        .into_iter()
+                        .map(|o| {
+                            let frame = StreamFrame {
+                                stream: stream.clone(),
+                                data: StreamFrameKind::OptionsOrder(o),
+                            };
+                            Self::Stream(frame)
+                        })
+                        .collect()
+                }
+                _ => vec![self],
+            },
+        }
+    }
 }
 
 /// Payload that with stream name.
@@ -170,13 +224,22 @@ pub trait Nameable {
 /// Stream frame kind.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
+#[non_exhaustive]
 pub enum StreamFrameKind {
     /// Aggregate trade.
     AggTrade(AggTrade),
+    /// Trade.
+    Trade(trade::Trade),
     /// Book ticker.
     BookTicker(BookTicker),
+    /// Depth.
+    Depth(depth::Depth),
     /// Account event.
     AccountEvent(AccountEvent),
+    /// Options Order Update.
+    OptionsOrder(account::OptionsOrder),
+    /// Options Order Trade Update.
+    OptionsOrderUpdate(account::OptionsOrderUpdate),
     /// Unknwon.
     Unknwon(serde_json::Value),
 }
@@ -195,9 +258,124 @@ impl StreamFrame {
     pub fn to_name(&self) -> Option<Name> {
         match &self.data {
             StreamFrameKind::AggTrade(f) => Some(f.to_name()),
+            StreamFrameKind::Trade(f) => Some(f.to_name()),
             StreamFrameKind::BookTicker(f) => Some(f.to_name()),
+            StreamFrameKind::Depth(_) => {
+                let (inst, channel) = self.stream.split_once('@')?;
+                Some(Name {
+                    inst: Some(inst.to_string()),
+                    channel: channel.to_string(),
+                })
+            }
             StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
-            StreamFrameKind::Unknwon(_) => None,
+            StreamFrameKind::OptionsOrder(e) => Some(e.to_name()),
+            StreamFrameKind::OptionsOrderUpdate(_) => None,
+            StreamFrameKind::Unknwon(_) => {
+                let (inst, channel) = self.stream.split_once('@')?;
+                Some(Name {
+                    inst: Some(inst.to_string()),
+                    channel: channel.to_string(),
+                })
+            }
+        }
+    }
+}
+
+impl TryFrom<StreamFrame> for serde_json::Value {
+    type Error = WsError;
+
+    fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
+        match frame.data {
+            StreamFrameKind::Unknwon(v) => Ok(v),
+            _ => Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}"))),
+        }
+    }
+}
+
+/// Trade frame.
+#[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
+pub enum TradeFrame {
+    /// Aggregate trade.
+    AggTrade(AggTrade),
+    /// Trade.
+    Trade(trade::Trade),
+}
+
+impl TryFrom<StreamFrame> for TradeFrame {
+    type Error = WsError;
+
+    fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
+        match frame.data {
+            StreamFrameKind::AggTrade(trade) => Ok(Self::AggTrade(trade)),
+            StreamFrameKind::Trade(trade) => Ok(Self::Trade(trade)),
+            _ => Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}"))),
+        }
+    }
+}
+
+impl TryFrom<TradeFrame> for exc_core::types::Trade {
+    type Error = ExchangeError;
+
+    fn try_from(value: TradeFrame) -> Result<Self, Self::Error> {
+        match value {
+            TradeFrame::AggTrade(trade) => Ok(exc_core::types::Trade {
+                ts: crate::types::adaptations::from_timestamp(trade.trade_timestamp)?,
+                price: trade.price.normalize(),
+                size: trade.size.normalize(),
+                buy: !trade.buy_maker,
+            }),
+            TradeFrame::Trade(trade) => Ok(exc_core::types::Trade {
+                ts: crate::types::adaptations::from_timestamp(trade.trade_timestamp)?,
+                price: trade.price.normalize(),
+                size: trade.size.normalize(),
+                buy: trade.is_taker_buy(),
+            }),
+        }
+    }
+}
+
+/// Depth frame.
+#[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
+pub enum DepthFrame {
+    /// Book ticker.
+    BookTicker(BookTicker),
+    /// Depth.
+    Depth(depth::Depth),
+}
+
+impl TryFrom<StreamFrame> for DepthFrame {
+    type Error = WsError;
+
+    fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
+        match frame.data {
+            StreamFrameKind::BookTicker(t) => Ok(Self::BookTicker(t)),
+            StreamFrameKind::Depth(t) => Ok(Self::Depth(t)),
+            _ => Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}"))),
+        }
+    }
+}
+
+impl TryFrom<DepthFrame> for exc_core::types::BidAsk {
+    type Error = ExchangeError;
+
+    fn try_from(value: DepthFrame) -> Result<Self, Self::Error> {
+        match value {
+            DepthFrame::BookTicker(t) => Ok(exc_core::types::BidAsk {
+                ts: t
+                    .trade_timestamp
+                    .map(crate::types::adaptations::from_timestamp)
+                    .transpose()?
+                    .unwrap_or_else(time::OffsetDateTime::now_utc),
+                bid: Some((t.bid.normalize(), t.bid_size.normalize())),
+                ask: Some((t.ask.normalize(), t.ask_size.normalize())),
+            }),
+            DepthFrame::Depth(t) => Ok(exc_core::types::BidAsk {
+                ts: crate::types::adaptations::from_timestamp(t.trade_timestamp)?,
+                bid: t.bids.first().map(|b| (b.0.normalize(), b.1.normalize())),
+                ask: t.asks.first().map(|a| (a.0.normalize(), a.1.normalize())),
+            }),
         }
     }
 }
@@ -218,9 +396,11 @@ where
         .and_then(|msg| {
             let f = serde_json::from_str::<ServerFrame>(&msg)
                 .map_err(WsError::from)
-                .and_then(ServerFrame::health);
+                .and_then(ServerFrame::health)
+                .map(|f| stream::iter(f.break_down().into_iter().map(Ok)));
             future::ready(f)
         })
+        .try_flatten()
 }
 
 #[cfg(test)]

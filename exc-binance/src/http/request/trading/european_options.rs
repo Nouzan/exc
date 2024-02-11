@@ -7,10 +7,20 @@ use crate::{
         error::RestError,
         request::{Payload, Rest, RestEndpoint},
     },
-    types::trading::{OrderSide, OrderType, PositionSide, TimeInForce},
+    types::trading::{OrderSide, TimeInForce},
 };
 
-pub use super::RespType;
+use super::RespType;
+
+/// Supported order types for european options.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum OrderType {
+    /// Limit.
+    Limit,
+    /// Market.
+    Market,
+}
 
 /// Place order.
 #[derive(Debug, Clone, Serialize)]
@@ -20,47 +30,32 @@ pub struct PlaceOrder {
     pub symbol: String,
     /// Side.
     pub side: OrderSide,
-    /// Position side.
-    pub position_side: PositionSide,
     /// Order type.
     #[serde(rename = "type")]
     pub order_type: OrderType,
     /// Reduce only.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reduce_only: Option<bool>,
-    /// Quantity.
+    /// Post only.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub quantity: Option<Decimal>,
+    pub post_only: Option<bool>,
+    /// Quantity.
+    pub quantity: Decimal,
     /// Price.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub price: Option<Decimal>,
     /// Client id.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub new_client_order_id: Option<String>,
-    /// Stop price.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stop_price: Option<Decimal>,
-    /// Close position.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub close_position: Option<bool>,
-    /// Activation price.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub activation_price: Option<Decimal>,
-    /// Callback rate.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub callback_rate: Option<Decimal>,
+    pub client_order_id: Option<String>,
     /// Time-In-Force.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub time_in_force: Option<TimeInForce>,
-    /// Working type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub working_type: Option<String>,
-    /// Price protect.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_protect: Option<String>,
     /// New order response type.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_order_resp_type: Option<RespType>,
+    /// Is the order a MMP order.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_mmp: Option<bool>,
 }
 
 impl<'a> TryFrom<&'a types::PlaceOrder> for PlaceOrder {
@@ -75,37 +70,35 @@ impl<'a> TryFrom<&'a types::PlaceOrder> for PlaceOrder {
         } else {
             OrderSide::Sell
         };
-        let (order_type, price, tif) = match place.kind {
-            types::OrderKind::Market => (OrderType::Market, None, None),
+        let (order_type, price, tif, post_only) = match place.kind {
+            types::OrderKind::Market => (OrderType::Market, None, None, None),
             types::OrderKind::Limit(price, tif) => {
                 let tif = match tif {
                     types::TimeInForce::GoodTilCancelled => Some(TimeInForce::Gtc),
                     types::TimeInForce::FillOrKill => Some(TimeInForce::Fok),
                     types::TimeInForce::ImmediateOrCancel => Some(TimeInForce::Ioc),
                 };
-                (OrderType::Limit, Some(price), tif)
+                (OrderType::Limit, Some(price), tif, None)
             }
-            types::OrderKind::PostOnly(price) => {
-                (OrderType::Limit, Some(price), Some(TimeInForce::Gtx))
-            }
+            types::OrderKind::PostOnly(price) => (
+                OrderType::Limit,
+                Some(price),
+                Some(TimeInForce::Gtc),
+                Some(true),
+            ),
         };
         Ok(Self {
             symbol: req.opts.instrument().to_uppercase(),
             side,
-            position_side: PositionSide::Both,
             order_type,
             reduce_only: None,
-            quantity: Some(place.size.abs()),
+            quantity: place.size.abs(),
             price,
-            new_client_order_id: req.opts.client_id().map(|s| s.to_string()),
-            stop_price: None,
-            close_position: None,
-            activation_price: None,
-            callback_rate: None,
+            client_order_id: req.opts.client_id().map(|s| s.to_string()),
             time_in_force: tif,
-            working_type: None,
-            price_protect: None,
             new_order_resp_type: None,
+            post_only,
+            is_mmp: None,
         })
     }
 }
@@ -117,9 +110,9 @@ impl Rest for PlaceOrder {
 
     fn to_path(&self, endpoint: &RestEndpoint) -> Result<String, RestError> {
         match endpoint {
-            RestEndpoint::UsdMarginFutures => Ok("/fapi/v1/order".to_string()),
+            RestEndpoint::EuropeanOptions => Ok("/eapi/v1/order".to_string()),
             _ => Err(RestError::UnsupportedEndpoint(anyhow::anyhow!(
-                "only support usd-margin futures"
+                "only support european options"
             ))),
         }
     }

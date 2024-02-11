@@ -2,6 +2,7 @@ use crate::{
     http::{request, response},
     Request,
 };
+use either::Either;
 use exc_core::{
     types::{self, CandleStream},
     Adaptor, ExchangeError,
@@ -80,19 +81,33 @@ impl Adaptor<types::QueryFirstCandles> for Request {
     }
 
     fn into_response(resp: Self::Response) -> Result<types::CandleStream, ExchangeError> {
-        let candles = resp
-            .into_response::<response::Candles>()?
-            .into_iter()
-            .map(|c| {
-                Ok(types::Candle {
-                    ts: super::from_timestamp(c.0)?,
-                    open: c.1.normalize(),
-                    high: c.2.normalize(),
-                    low: c.3.normalize(),
-                    close: c.4.normalize(),
-                    volume: c.5.normalize(),
-                })
-            });
+        let candles = resp.into_response::<response::candle::CandlesKind>()?;
+        let candles = match candles {
+            response::candle::CandlesKind::Candles(candles) => {
+                Either::Left(candles.into_iter().map(|c| {
+                    Ok(types::Candle {
+                        ts: super::from_timestamp(c.0)?,
+                        open: c.1.normalize(),
+                        high: c.2.normalize(),
+                        low: c.3.normalize(),
+                        close: c.4.normalize(),
+                        volume: c.5.normalize(),
+                    })
+                }))
+            }
+            response::candle::CandlesKind::OptionsCandles(candles) => {
+                Either::Right(candles.into_iter().rev().map(|c| {
+                    Ok(types::Candle {
+                        ts: super::from_timestamp(c.open_time)?,
+                        open: c.open.normalize(),
+                        high: c.high.normalize(),
+                        low: c.low.normalize(),
+                        close: c.close.normalize(),
+                        volume: c.volume.normalize(),
+                    })
+                }))
+            }
+        };
         Ok(CandleStream::new_forward(futures::stream::iter(candles)))
     }
 }
