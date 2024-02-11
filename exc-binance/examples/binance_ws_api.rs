@@ -22,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
         .connect();
     ServiceExt::<WsRequest>::ready(&mut api).await?;
     let mut stream = api
-        .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))
+        .call(WsRequest::subscribe_stream(Name::agg_trade("btcusdt")))
         .await?
         .into_stream::<AggTrade>()
         .unwrap()
@@ -49,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
         count += 1;
         ServiceExt::<WsRequest>::ready(&mut api).await?;
         match api
-            .call(WsRequest::subscribe(Name::agg_trade("btcusdt")))
+            .call(WsRequest::subscribe_stream(Name::agg_trade("btcusdt")))
             .await
         {
             Ok(resp) => {

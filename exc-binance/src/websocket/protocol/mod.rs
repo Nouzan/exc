@@ -140,6 +140,7 @@ impl From<tokio_tower::Error<Protocol, Req>> for WsError {
 
 /// Binance websocket service.
 pub struct WsClient {
+    main_stream: HashSet<Name>,
     endpoint: BinanceWsHost,
     state: Arc<stream::Shared>,
     svc: Multiplex<Protocol, WsError, Req>,
@@ -158,7 +159,7 @@ impl WsClient {
     ) -> Result<Self, WsError> {
         let (protocol, state) = Protocol::new(
             websocket,
-            main_stream,
+            main_stream.clone(),
             keep_alive_timeout,
             default_stream_timeout,
             refresh,
@@ -170,6 +171,7 @@ impl WsClient {
         });
         Ok(Self {
             endpoint,
+            main_stream,
             svc,
             state,
             reconnect: false,
@@ -184,16 +186,23 @@ impl WsClient {
         match &req.inner {
             RequestKind::DispatchTrades(trades) => match self.endpoint {
                 BinanceWsHost::EuropeanOptions => {
-                    WsRequest::subscribe(Name::trade(&trades.instrument))
+                    WsRequest::sub_stream(Name::trade(&trades.instrument))
                 }
-                _ => WsRequest::subscribe(Name::agg_trade(&trades.instrument)),
+                _ => WsRequest::sub_stream(Name::agg_trade(&trades.instrument)),
             },
             RequestKind::DispatchBidAsk(bid_ask) => match self.endpoint {
                 BinanceWsHost::EuropeanOptions => {
-                    WsRequest::subscribe(Name::depth(&bid_ask.instrument, "10", "100ms"))
+                    WsRequest::sub_stream(Name::depth(&bid_ask.instrument, "10", "100ms"))
                 }
-                _ => WsRequest::subscribe(Name::book_ticker(&bid_ask.instrument)),
+                _ => WsRequest::sub_stream(Name::book_ticker(&bid_ask.instrument)),
             },
+            RequestKind::DispatchSubscribe(name) => {
+                if self.main_stream.contains(name) {
+                    WsRequest::main_stream(name.clone())
+                } else {
+                    WsRequest::sub_stream(name.clone())
+                }
+            }
             _ => {
                 tracing::error!("ws client; not a dispatch request");
                 req

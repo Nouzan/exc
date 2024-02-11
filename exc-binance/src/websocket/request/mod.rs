@@ -7,6 +7,7 @@ use super::protocol::{
 use async_stream::stream;
 
 pub(crate) enum RequestKind {
+    DispatchSubscribe(Name),
     DispatchTrades(exc_core::types::SubscribeTrades),
     DispatchBidAsk(exc_core::types::SubscribeBidAsk),
     Multiplex(MultiplexRequest),
@@ -20,6 +21,7 @@ impl RequestKind {
             Self::Reconnect => Self::Reconnect,
             Self::DispatchTrades(req) => Self::DispatchTrades(req),
             Self::DispatchBidAsk(req) => Self::DispatchBidAsk(req),
+            Self::DispatchSubscribe(req) => Self::DispatchSubscribe(req),
         }
     }
 }
@@ -31,8 +33,22 @@ pub struct WsRequest {
 }
 
 impl WsRequest {
-    /// Subscribe to a stream.
+    /// Subscribe to a stream. No matter whether the stream is main or sub.
+    pub fn subscribe_stream(name: Name) -> Self {
+        Self {
+            stream: true,
+            inner: RequestKind::DispatchSubscribe(name),
+        }
+    }
+
+    /// Subscribe to a sub stream.
+    #[deprecated(note = "Use `subscribe_stream` instead")]
     pub fn subscribe(stream: Name) -> Self {
+        Self::sub_stream(stream)
+    }
+
+    /// Subscribe to a sub stream.
+    pub fn sub_stream(stream: Name) -> Self {
         Self {
             stream: true,
             inner: RequestKind::Multiplex(MultiplexRequest::new(|token| {

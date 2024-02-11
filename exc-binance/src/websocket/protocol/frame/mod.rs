@@ -44,14 +44,16 @@ pub struct Name {
 }
 
 impl Name {
-    pub(crate) fn new(channel: &str) -> Self {
+    /// Create a new stream name.
+    pub fn new(channel: &str) -> Self {
         Self {
             inst: None,
             channel: channel.to_string(),
         }
     }
 
-    pub(crate) fn inst(mut self, inst: &str) -> Self {
+    /// Set instrument.
+    pub fn with_inst(mut self, inst: &str) -> Self {
         self.inst = Some(inst.to_string());
         self
     }
@@ -95,7 +97,7 @@ impl Name {
 
     /// Order trade update.
     pub fn order_trade_update(inst: &str) -> Self {
-        Self::new("orderTradeUpdate").inst(inst)
+        Self::new("orderTradeUpdate").with_inst(inst)
     }
 }
 
@@ -268,7 +270,24 @@ impl StreamFrame {
             StreamFrameKind::AccountEvent(e) => Some(e.to_name()),
             StreamFrameKind::OptionsOrder(e) => Some(e.to_name()),
             StreamFrameKind::OptionsOrderUpdate(_) => None,
-            StreamFrameKind::Unknwon(_) => None,
+            StreamFrameKind::Unknwon(_) => {
+                let (inst, channel) = self.stream.split_once('@')?;
+                Some(Name {
+                    inst: Some(inst.to_string()),
+                    channel: channel.to_string(),
+                })
+            }
+        }
+    }
+}
+
+impl TryFrom<StreamFrame> for serde_json::Value {
+    type Error = WsError;
+
+    fn try_from(frame: StreamFrame) -> Result<Self, Self::Error> {
+        match frame.data {
+            StreamFrameKind::Unknwon(v) => Ok(v),
+            _ => Err(WsError::UnexpectedFrame(anyhow::anyhow!("{frame:?}"))),
         }
     }
 }
