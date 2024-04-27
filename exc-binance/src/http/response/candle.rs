@@ -6,6 +6,7 @@ use crate::http::error::RestError;
 use super::Data;
 
 /// Candle in list form.
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct Candle(
     /// Open time.

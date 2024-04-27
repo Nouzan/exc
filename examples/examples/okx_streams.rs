@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
             tokio::spawn(async move {
                 loop {
                     tracing::info!("{inst}");
-                    match { client.subscribe_tickers(inst).await } {
+                    match client.subscribe_tickers(inst).await {
                         Ok(mut stream) => {
                             while let Some(c) = stream.next().await {
                                 match c {
