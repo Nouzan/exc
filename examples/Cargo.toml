@@ -6,7 +6,15 @@ rust-version.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-exc = { workspace = true, features = ["okx", "binance", "instrument", "poll"] }
+exc = { workspace = true, features = [
+    "okx",
+    "binance",
+    "instrument",
+    "poll",
+    "rustls-tls",
+    "limit",
+    "fetch-candles",
+] }
 exc-okx = { workspace = true }
 exc-binance = { workspace = true }
 tokio = { workspace = true, features = ["full", "tracing"] }
