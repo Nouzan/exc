@@ -28,11 +28,12 @@ mod https {
                 if #[cfg(feature = "native-tls")] {
                     let https = hyper_tls::HttpsConnector::new();
                 } else if #[cfg(feature = "rustls-tls")] {
-                    let https = hyper_rustls::HttpsConnectorBuilder::new()
-                        .with_webpki_roots()
-                        .https_or_http()
-                        .enable_http1()
-                        .build();
+                    let https = hyper_rustls::HttpsConnectorBuilder::new().with_webpki_roots().https_or_http();
+                    #[cfg(not(feature = "http2"))]
+                    let https = https.enable_http1();
+                    #[cfg(feature = "http2")]
+                    let https = https.enable_http2();
+                    let https= https.build();
                 }
             }
             let client = self.inner.build(https);
